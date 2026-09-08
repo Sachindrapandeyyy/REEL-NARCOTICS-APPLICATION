@@ -28,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -44,6 +45,8 @@ import com.zenith.focus.R
 import com.zenith.focus.core.designsystem.ZenithEmeraldAccent
 import com.zenith.focus.core.designsystem.ZenithNavy
 import com.zenith.focus.core.designsystem.ZenithNavyDark
+import com.zenith.focus.core.ui.RestrictedSettingsBanner
+import com.zenith.focus.core.ui.RestrictedSettingsGuideDialog
 import com.zenith.focus.domain.model.ContentCategory
 import com.zenith.focus.domain.model.ProtectionConfig
 
@@ -57,8 +60,13 @@ fun OnboardingScreen(
     onCompleteOnboarding: () -> Unit
 ) {
     var currentPage by remember { mutableIntStateOf(0) }
+    var showRestrictedDialog by remember { mutableStateOf(false) }
     val totalPages = 9
     val context = LocalContext.current
+
+    if (showRestrictedDialog) {
+        RestrictedSettingsGuideDialog(onDismiss = { showRestrictedDialog = false })
+    }
 
     Box(
         modifier = Modifier
@@ -201,6 +209,13 @@ fun OnboardingScreen(
                                 color = if (isServiceConnected) Color(0xFF6EE7B7) else Color.Black
                             )
                         }
+
+                        if (!isServiceConnected) {
+                            Spacer(modifier = Modifier.height(10.dp))
+                            RestrictedSettingsBanner(
+                                onOpenDialog = { showRestrictedDialog = true }
+                            )
+                        }
                     }
                     6 -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
@@ -261,6 +276,13 @@ fun OnboardingScreen(
                                 text = if (isDeviceAdminActive) "UNINSTALL PROTECTION ACTIVE ✓" else "ACTIVATE UNINSTALL PROTECTION",
                                 fontWeight = FontWeight.Bold,
                                 color = if (isDeviceAdminActive) Color(0xFF6EE7B7) else Color.White
+                            )
+                        }
+
+                        if (!isDeviceAdminActive) {
+                            Spacer(modifier = Modifier.height(10.dp))
+                            RestrictedSettingsBanner(
+                                onOpenDialog = { showRestrictedDialog = true }
                             )
                         }
                     }

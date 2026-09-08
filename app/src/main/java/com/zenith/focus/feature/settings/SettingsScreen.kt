@@ -57,6 +57,8 @@ import com.zenith.focus.core.designsystem.ZenithEmerald
 import com.zenith.focus.core.designsystem.ZenithEmeraldAccent
 import com.zenith.focus.core.designsystem.ZenithNavy
 import com.zenith.focus.core.designsystem.ZenithNavyDark
+import com.zenith.focus.core.ui.RestrictedSettingsBanner
+import com.zenith.focus.core.ui.RestrictedSettingsGuideDialog
 import com.zenith.focus.domain.model.FrictionType
 import com.zenith.focus.domain.model.ProtectionConfig
 import kotlinx.coroutines.launch
@@ -78,8 +80,13 @@ fun SettingsScreen(
     val coroutineScope = rememberCoroutineScope()
 
     var showPinDialog by remember { mutableStateOf(false) }
+    var showRestrictedDialog by remember { mutableStateOf(false) }
     var isDeviceAdminActive by remember {
         mutableStateOf(ZenithDeviceAdminReceiver.isAdminActive(context))
+    }
+
+    if (showRestrictedDialog) {
+        RestrictedSettingsGuideDialog(onDismiss = { showRestrictedDialog = false })
     }
 
     DisposableEffect(lifecycleOwner) {
@@ -215,6 +222,10 @@ fun SettingsScreen(
                     ) {
                         Text("ACTIVATE ACCESSIBILITY PERMISSION", fontWeight = FontWeight.Bold)
                     }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    RestrictedSettingsBanner(
+                        onOpenDialog = { showRestrictedDialog = true }
+                    )
                 }
             }
         }
@@ -264,6 +275,10 @@ fun SettingsScreen(
                     ) {
                         Text("ACTIVATE UNINSTALL PROTECTION", fontWeight = FontWeight.Bold)
                     }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    RestrictedSettingsBanner(
+                        onOpenDialog = { showRestrictedDialog = true }
+                    )
                 } else if (isNuclearActive) {
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
