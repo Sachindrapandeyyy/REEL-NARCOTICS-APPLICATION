@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Reel Narcotics</string>
+    <string name="accessibility_service_label">Reel Narcotics Shield</string>
+    <string name="accessibility_service_description">Real-time short-form video interceptor for YouTube Shorts, Instagram Reels, and addictive scrolling feeds. Break the scroll. Take back your attention.</string>
+    <string name="device_admin_label">Reel Narcotics Protection</string>
+    <string name="device_admin_description">Locks Reel Narcotics to prevent uninstallation or tampering during active focus sessions. Break the scroll. Take back your attention.</string>
+</resources>

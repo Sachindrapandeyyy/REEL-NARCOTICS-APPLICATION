@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reel Narcotics — Break the scroll. Take back your attention.</title>
+  <meta name="description" content="A surgical distraction blocker for Android engineered to destroy short-form video dopamine loops. 100% offline, zero telemetry, unbreakable Nuclear Mode." />
+  <link rel="icon" type="image/png" href="assets/logo.png" />
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            obsidian: {
+              950: '#070A11',
+              900: '#0B0F19',
+              850: '#0F1626',
+              800: '#141D32',
+              700: '#1E293B',
+              600: '#334155'
+            },
+            emerald: {
+              accent: '#10B981',
+              glow: '#059669',
+              bright: '#34D399',
+              dark: '#064E3B'
+            },
+            burgundy: {
+              DEFAULT: '#E11D48',
+              deep: '#1E1018',
+              glow: '#BE123C'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #070A11;
+      color: #F1F5F9;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+    }
+    
+    .glow-emerald {
+      box-shadow: 0 0 60px -15px rgba(16, 185, 129, 0.35);
+    }
+    
+    .glow-burgundy {
+      box-shadow: 0 0 50px -15px rgba(225, 29, 72, 0.3);
+    }
+    
+    .glass-panel {
+      background: rgba(15, 22, 38, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(51, 65, 85, 0.4);
+    }
+
+    .glass-card {
+      background: rgba(15, 22, 38, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(51, 65, 85, 0.5);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .glass-card:hover {
+      border-color: rgba(16, 185, 129, 0.5);
+      transform: translateY(-3px);
+    }
+
+    .phone-mockup {
+      border-radius: 46px;
+      box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.85), 0 0 45px rgba(16, 185, 129, 0.2);
+    }
+  </style>
+</head>
+
+<body class="selection:bg-emerald-500 selection:text-black">
+
+  <!-- BACKGROUND DECORATIONS -->
+  <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+    <div class="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-emerald-500/10 blur-[130px] rounded-full"></div>
+    <div class="absolute top-1/3 -left-40 w-[500px] h-[500px] bg-cyan-500/5 blur-[140px] rounded-full"></div>
+    <div class="absolute top-2/3 -right-40 w-[500px] h-[500px] bg-burgundy/5 blur-[140px] rounded-full"></div>
+  </div>
+
+  <!-- NAVIGATION -->
+  <header class="sticky top-0 z-50 w-full border-b border-obsidian-700/60 bg-obsidian-950/80 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <!-- Logo & Title -->
+      <a href="#" class="flex items-center gap-3.5 group">
+        <img src="assets/logo.png" alt="Reel Narcotics Logo" class="w-11 h-11 rounded-xl shadow-lg border border-obsidian-600 group-hover:scale-105 transition duration-200" />
+        <div>
+          <span class="text-xl font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-emerald-accent">REEL NARCOTICS</span>
+          <span class="block text-[10.5px] uppercase tracking-widest text-slate-400 font-semibold">Break the scroll</span>
+        </div>
+      </a>
+
+      <!-- Navigation Links -->
+      <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
+        <a href="#features" class="hover:text-emerald-bright transition">Features</a>
+        <a href="#philosophy" class="hover:text-emerald-bright transition">Why It Works</a>
+        <a href="#install-guide" class="hover:text-emerald-bright transition">Installation</a>
+        <a href="#privacy" class="hover:text-emerald-bright transition">Privacy (100% Offline)</a>
+        <a href="#faq" class="hover:text-emerald-bright transition">FAQ</a>
+      </nav>
+
+      <!-- Action Button -->
+      <div class="flex items-center gap-3">
+        <a href="assets/ReelNarcotics-v2.0-Release.apk" download="ReelNarcotics-v2.0-Release.apk" class="relative inline-flex items-center justify-center px-5 py-2.5 text-sm font-bold text-black transition-all bg-emerald-accent rounded-xl hover:bg-emerald-bright shadow-lg hover:shadow-emerald-500/25 active:scale-95">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+          </svg>
+          Download APK
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section class="relative z-10 pt-16 pb-24 md:pt-24 md:pb-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+      
+      <!-- Left Copy Column -->
+      <div class="lg:col-span-7 text-center lg:text-left">
+        <!-- Release Badge -->
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-obsidian-850 border border-obsidian-700 text-xs font-semibold text-emerald-bright mb-6">
+          <span class="w-2 h-2 rounded-full bg-emerald-accent animate-pulse"></span>
+          <span>v2.0.0 Stable Release • Android 8.0 - 15</span>
+        </div>
+
+        <!-- Headline -->
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.15] text-white">
+          Break the scroll.<br />
+          <span class="bg-clip-text text-transparent bg-gradient-to-r from-emerald-bright via-emerald-accent to-teal-400">
+            Take back your attention.
+          </span>
+        </h1>
+
+        <!-- Subheading -->
+        <p class="mt-6 text-lg sm:text-xl text-slate-300 leading-relaxed font-normal max-w-2xl mx-auto lg:mx-0">
+          The surgical distraction blocker engineered to destroy short-form dopamine loops. Keeps long-form tutorials and messages open, but kills addictive infinite feeds the microsecond they appear.
+        </p>
+
+        <!-- CTA Buttons -->
+        <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center">
+          <a href="assets/ReelNarcotics-v2.0-Release.apk" download="ReelNarcotics-v2.0-Release.apk" class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-base font-extrabold text-black bg-gradient-to-r from-emerald-accent to-emerald-bright rounded-2xl shadow-xl hover:shadow-emerald-500/30 active:scale-95 transition-all">
+            <svg class="w-5 h-5 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+            </svg>
+            Download Free APK
+            <span class="ml-2 text-xs opacity-75 font-mono">(10.5 MB)</span>
+          </a>
+
+          <a href="#install-guide" class="w-full sm:w-auto inline-flex items-center justify-center px-7 py-4 text-base font-bold text-slate-300 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700 rounded-2xl transition-all">
+            <svg class="w-5 h-5 mr-2 text-emerald-bright" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            How to Install
+          </a>
+        </div>
+
+        <!-- Trust Features Checklist -->
+        <div class="mt-10 pt-8 border-t border-obsidian-800 grid grid-cols-2 sm:grid-cols-4 gap-4 text-left">
+          <div class="flex items-center gap-2">
+            <span class="text-emerald-bright text-base">✓</span>
+            <span class="text-xs font-semibold text-slate-300">100% Offline</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-emerald-bright text-base">✓</span>
+            <span class="text-xs font-semibold text-slate-300">Zero Telemetry</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-emerald-bright text-base">✓</span>
+            <span class="text-xs font-semibold text-slate-300">Play Protect Safe</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-emerald-bright text-base">✓</span>
+            <span class="text-xs font-semibold text-slate-300">Nuclear Lock</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Mockup Column -->
+      <div class="lg:col-span-5 flex justify-center relative">
+        <!-- Glow backing -->
+        <div class="absolute inset-0 bg-gradient-to-tr from-emerald-500/20 via-transparent to-burgundy/10 blur-2xl rounded-full"></div>
+
+        <!-- Phone Frame -->
+        <div class="relative w-[290px] sm:w-[320px] p-3.5 bg-gradient-to-b from-slate-700 via-slate-900 to-black rounded-[50px] shadow-2xl border-4 border-slate-700/60 phone-mockup">
+          <!-- Dynamic Island / Speaker cutout -->
+          <div class="absolute top-6 left-1/2 -translate-x-1/2 w-28 h-4 bg-black rounded-full z-20 flex items-center justify-center">
+            <div class="w-3 h-3 rounded-full bg-slate-900 mr-2"></div>
+            <div class="w-2 h-2 rounded-full bg-blue-900/60"></div>
+          </div>
+          
+          <!-- Inner Screen -->
+          <div class="rounded-[40px] overflow-hidden bg-obsidian-950 border border-slate-800 relative shadow-inner">
+            <img src="assets/screenshot_home.png" alt="Reel Narcotics Live Screen" class="w-full h-auto object-cover select-none" />
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- THE PROBLEM & SURGICAL SOLUTION -->
+  <section id="philosophy" class="relative z-10 py-20 bg-obsidian-900/50 border-y border-obsidian-800/80">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto">
+        <h2 class="text-xs font-black uppercase tracking-widest text-emerald-bright">THE DESIGN PHILOSOPHY</h2>
+        <p class="mt-3 text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+          Why traditional app blockers fail.
+        </p>
+        <p class="mt-4 text-base sm:text-lg text-slate-400">
+          When you block YouTube or Instagram completely, you lose important work tutorials and client messages. Soon, you disable the blocker and relapse.
+        </p>
+      </div>
+
+      <div class="mt-14 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Old Way -->
+        <div class="glass-card rounded-3xl p-8 border-burgundy/30 relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-burgundy/10 rounded-full blur-2xl"></div>
+          <div class="w-12 h-12 rounded-2xl bg-burgundy/20 flex items-center justify-center text-burgundy mb-6 text-2xl font-bold">✕</div>
+          <h3 class="text-xl font-extrabold text-white">Traditional Blunt Blockers</h3>
+          <ul class="mt-4 space-y-3 text-sm text-slate-300">
+            <li class="flex items-start gap-2.5">
+              <span class="text-red-400 mt-0.5 font-bold">✕</span>
+              <span>Locks the entire app (can't watch university lectures or talk to family).</span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="text-red-400 mt-0.5 font-bold">✕</span>
+              <span>Easy to bypass with an app reinstall or by clearing app data.</span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="text-red-400 mt-0.5 font-bold">✕</span>
+              <span>Collects analytics, requires accounts, and tracks browsing habits.</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Reel Narcotics Way -->
+        <div class="glass-card rounded-3xl p-8 border-emerald-accent/40 relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-accent/10 rounded-full blur-2xl"></div>
+          <div class="w-12 h-12 rounded-2xl bg-emerald-accent/20 flex items-center justify-center text-emerald-bright mb-6 text-2xl font-bold">✓</div>
+          <h3 class="text-xl font-extrabold text-white">The Reel Narcotics Shield</h3>
+          <ul class="mt-4 space-y-3 text-sm text-slate-300">
+            <li class="flex items-start gap-2.5">
+              <span class="text-emerald-bright mt-0.5 font-bold">✓</span>
+              <span><strong>Surgical precision</strong>: Keep DMs and tutorials. Eject only infinite scrolling feeds.</span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="text-emerald-bright mt-0.5 font-bold">✓</span>
+              <span><strong>Nuclear Mode &amp; Device Admin</strong>: Impossible to delete or pause while locked.</span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="text-emerald-bright mt-0.5 font-bold">✓</span>
+              <span><strong>100% Offline Hardware Sandbox</strong>: Zero internet permission. Total privacy.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES GRID -->
+  <section id="features" class="relative z-10 py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center max-w-3xl mx-auto">
+      <h2 class="text-xs font-black uppercase tracking-widest text-emerald-bright">DEFENSE ARSENAL</h2>
+      <p class="mt-3 text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+        Engineered for zero willpower reliance.
+      </p>
+      <p class="mt-4 text-base sm:text-lg text-slate-400">
+        You don't need more discipline. You need a system that removes the choice.
+      </p>
+    </div>
+
+    <div class="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      
+      <!-- Feature 1 -->
+      <div class="glass-card rounded-3xl p-7 flex flex-col justify-between">
+        <div>
+          <div class="w-12 h-12 rounded-2xl bg-emerald-accent/20 text-emerald-bright flex items-center justify-center mb-5 text-xl font-black">
+            ⚡
+          </div>
+          <h3 class="text-lg font-extrabold text-white">Surgical Short-Form Interceptor</h3>
+          <p class="mt-3 text-sm text-slate-400 leading-relaxed">
+            Real-time accessibility monitors app navigation trees. The instant YouTube Shorts, Instagram Reels, or Snapchat Spotlight appear, Reel Narcotics ejects you to the home screen in under 16 milliseconds.
+          </p>
+        </div>
+        <div class="mt-6 pt-4 border-t border-obsidian-700/60 flex items-center justify-between text-xs font-mono text-emerald-bright">
+          <span>Zero-Tolerance</span>
+          <span>&lt; 16ms Reaction</span>
+        </div>
+      </div>
+
+      <!-- Feature 2 -->
+      <div class="glass-card rounded-3xl p-7 flex flex-col justify-between border-burgundy/20">
+        <div>
+          <div class="w-12 h-12 rounded-2xl bg-burgundy/20 text-red-400 flex items-center justify-center mb-5 text-xl font-black">
+            ☢️
+          </div>
+          <h3 class="text-lg font-extrabold text-white">Nuclear Mode (Irreversible)</h3>
+          <p class="mt-3 text-sm text-slate-400 leading-relaxed">
+            Once armed, your commitment is etched into disk. Nuclear Mode cannot be disabled, canceled, or paused until the countdown concludes. Survives phone reboots, app crashes, and process kills.
+          </p>
+        </div>
+        <div class="mt-6 pt-4 border-t border-obsidian-700/60 flex items-center justify-between text-xs font-mono text-red-400">
+          <span>Immutable Timer</span>
+          <span>Reboot Proof</span>
+        </div>
+      </div>
+
+      <!-- Feature 3 -->
+      <div class="glass-card rounded-3xl p-7 flex flex-col justify-between">
+        <div>
+          <div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-5 text-xl font-black">
+            🛡️
+          </div>
+          <h3 class="text-lg font-extrabold text-white">Anti-Uninstall Tamper Lock</h3>
+          <p class="mt-3 text-sm text-slate-400 leading-relaxed">
+            Leverages Android's OS-level Device Administration to lock the application against uninstallation. If your subconscious brain attempts to delete the app during a session, Android denies the request.
+          </p>
+        </div>
+        <div class="mt-6 pt-4 border-t border-obsidian-700/60 flex items-center justify-between text-xs font-mono text-amber-400">
+          <span>Device Admin</span>
+          <span>Uninstall Block</span>
+        </div>
+      </div>
+
+      <!-- Feature 4 -->
+      <div class="glass-card rounded-3xl p-7 flex flex-col justify-between">
+        <div>
+          <div class="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center mb-5 text-xl font-black">
+            🔒
+          </div>
+          <h3 class="text-lg font-extrabold text-white">100% Offline • Zero Telemetry</h3>
+          <p class="mt-3 text-sm text-slate-400 leading-relaxed">
+            Reel Narcotics has <strong>NO INTERNET PERMISSION</strong> in its manifest. No cloud servers, no trackers, no analytics, no user accounts. Your data never physically leaves your phone hardware.
+          </p>
+        </div>
+        <div class="mt-6 pt-4 border-t border-obsidian-700/60 flex items-center justify-between text-xs font-mono text-cyan-400">
+          <span>0 Network Calls</span>
+          <span>Zero Logging</span>
+        </div>
+      </div>
+
+      <!-- Feature 5 -->
+      <div class="glass-card rounded-3xl p-7 flex flex-col justify-between">
+        <div>
+          <div class="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center mb-5 text-xl font-black">
+            🛑
+          </div>
+          <h3 class="text-lg font-extrabold text-white">Offline Adult Defense</h3>
+          <p class="mt-3 text-sm text-slate-400 leading-relaxed">
+            A surgical multi-layered local database of explicit domains and keywords is checked purely in memory. Intercepts adult browsing on Chrome, Firefox, and Samsung Internet with zero cloud latency.
+          </p>
+        </div>
+        <div class="mt-6 pt-4 border-t border-obsidian-700/60 flex items-center justify-between text-xs font-mono text-purple-400">
+          <span>Local Trie Engine</span>
+          <span>Zero Cloud</span>
+        </div>
+      </div>
+
+      <!-- Feature 6 -->
+      <div class="glass-card rounded-3xl p-7 flex flex-col justify-between">
+        <div>
+          <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-bright flex items-center justify-center mb-5 text-xl font-black">
+            🧠
+          </div>
+          <h3 class="text-lg font-extrabold text-white">Anti-Impulse Friction Gates</h3>
+          <p class="mt-3 text-sm text-slate-400 leading-relaxed">
+            For non-nuclear focus locks, unlocking early requires conscious cognitive friction: solve mental arithmetic, type mindful friction phrases, or endure radial hold delays to engage your prefrontal cortex.
+          </p>
+        </div>
+        <div class="mt-6 pt-4 border-t border-obsidian-700/60 flex items-center justify-between text-xs font-mono text-emerald-bright">
+          <span>Cognitive Gates</span>
+          <span>Mindful Pause</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- INSTALLATION GUIDE -->
+  <section id="install-guide" class="relative z-10 py-20 bg-obsidian-900/60 border-t border-obsidian-800">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto">
+        <h2 class="text-xs font-black uppercase tracking-widest text-emerald-bright">INSTALLATION GUIDE</h2>
+        <p class="mt-3 text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+          Sideloading Made Simple in 3 Steps.
+        </p>
+        <p class="mt-3 text-base text-slate-400">
+          Reel Narcotics is a pure release APK with a valid signing certificate. Follow these 3 easy steps to install:
+        </p>
+      </div>
+
+      <div class="mt-14 grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Step 1 -->
+        <div class="glass-panel rounded-3xl p-7 border-obsidian-700 relative">
+          <div class="w-10 h-10 rounded-full bg-emerald-accent text-black font-extrabold flex items-center justify-center text-lg mb-5">1</div>
+          <h3 class="text-lg font-bold text-white">Download APK</h3>
+          <p class="mt-2 text-sm text-slate-400 leading-relaxed">
+            Tap the download button below. Your browser will download <code class="text-emerald-bright font-mono text-xs">ReelNarcotics-v2.0-Release.apk</code> (10.5 MB).
+          </p>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="glass-panel rounded-3xl p-7 border-obsidian-700 relative">
+          <div class="w-10 h-10 rounded-full bg-emerald-accent text-black font-extrabold flex items-center justify-center text-lg mb-5">2</div>
+          <h3 class="text-lg font-bold text-white">Allow from Source</h3>
+          <p class="mt-2 text-sm text-slate-400 leading-relaxed">
+            When tapping to install, if Android displays <em>"Install unknown apps"</em>, tap <strong>Settings → Toggle "Allow from this source"</strong>, then tap <strong>Install</strong>.
+          </p>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="glass-panel rounded-3xl p-7 border-obsidian-700 relative">
+          <div class="w-10 h-10 rounded-full bg-emerald-accent text-black font-extrabold flex items-center justify-center text-lg mb-5">3</div>
+          <h3 class="text-lg font-bold text-white">Arm the Shield</h3>
+          <p class="mt-2 text-sm text-slate-400 leading-relaxed">
+            Open the app. Follow the 1-tap setup assistant to activate Accessibility Shield and Uninstall Protection. You are now protected 24/7!
+          </p>
+        </div>
+      </div>
+
+      <!-- Play Protect Note -->
+      <div class="mt-10 p-5 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-start gap-4">
+        <div class="text-2xl mt-0.5">🛡️</div>
+        <div>
+          <h4 class="text-sm font-bold text-emerald-bright">Play Protect &amp; Security Guarantee</h4>
+          <p class="mt-1 text-xs sm:text-sm text-slate-300 leading-relaxed">
+            Reel Narcotics contains zero trackers, zero network calls, and is compiled with strict release obfuscation. It does not access contacts, photos, or personal messages.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ SECTION -->
+  <section id="faq" class="relative z-10 py-20 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center">
+      <h2 class="text-xs font-black uppercase tracking-widest text-emerald-bright">FREQUENTLY ASKED QUESTIONS</h2>
+      <p class="mt-3 text-3xl font-extrabold text-white">Got questions? We have answers.</p>
+    </div>
+
+    <div class="mt-12 space-y-4">
+      <!-- FAQ 1 -->
+      <details class="glass-card rounded-2xl p-5 group cursor-pointer">
+        <summary class="flex justify-between items-center text-base font-bold text-white list-none">
+          <span>Why does Reel Narcotics require Accessibility permission?</span>
+          <span class="text-emerald-bright transition group-open:rotate-180">▼</span>
+        </summary>
+        <p class="mt-3 text-sm text-slate-400 leading-relaxed">
+          Android’s Accessibility Service is the only OS API that allows an app to inspect the current screen package and view layout locally. Reel Narcotics uses it exclusively to identify when a short-form video container (YouTube Shorts, Instagram Reels) appears on your screen and eject you back to safety. Because Reel Narcotics has NO internet permission, your screen data cannot leave your phone.
+        </p>
+      </details>
+
+      <!-- FAQ 2 -->
+      <details class="glass-card rounded-2xl p-5 group cursor-pointer">
+        <summary class="flex justify-between items-center text-base font-bold text-white list-none">
+          <span>What is Nuclear Mode, and can I turn it off early?</span>
+          <span class="text-emerald-bright transition group-open:rotate-180">▼</span>
+        </summary>
+        <p class="mt-3 text-sm text-slate-400 leading-relaxed">
+          No. By definition, Nuclear Mode is irreversible. When you commit to a Nuclear focus session (e.g. 1 hour), the app locks its state in encrypted storage. Even if you reboot your device or try to force stop it, the lock remains enforced until the timer naturally completes.
+        </p>
+      </details>
+
+      <!-- FAQ 3 -->
+      <details class="glass-card rounded-2xl p-5 group cursor-pointer">
+        <summary class="flex justify-between items-center text-base font-bold text-white list-none">
+          <span>Why does it ask for Device Administrator?</span>
+          <span class="text-emerald-bright transition group-open:rotate-180">▼</span>
+        </summary>
+        <p class="mt-3 text-sm text-slate-400 leading-relaxed">
+          When dopamine cravings hit during strict focus locks, many users impulsively uninstall their blocker. Granting Device Admin allows Reel Narcotics to stop uninstallation while a focus timer is active. Once your session ends, you can deactivate or uninstall normally anytime.
+        </p>
+      </details>
+
+      <!-- FAQ 4 -->
+      <details class="glass-card rounded-2xl p-5 group cursor-pointer">
+        <summary class="flex justify-between items-center text-base font-bold text-white list-none">
+          <span>Is Reel Narcotics completely free?</span>
+          <span class="text-emerald-bright transition group-open:rotate-180">▼</span>
+        </summary>
+        <p class="mt-3 text-sm text-slate-400 leading-relaxed">
+          Yes! Reel Narcotics is 100% free, has no subscriptions, no paywalls, and displays zero advertisements.
+        </p>
+      </details>
+    </div>
+  </section>
+
+  <!-- CTA DOWNLOAD HERO -->
+  <section class="relative z-10 py-20 bg-gradient-to-b from-obsidian-900 to-obsidian-950 border-t border-obsidian-800 text-center">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <img src="assets/logo.png" alt="Reel Narcotics" class="w-20 h-20 mx-auto rounded-3xl border-2 border-slate-700 shadow-2xl mb-8" />
+      <h2 class="text-3xl sm:text-5xl font-black text-white tracking-tight">
+        Ready to take back your attention?
+      </h2>
+      <p class="mt-4 text-slate-400 text-lg max-w-xl mx-auto">
+        Join hundreds of deep workers who eliminated endless scrolling loops forever.
+      </p>
+
+      <div class="mt-8">
+        <a href="assets/ReelNarcotics-v2.0-Release.apk" download="ReelNarcotics-v2.0-Release.apk" class="inline-flex items-center justify-center px-10 py-5 text-lg font-extrabold text-black bg-gradient-to-r from-emerald-accent to-emerald-bright rounded-2xl shadow-2xl hover:shadow-emerald-500/40 active:scale-95 transition-all">
+          <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+          </svg>
+          Download Reel Narcotics APK (v2.0)
+        </a>
+      </div>
+
+      <p class="mt-4 text-xs font-mono text-slate-400">
+        Compatible with Android 8.0 (Oreo) through Android 15 • SHA256 Verified
+      </p>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="relative z-10 border-t border-obsidian-800/80 py-10 text-center text-xs text-slate-400">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <img src="assets/logo.png" alt="Reel Narcotics" class="w-6 h-6 rounded-md" />
+        <span class="font-bold text-slate-300">Reel Narcotics</span> — Break the scroll. Take back your attention.
+      </div>
+
+      <div>
+        <span>100% Offline • Zero Telemetry • No Network Access</span>
+      </div>
+
+      <div>
+        <span>© 2026 Reel Narcotics. Released under Apache-2.0.</span>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
