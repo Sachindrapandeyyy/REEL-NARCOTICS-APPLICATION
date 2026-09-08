@@ -144,4 +144,64 @@ class NuclearSessionTest {
             )
         )
     }
+
+    @Test
+    fun testNoLockHasNoRestrictions() {
+        val now = 1000000L
+        val inactiveNuclear = NuclearSession(status = NuclearSessionStatus.INACTIVE)
+        val inactiveLock = LockState(isActive = false)
+        val normalConfig = ProtectionConfig()
+
+        val shortsResult = DetectionResult(
+            isBlocked = true,
+            category = ContentCategory.YOUTUBE_SHORTS,
+            confidence = 1.0f,
+            ruleId = "youtube_shorts",
+            reason = "Addictive short form video"
+        )
+
+        // Without any lock active: NO RESTRICTIONS!
+        org.junit.Assert.assertFalse(
+            NuclearProtectionPolicy.shouldBlock(
+                result = shortsResult,
+                nuclearSession = inactiveNuclear,
+                lockState = inactiveLock,
+                config = normalConfig,
+                nowWallClock = now,
+                nowElapsedRealtime = 60000L
+            )
+        )
+    }
+
+    @Test
+    fun testStandardFocusLockEnforcesRestrictions() {
+        val now = 1000000L
+        val inactiveNuclear = NuclearSession(status = NuclearSessionStatus.INACTIVE)
+        val activeStandardLock = LockState(
+            isActive = true,
+            startTimeMillis = now - 5000L,
+            endTimeMillis = now + 1800000L
+        )
+        val normalConfig = ProtectionConfig()
+
+        val shortsResult = DetectionResult(
+            isBlocked = true,
+            category = ContentCategory.YOUTUBE_SHORTS,
+            confidence = 1.0f,
+            ruleId = "youtube_shorts",
+            reason = "Addictive short form video"
+        )
+
+        // Under Standard Focus Lock: Restrictions MUST be active!
+        assertTrue(
+            NuclearProtectionPolicy.shouldBlock(
+                result = shortsResult,
+                nuclearSession = inactiveNuclear,
+                lockState = activeStandardLock,
+                config = normalConfig,
+                nowWallClock = now,
+                nowElapsedRealtime = 60000L
+            )
+        )
+    }
 }

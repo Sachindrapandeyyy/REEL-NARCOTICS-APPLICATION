@@ -6,11 +6,18 @@ import com.zenith.focus.domain.model.ProtectionConfig
 
 class FacebookReelsDetector : ContentDetector {
     override val name = "FacebookReelsDetector"
-    override val version = "1.1.0"
+    override val version = "2.0.0-STRICT"
+
+    companion object {
+        val FACEBOOK_PACKAGES = setOf(
+            "com.facebook.katana",
+            "com.facebook.lite",
+            "com.facebook.orca"
+        )
+    }
 
     override fun canHandle(packageName: String): Boolean {
-        return packageName.equals("com.facebook.katana", ignoreCase = true) ||
-               packageName.equals("com.facebook.lite", ignoreCase = true)
+        return FACEBOOK_PACKAGES.any { it.equals(packageName, ignoreCase = true) }
     }
 
     override fun evaluate(context: ScreenContext, config: ProtectionConfig): DetectionResult {
@@ -21,29 +28,64 @@ class FacebookReelsDetector : ContentDetector {
         var confidence = 0.0f
         val reasons = mutableListOf<String>()
 
-        if (context.hasAnyViewId("reel_fullscreen_view", "fb_shorts_container", "reels_tab_container")) {
-            confidence += 0.75f
-            reasons.add("Facebook reel full-screen container detected")
+        // Signal 1: Fullscreen Reels container or view hierarchy
+        if (context.hasAnyViewId(
+                "reel_fullscreen_view",
+                "fb_shorts_container",
+                "reels_tab_container",
+                "reels_video_player",
+                "reel_viewer",
+                "fb_shorts_viewer",
+                "reels_tray",
+                "reels_page_container",
+                "reels_fragment"
+            )
+        ) {
+            confidence = 1.0f
+            reasons.add("Facebook Reels container active")
         }
 
-        if (context.hasText("Reels and short videos") || context.hasText("Create reel") || context.hasContentDescription("Reel by")) {
-            confidence += 0.40f
-            reasons.add("Facebook Reel tokens found")
+        // Signal 2: Content descriptions (Accessibility nodes)
+        if (context.hasContentDescription("Reels, tab") ||
+            context.hasContentDescription("Reels tab") ||
+            context.hasContentDescription("Watch Reels") ||
+            context.hasContentDescription("Shorts and reels") ||
+            context.hasContentDescription("Reels video player") ||
+            context.hasContentDescription("Facebook Reels") ||
+            context.hasContentDescription("Reels")
+        ) {
+            confidence = maxOf(confidence, 0.95f)
+            reasons.add("Facebook Reels navigation/viewer node detected")
         }
 
-        val finalConfidence = confidence.coerceIn(0f, 1f)
-        val threshold = if (config.strictMode) 0.55f else 0.70f
+        // Signal 3: Reel Creator / Audio tokens
+        if (context.hasContentDescription("Reel by") ||
+            context.hasContentDescription("Reel of") ||
+            context.hasText("Remix reel") ||
+            context.hasText("Remix this reel") ||
+            context.hasText("Use audio") ||
+            context.hasText("Original audio") ||
+            context.hasText("Watch more reels") ||
+            context.hasText("Create reel") ||
+            context.hasText("Reels and short videos") ||
+            context.hasText("Reels & short videos")
+        ) {
+            confidence = maxOf(confidence, 0.90f)
+            reasons.add("Facebook Reel audio/creator tokens detected")
+        }
 
-        return if (finalConfidence >= threshold) {
+        val threshold = if (config.strictMode) 0.40f else 0.60f
+
+        return if (confidence >= threshold) {
             DetectionResult(
                 isBlocked = true,
-                confidence = finalConfidence,
+                confidence = confidence,
                 category = ContentCategory.FACEBOOK_REELS,
-                ruleId = "FB_REELS_",
+                ruleId = "FB_REELS_STRICT_V2",
                 reason = reasons.joinToString("; ")
             )
         } else {
-            DetectionResult.allowed(ContentCategory.FACEBOOK_REELS, "Insufficient Facebook Reels signals")
+            DetectionResult.allowed(ContentCategory.FACEBOOK_REELS, "Clean Facebook surface")
         }
     }
 }

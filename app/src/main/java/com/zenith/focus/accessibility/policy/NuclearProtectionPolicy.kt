@@ -26,21 +26,23 @@ object NuclearProtectionPolicy {
     ): Boolean {
         if (!result.isBlocked) return false
 
-        // PRIORITY 1: NUCLEAR MODE
+        // PRIORITY 1: NUCLEAR LOCK (Strict Restriction: All addictive & adult content 100% blocked, zero exceptions)
         if (nuclearSession.isCurrentlyActive(nowWallClock, nowElapsedRealtime)) {
-            // Under Nuclear Mode, ALL addictive & adult content is 100% blocked, zero exceptions
             return isAddictiveOrAdultCategory(result.category)
         }
 
-        // PRIORITY 2: FOCUS LOCK
+        // PRIORITY 2: STANDARD FOCUS LOCK (Standard Restriction: Active focus countdown window)
         if (lockState.isCurrentlyActive(nowWallClock)) {
-            if (lockState.enabledCategories.contains(result.category)) {
-                return true
+            return if (lockState.enabledCategories.isNotEmpty()) {
+                lockState.enabledCategories.contains(result.category)
+            } else {
+                isAddictiveOrAdultCategory(result.category) || config.isCategoryBlocked(result.category)
             }
         }
 
-        // PRIORITY 3: CONTINUOUS SHIELD / GLOBAL PREFERENCES
-        return config.isCategoryBlocked(result.category)
+        // NO LOCK ACTIVE: NO RESTRICTIONS
+        // When neither Nuclear Mode nor Standard Focus Lock is active, NO content is restricted.
+        return false
     }
 
     private fun isAddictiveOrAdultCategory(category: ContentCategory): Boolean {

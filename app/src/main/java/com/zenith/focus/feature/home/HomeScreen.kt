@@ -161,12 +161,22 @@ fun HomeScreen(
                 modifier = Modifier
                     .clip(RoundedCornerShape(14.dp))
                     .background(ZenithNavyLight)
-                    .border(1.dp, if (isNuclearActive) ZenithBurgundy else ZenithEmeraldAccent.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
+                    .border(
+                        1.dp,
+                        if (isNuclearActive) ZenithBurgundy
+                        else if (isRegularLocked) ZenithEmeraldAccent.copy(alpha = 0.5f)
+                        else Color(0xFF334155),
+                        RoundedCornerShape(14.dp)
+                    )
                     .padding(horizontal = 10.dp, vertical = 6.dp)
             ) {
                 Text(
-                    text = if (isNuclearActive) "☢️ NUCLEAR" else "24/7 SHIELD",
-                    color = if (isNuclearActive) Color(0xFFF43F5E) else ZenithEmeraldAccent,
+                    text = if (isNuclearActive) "☢️ NUCLEAR (STRICT)"
+                    else if (isRegularLocked) "🔒 STANDARD LOCK"
+                    else "🟢 STANDBY (NO LOCK)",
+                    color = if (isNuclearActive) Color(0xFFF43F5E)
+                    else if (isRegularLocked) ZenithEmeraldAccent
+                    else Color(0xFF94A3B8),
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black
                 )
@@ -217,19 +227,23 @@ fun HomeScreen(
                             modifier = Modifier
                                 .size(10.dp)
                                 .clip(CircleShape)
-                                .background(ZenithEmeraldAccent)
+                                .background(if (isNuclearActive) Color(0xFFF43F5E) else ZenithEmeraldAccent)
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
-                                text = "ALL SHIELDS ARMED & OPERATIONAL 🛡️",
-                                color = ZenithEmeraldAccent,
+                                text = if (isNuclearActive) "NUCLEAR RESTRICTIONS STRICTLY ENFORCED ☢️"
+                                else if (isRegularLocked) "STANDARD FOCUS RESTRICTIONS ACTIVE 🔒"
+                                else "SHIELDS ARMED & READY (STANDBY) 🛡️",
+                                color = if (isNuclearActive) Color(0xFFF43F5E) else ZenithEmeraldAccent,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 0.5.sp
                             )
                             Text(
-                                text = "Accessibility Shield: Active ✓  •  Anti-Uninstall: Armed ✓",
+                                text = if (isNuclearActive) "Nuclear Lock: Strict zero-bypass mode active until timer ends"
+                                else if (isRegularLocked) "Standard Focus: Short-form feeds blocked during session"
+                                else "No lock active = No restrictions. Start a lock to block shorts.",
                                 color = Color(0xFF94A3B8),
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(top = 2.dp)
@@ -237,8 +251,8 @@ fun HomeScreen(
                         }
                     }
                     Text(
-                        text = "LIVE",
-                        color = ZenithEmeraldAccent,
+                        text = if (isNuclearActive || isRegularLocked) "LOCKED" else "READY",
+                        color = if (isNuclearActive) Color(0xFFF43F5E) else ZenithEmeraldAccent,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Black
                     )
@@ -634,11 +648,14 @@ fun HomeScreen(
                 .border(1.dp, Color(0xFF1E293B), RoundedCornerShape(16.dp))
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                ProtectionItemRow(name = "YouTube Shorts", count = todayShortsBlocks)
+                val isEnforced = isNuclearActive || isRegularLocked
+                ProtectionItemRow(name = "YouTube Shorts", count = todayShortsBlocks, isEnforced = isEnforced)
                 Spacer(modifier = Modifier.height(12.dp))
-                ProtectionItemRow(name = "Instagram Reels", count = todayReelsBlocks)
+                ProtectionItemRow(name = "Instagram Reels", count = todayReelsBlocks, isEnforced = isEnforced)
                 Spacer(modifier = Modifier.height(12.dp))
-                ProtectionItemRow(name = "Adult & Explicit Websites", count = todayAdultBlocks)
+                ProtectionItemRow(name = "Facebook Reels", count = 0, isEnforced = isEnforced)
+                Spacer(modifier = Modifier.height(12.dp))
+                ProtectionItemRow(name = "Adult & Explicit Websites", count = todayAdultBlocks, isEnforced = isEnforced)
             }
         }
 
@@ -709,13 +726,13 @@ fun HomeScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = if (isNuclearActive) "NUCLEAR" else "24/7 ACTIVE",
-                        color = if (isNuclearActive) Color(0xFFF43F5E) else ZenithEmeraldAccent,
+                        text = if (isNuclearActive) "NUCLEAR" else if (isRegularLocked) "STANDARD" else "STANDBY",
+                        color = if (isNuclearActive) Color(0xFFF43F5E) else if (isRegularLocked) ZenithEmeraldAccent else Color(0xFF94A3B8),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Black
                     )
                     Text(
-                        text = if (isNuclearActive) "Immutable Lock" else "Zero Tolerance",
+                        text = if (isNuclearActive) "Strict Restriction" else if (isRegularLocked) "Focus Active" else "No Restrictions",
                         color = Color(0xFF94A3B8),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold
@@ -729,7 +746,8 @@ fun HomeScreen(
 @Composable
 fun ProtectionItemRow(
     name: String,
-    count: Int
+    count: Int,
+    isEnforced: Boolean
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -755,13 +773,13 @@ fun ProtectionItemRow(
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(8.dp))
-                .background(ZenithBurgundyDeep)
-                .border(1.dp, ZenithBurgundy, RoundedCornerShape(8.dp))
+                .background(if (isEnforced) ZenithBurgundyDeep else Color(0xFF1E293B))
+                .border(1.dp, if (isEnforced) ZenithBurgundy else Color(0xFF334155), RoundedCornerShape(8.dp))
                 .padding(horizontal = 10.dp, vertical = 4.dp)
         ) {
             Text(
-                text = "BLOCKED",
-                color = Color(0xFFFECACA),
+                text = if (isEnforced) "BLOCKED" else "READY",
+                color = if (isEnforced) Color(0xFFFECACA) else Color(0xFF94A3B8),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Black,
                 letterSpacing = 0.5.sp

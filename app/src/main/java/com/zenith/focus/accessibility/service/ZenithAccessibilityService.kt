@@ -156,10 +156,10 @@ class ZenithAccessibilityService : AccessibilityService() {
             // 2. S++ INSTANT KICK-OUT: Force exit directly to phone's Home Screen
             withContext(Dispatchers.Main) {
                 ejectToHomeScreen()
-                val statusMsg = if (isNuclear) "☢️ NUCLEAR MODE: IMMUTABLE LOCK" else if (lockState.isCurrentlyActive(now)) "Focus Lock Active" else "Shield Armed"
+                val statusMsg = if (isNuclear) "☢️ NUCLEAR LOCK (STRICT RESTRICTION)" else "🔒 STANDARD FOCUS LOCK (RESTRICTION ACTIVE)"
                 Toast.makeText(
                     applicationContext,
-                    "🚫 S++ ZERO TOLERANCE: SHORT/REEL TERMINATED!\n$statusMsg. Put the phone down.",
+                    "$statusMsg\nShort-form loop terminated. Keep focusing!",
                     Toast.LENGTH_SHORT
                 ).show()
             }
