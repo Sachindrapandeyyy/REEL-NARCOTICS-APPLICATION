@@ -101,14 +101,15 @@ class MainActivity : ComponentActivity() {
 
             ZenithFocusTheme(darkTheme = isDarkTheme) {
                 val view = androidx.compose.ui.platform.LocalView.current
+                val earthColors = com.zenith.focus.core.designsystem.EarthTheme.colors
                 if (!view.isInEditMode) {
                     androidx.compose.runtime.SideEffect {
                         val window = (view.context as android.app.Activity).window
-                        window.statusBarColor = com.zenith.focus.core.designsystem.EarthCanvasCream.toArgb()
-                        window.navigationBarColor = com.zenith.focus.core.designsystem.EarthSurfaceLinen.toArgb()
+                        window.statusBarColor = earthColors.canvas.toArgb()
+                        window.navigationBarColor = earthColors.surfaceSoft.toArgb()
                         val insets = androidx.core.view.WindowCompat.getInsetsController(window, view)
-                        insets.isAppearanceLightStatusBars = true
-                        insets.isAppearanceLightNavigationBars = true
+                        insets.isAppearanceLightStatusBars = !earthColors.isDark
+                        insets.isAppearanceLightNavigationBars = !earthColors.isDark
                     }
                 }
 
@@ -234,6 +235,12 @@ class MainActivity : ComponentActivity() {
                                         todayReelsBlocks = todayReels,
                                         todayAdultBlocks = todayAdult,
                                         focusStreakDays = streakDays,
+                                        isDarkTheme = isDarkTheme,
+                                        onToggleTheme = {
+                                            coroutineScope.launch {
+                                                settingsRepo.setAppTheme(if (isDarkTheme) "LIGHT" else "DARK")
+                                            }
+                                        },
                                         onArmNuclearClicked = { showNuclearArmingDialog = true },
                                         onStartLockClicked = { showLockDialog = true },
                                         onUnlockClicked = { showUnlockDialog = true },
@@ -401,8 +408,9 @@ fun ZenithBottomNavigation(
     onTabSelected: (Int) -> Unit,
     onFabClicked: () -> Unit
 ) {
+    val earth = com.zenith.focus.core.designsystem.EarthTheme.colors
     Surface(
-        color = com.zenith.focus.core.designsystem.EarthSurfaceLinen,
+        color = earth.surfaceSoft,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
         shadowElevation = 8.dp,
         modifier = Modifier.fillMaxWidth()
@@ -412,7 +420,7 @@ fun ZenithBottomNavigation(
                 .fillMaxWidth()
                 .border(
                     width = 1.dp,
-                    color = com.zenith.focus.core.designsystem.EarthBorderLinen,
+                    color = earth.border,
                     shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                 )
                 .padding(horizontal = 14.dp, vertical = 8.dp),
@@ -440,7 +448,7 @@ fun ZenithBottomNavigation(
                 modifier = Modifier
                     .size(46.dp)
                     .clip(CircleShape)
-                    .background(com.zenith.focus.core.designsystem.EarthCamelOchre)
+                    .background(earth.camelOchre)
                     .clickable { onFabClicked() },
                 contentAlignment = Alignment.Center
             ) {
@@ -478,6 +486,7 @@ private fun BottomNavItem(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
+    val earth = com.zenith.focus.core.designsystem.EarthTheme.colors
     Column(
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
@@ -489,13 +498,13 @@ private fun BottomNavItem(
         Icon(
             imageVector = icon,
             contentDescription = label,
-            tint = if (isSelected) com.zenith.focus.core.designsystem.EarthForestGreen else com.zenith.focus.core.designsystem.EarthTextMuted,
+            tint = if (isSelected) earth.forestGreen else earth.textMuted,
             modifier = Modifier.size(24.dp)
         )
         Spacer(modifier = Modifier.height(2.dp))
         Text(
             text = label,
-            color = if (isSelected) com.zenith.focus.core.designsystem.EarthForestGreen else com.zenith.focus.core.designsystem.EarthTextMuted,
+            color = if (isSelected) earth.forestGreen else earth.textMuted,
             fontSize = 11.sp,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
         )

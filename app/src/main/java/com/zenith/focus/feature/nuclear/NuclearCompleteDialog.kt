@@ -30,10 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.zenith.focus.core.designsystem.ZenithEmerald
-import com.zenith.focus.core.designsystem.ZenithEmeraldAccent
-import com.zenith.focus.core.designsystem.ZenithNavy
-import com.zenith.focus.core.designsystem.ZenithNavyDark
+import com.zenith.focus.core.designsystem.*
 import com.zenith.focus.core.time.DateTimeUtils
 import com.zenith.focus.domain.nuclear.NuclearSession
 
@@ -43,12 +40,13 @@ fun NuclearCompleteDialog(
     totalBlocksDuringSession: Int,
     onAcknowledge: () -> Unit
 ) {
+    val earth = EarthTheme.colors
     val durationText = DateTimeUtils.formatRemaining(session.durationMillis)
 
     Dialog(onDismissRequest = onAcknowledge) {
         Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = ZenithNavy,
+            shape = RoundedCornerShape(20.dp),
+            color = earth.surfaceSoft,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
@@ -62,7 +60,7 @@ fun NuclearCompleteDialog(
                     modifier = Modifier
                         .size(64.dp)
                         .clip(CircleShape)
-                        .background(ZenithEmerald),
+                        .background(earth.forestGreen),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(text = "🛡️", fontSize = 32.sp)
@@ -72,7 +70,7 @@ fun NuclearCompleteDialog(
 
                 Text(
                     text = "NUCLEAR MODE COMPLETE",
-                    color = ZenithEmeraldAccent,
+                    color = earth.camelOchre,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 1.sp
@@ -80,7 +78,7 @@ fun NuclearCompleteDialog(
 
                 Text(
                     text = "Session Complete.",
-                    color = Color.White,
+                    color = earth.forestDark,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Black,
                     modifier = Modifier.padding(top = 4.dp)
@@ -88,7 +86,7 @@ fun NuclearCompleteDialog(
 
                 Text(
                     text = "You stayed locked in and focused for $durationText.",
-                    color = Color(0xFF94A3B8),
+                    color = earth.textMuted,
                     fontSize = 14.sp,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(top = 4.dp, bottom = 20.dp)
@@ -97,18 +95,18 @@ fun NuclearCompleteDialog(
                 // STATS GRID
                 Card(
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = ZenithNavyDark),
+                    colors = CardDefaults.cardColors(containerColor = earth.surface),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
+                        .border(1.dp, earth.border, RoundedCornerShape(16.dp))
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(text = "Total Protected Duration", color = Color(0xFF94A3B8), fontSize = 13.sp)
-                            Text(text = durationText, color = Color.White, fontWeight = FontWeight.Bold)
+                            Text(text = "Total Protected Duration", color = earth.textMuted, fontSize = 13.sp)
+                            Text(text = durationText, color = earth.forestDark, fontWeight = FontWeight.Bold)
                         }
 
                         Spacer(modifier = Modifier.height(12.dp))
@@ -117,10 +115,10 @@ fun NuclearCompleteDialog(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(text = "Distractions Blocked", color = Color(0xFF94A3B8), fontSize = 13.sp)
+                            Text(text = "Distractions Blocked", color = earth.textMuted, fontSize = 13.sp)
                             Text(
                                 text = "$totalBlocksDuringSession",
-                                color = ZenithEmeraldAccent,
+                                color = earth.forestGreen,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -131,8 +129,8 @@ fun NuclearCompleteDialog(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(text = "Discipline Score", color = Color(0xFF94A3B8), fontSize = 13.sp)
-                            Text(text = "100% UNBROKEN", color = Color(0xFF10B981), fontWeight = FontWeight.Black)
+                            Text(text = "Discipline Score", color = earth.textMuted, fontSize = 13.sp)
+                            Text(text = "100% UNBROKEN", color = earth.camelOchre, fontWeight = FontWeight.Black)
                         }
                     }
                 }
@@ -144,7 +142,7 @@ fun NuclearCompleteDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = ZenithEmerald),
+                    colors = ButtonDefaults.buttonColors(containerColor = earth.forestGreen),
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Text(

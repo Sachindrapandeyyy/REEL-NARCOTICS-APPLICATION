@@ -28,15 +28,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.zenith.focus.core.designsystem.EarthBorderLinen
-import com.zenith.focus.core.designsystem.EarthCamelOchre
-import com.zenith.focus.core.designsystem.EarthCanvasCream
-import com.zenith.focus.core.designsystem.EarthForestDark
-import com.zenith.focus.core.designsystem.EarthForestGreen
-import com.zenith.focus.core.designsystem.EarthSurfaceLinen
-import com.zenith.focus.core.designsystem.EarthSurfaceLinenSoft
-import com.zenith.focus.core.designsystem.EarthTextDark
-import com.zenith.focus.core.designsystem.EarthTextMuted
+import com.zenith.focus.core.designsystem.*
 import com.zenith.focus.domain.model.ContentCategory
 import com.zenith.focus.domain.model.ProtectionConfig
 import com.zenith.focus.domain.nuclear.NuclearSession
@@ -52,6 +44,7 @@ fun ProtectionScreen(
     onToggleBrowserProtection: (Boolean) -> Unit,
     onToggleStrictMode: (Boolean) -> Unit
 ) {
+    val earth = EarthTheme.colors
     val scrollState = rememberScrollState()
     val isNuclearActive = nuclearSession.isCurrentlyActive()
 
@@ -62,27 +55,27 @@ fun ProtectionScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(EarthCanvasCream)
+            .background(earth.canvas)
             .verticalScroll(scrollState)
             .padding(horizontal = 20.dp, vertical = 20.dp)
     ) {
         Text(
             text = "⚡ S++ HARD ENFORCEMENT",
-            color = EarthForestGreen,
+            color = earth.forestGreen,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.5.sp
         )
         Text(
             text = "Content Shield",
-            color = EarthForestDark,
+            color = earth.forestDark,
             fontSize = 28.sp,
             fontFamily = FontFamily.Serif,
             fontWeight = FontWeight.Normal
         )
         Text(
             text = "Zero tolerance for cheap dopamine. The moment a blocked surface is detected, you will be instantly ejected to the Home Screen.",
-            color = EarthTextMuted,
+            color = earth.textMuted,
             fontSize = 12.5.sp,
             modifier = Modifier.padding(top = 4.dp, bottom = 20.dp)
         )
@@ -90,12 +83,12 @@ fun ProtectionScreen(
         // NUCLEAR MODE STATUS CARD (IMMUTABLE COMMITMENT)
         Card(
             shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
+            colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
             modifier = Modifier
                 .fillMaxWidth()
                 .border(
                     width = if (isNuclearActive) 1.5.dp else 1.dp,
-                    color = if (isNuclearActive) EarthCamelOchre else EarthBorderLinen,
+                    color = if (isNuclearActive) earth.camelOchre else earth.border,
                     shape = RoundedCornerShape(18.dp)
                 )
         ) {
@@ -107,7 +100,7 @@ fun ProtectionScreen(
                 ) {
                     Text(
                         text = if (isNuclearActive) "☢️ NUCLEAR MODE: ACTIVE" else "☢️ NUCLEAR MODE COMMITMENT",
-                        color = if (isNuclearActive) EarthCamelOchre else EarthForestGreen,
+                        color = if (isNuclearActive) earth.camelOchre else earth.forestGreen,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.8.sp
@@ -116,7 +109,7 @@ fun ProtectionScreen(
                     if (isNuclearActive) {
                         Box(
                             modifier = Modifier
-                                .background(EarthCamelOchre, shape = RoundedCornerShape(8.dp))
+                                .background(earth.camelOchre, shape = RoundedCornerShape(8.dp))
                                 .padding(horizontal = 10.dp, vertical = 4.dp)
                         ) {
                             Text(
@@ -135,7 +128,7 @@ fun ProtectionScreen(
                     } else {
                         "Nuclear Mode can only be armed from the Home dashboard with a deliberate Hold-To-Activate gesture. Once active, all cheat paths and disable toggles are completely locked."
                     },
-                    color = EarthTextDark,
+                    color = earth.textPrimary,
                     fontSize = 12.sp,
                     lineHeight = 17.sp,
                     modifier = Modifier.padding(top = 8.dp)
@@ -148,7 +141,7 @@ fun ProtectionScreen(
         // SHORT-FORM VIDEO TARGETS SECTION
         Text(
             text = "SHORT-FORM ADDICTIVE FEEDS",
-            color = EarthForestGreen,
+            color = earth.forestGreen,
             fontSize = 11.5.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.sp
@@ -198,7 +191,7 @@ fun ProtectionScreen(
         // EXPLICIT CONTENT SECTION
         Text(
             text = "EXPLICIT CONTENT BARRIER",
-            color = EarthForestGreen,
+            color = earth.forestGreen,
             fontSize = 11.5.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.sp
@@ -228,7 +221,7 @@ fun ProtectionScreen(
         // ADVANCED ENFORCEMENT
         Text(
             text = "SYSTEM ENFORCEMENT DEPTH",
-            color = EarthForestGreen,
+            color = earth.forestGreen,
             fontSize = 11.5.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.sp
@@ -253,7 +246,7 @@ fun ProtectionScreen(
             onCheckedChange = onToggleBrowserProtection
         )
 
-        Spacer(modifier = Modifier.height(60.dp))
+        Spacer(modifier = Modifier.height(110.dp))
     }
 }
 
@@ -265,12 +258,13 @@ fun ProtectionToggleCard(
     enabled: Boolean = true,
     onCheckedChange: (Boolean) -> Unit
 ) {
+    val earth = EarthTheme.colors
     Card(
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
+        colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, EarthBorderLinen, RoundedCornerShape(18.dp))
+            .border(1.dp, earth.border, RoundedCornerShape(18.dp))
     ) {
         Row(
             modifier = Modifier
@@ -282,13 +276,13 @@ fun ProtectionToggleCard(
             Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
                 Text(
                     text = title,
-                    color = EarthTextDark,
+                    color = earth.textPrimary,
                     fontSize = 14.5.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = subtitle,
-                    color = EarthTextMuted,
+                    color = earth.textMuted,
                     fontSize = 12.sp,
                     lineHeight = 16.sp,
                     modifier = Modifier.padding(top = 3.dp)
@@ -301,11 +295,11 @@ fun ProtectionToggleCard(
                 onCheckedChange = onCheckedChange,
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = Color.White,
-                    checkedTrackColor = EarthForestGreen,
-                    uncheckedThumbColor = EarthTextMuted,
-                    uncheckedTrackColor = EarthSurfaceLinen,
+                    checkedTrackColor = earth.forestGreen,
+                    uncheckedThumbColor = earth.textMuted,
+                    uncheckedTrackColor = earth.surface,
                     disabledCheckedThumbColor = Color.White,
-                    disabledCheckedTrackColor = EarthCamelOchre
+                    disabledCheckedTrackColor = earth.camelOchre
                 )
             )
         }

@@ -50,16 +50,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.zenith.focus.core.designsystem.EarthBorderLinen
-import com.zenith.focus.core.designsystem.EarthCamelOchre
-import com.zenith.focus.core.designsystem.EarthCanvasCream
-import com.zenith.focus.core.designsystem.EarthForestDark
-import com.zenith.focus.core.designsystem.EarthForestGreen
-import com.zenith.focus.core.designsystem.EarthSageOlive
-import com.zenith.focus.core.designsystem.EarthSurfaceLinen
-import com.zenith.focus.core.designsystem.EarthSurfaceLinenSoft
-import com.zenith.focus.core.designsystem.EarthTextDark
-import com.zenith.focus.core.designsystem.EarthTextMuted
+import com.zenith.focus.core.designsystem.*
 import com.zenith.focus.core.time.DateTimeUtils
 import com.zenith.focus.domain.model.ContentCategory
 import com.zenith.focus.receiver.ZenithDeviceAdminReceiver
@@ -74,6 +65,18 @@ fun NuclearArmingDialog(
     onArmSession: (durationMillis: Long, enabledCategories: Set<ContentCategory>) -> Unit,
     onConfirmActivation: () -> Unit
 ) {
+    val earth = EarthTheme.colors
+    val EarthSurfaceLinenSoft = earth.surfaceSoft
+    val EarthSurfaceLinen = earth.surface
+    val EarthCanvasCream = earth.canvas
+    val EarthBorderLinen = earth.border
+    val EarthTextDark = earth.textPrimary
+    val EarthTextMuted = earth.textMuted
+    val EarthForestDark = earth.forestDark
+    val EarthForestGreen = earth.forestGreen
+    val EarthCamelOchre = earth.camelOchre
+    val EarthSageOlive = earth.sageOlive
+
     var step by remember { mutableIntStateOf(0) } // 0: Config & Shields, 1: Ready & Hold to Activate
     var selectedDurationMillis by remember { mutableStateOf(2 * 60 * 60 * 1000L) } // default 2 hours
 
@@ -453,7 +456,8 @@ fun NuclearArmingDialog(
                                                 modifier = Modifier
                                                     .size(28.dp)
                                                     .clip(CircleShape)
-                                                    .background(Color.White.copy(alpha = 0.7f))
+                                                    .background(earth.canvasElevated)
+                                                    .border(1.dp, earth.border, CircleShape)
                                                     .clickable {
                                                         if (customDays > 0) {
                                                             customDays--
@@ -476,7 +480,8 @@ fun NuclearArmingDialog(
                                                 modifier = Modifier
                                                     .size(28.dp)
                                                     .clip(CircleShape)
-                                                    .background(Color.White.copy(alpha = 0.7f))
+                                                    .background(earth.canvasElevated)
+                                                    .border(1.dp, earth.border, CircleShape)
                                                     .clickable {
                                                         if (customDays < 90) {
                                                             customDays++
@@ -500,7 +505,8 @@ fun NuclearArmingDialog(
                                                 modifier = Modifier
                                                     .size(28.dp)
                                                     .clip(CircleShape)
-                                                    .background(Color.White.copy(alpha = 0.7f))
+                                                    .background(earth.canvasElevated)
+                                                    .border(1.dp, earth.border, CircleShape)
                                                     .clickable {
                                                         if (customHours > 0) {
                                                             customHours--
@@ -523,7 +529,8 @@ fun NuclearArmingDialog(
                                                 modifier = Modifier
                                                     .size(28.dp)
                                                     .clip(CircleShape)
-                                                    .background(Color.White.copy(alpha = 0.7f))
+                                                    .background(earth.canvasElevated)
+                                                    .border(1.dp, earth.border, CircleShape)
                                                     .clickable {
                                                         if (customHours < 23) {
                                                             customHours++
@@ -547,7 +554,8 @@ fun NuclearArmingDialog(
                                                 modifier = Modifier
                                                     .size(28.dp)
                                                     .clip(CircleShape)
-                                                    .background(Color.White.copy(alpha = 0.7f))
+                                                    .background(earth.canvasElevated)
+                                                    .border(1.dp, earth.border, CircleShape)
                                                     .clickable {
                                                         if (customMinutes >= 5) {
                                                             customMinutes -= 5
@@ -570,7 +578,8 @@ fun NuclearArmingDialog(
                                                 modifier = Modifier
                                                     .size(28.dp)
                                                     .clip(CircleShape)
-                                                    .background(Color.White.copy(alpha = 0.7f))
+                                                    .background(earth.canvasElevated)
+                                                    .border(1.dp, earth.border, CircleShape)
                                                     .clickable {
                                                         if (customMinutes < 55) {
                                                             customMinutes += 5
@@ -763,6 +772,11 @@ fun NuclearArmingDialog(
 fun HoldToActivateButton(
     onConfirmed: () -> Unit
 ) {
+    val earth = EarthTheme.colors
+    val EarthCamelOchre = earth.camelOchre
+    val EarthBorderLinen = earth.border
+    val EarthForestDark = earth.forestDark
+
     var holdProgress by remember { mutableFloatStateOf(0f) }
     var isHolding by remember { mutableStateOf(false) }
     val view = LocalView.current

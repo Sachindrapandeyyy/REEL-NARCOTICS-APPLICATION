@@ -6,34 +6,37 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.Color
+
 private val DarkColorScheme = darkColorScheme(
-    primary = ZenithPrimary,
-    onPrimary = ZenithOnPrimary,
-    primaryContainer = ZenithPrimaryContainer,
-    secondary = ZenithSecondary,
-    onSecondary = ZenithOnSecondary,
-    secondaryContainer = ZenithSecondaryContainer,
-    background = ZenithDarkBg,
-    surface = ZenithDarkSurface,
-    surfaceVariant = ZenithDarkSurfaceVariant,
-    onBackground = ZenithTextPrimaryDark,
-    onSurface = ZenithTextPrimaryDark,
-    outline = ZenithDarkBorder
+    primary = EarthNightGreen,
+    onPrimary = Color.White,
+    primaryContainer = EarthNightSurfaceSoft,
+    secondary = EarthNightCamel,
+    onSecondary = Color.White,
+    secondaryContainer = EarthNightCamelLight,
+    background = EarthNightBg,
+    surface = EarthNightSurface,
+    surfaceVariant = EarthNightSurfaceVariant,
+    onBackground = EarthNightText,
+    onSurface = EarthNightText,
+    outline = EarthNightBorder
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = ZenithPrimaryDark,
-    onPrimary = ZenithOnPrimary,
-    primaryContainer = ZenithPrimary,
-    secondary = ZenithSecondary,
-    onSecondary = ZenithOnSecondary,
-    secondaryContainer = ZenithSecondaryContainer,
-    background = ZenithLightBg,
-    surface = ZenithLightSurface,
-    surfaceVariant = ZenithLightSurfaceVariant,
-    onBackground = ZenithTextPrimaryLight,
-    onSurface = ZenithTextPrimaryLight,
-    outline = ZenithLightBorder
+    primary = EarthForestGreen,
+    onPrimary = Color.White,
+    primaryContainer = EarthSurfaceLinenSoft,
+    secondary = EarthCamelOchre,
+    onSecondary = Color.White,
+    secondaryContainer = EarthCamelLight,
+    background = EarthCanvasCream,
+    surface = EarthSurfaceLinenSoft,
+    surfaceVariant = EarthSandCard,
+    onBackground = EarthTextDark,
+    onSurface = EarthTextDark,
+    outline = EarthBorderLinen
 )
 
 @Composable
@@ -41,9 +44,13 @@ fun ZenithFocusTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
+    val earthColors = if (darkTheme) DarkEarthColors else LightEarthColors
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
-    MaterialTheme(
-        colorScheme = colorScheme,
-        content = content
-    )
+
+    CompositionLocalProvider(LocalEarthColors provides earthColors) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            content = content
+        )
+    }
 }

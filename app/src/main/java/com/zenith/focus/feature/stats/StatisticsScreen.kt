@@ -42,16 +42,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.zenith.focus.core.designsystem.EarthBorderLinen
-import com.zenith.focus.core.designsystem.EarthCamelOchre
-import com.zenith.focus.core.designsystem.EarthCanvasCream
-import com.zenith.focus.core.designsystem.EarthForestDark
-import com.zenith.focus.core.designsystem.EarthForestGreen
-import com.zenith.focus.core.designsystem.EarthSageOlive
-import com.zenith.focus.core.designsystem.EarthSurfaceLinen
-import com.zenith.focus.core.designsystem.EarthSurfaceLinenSoft
-import com.zenith.focus.core.designsystem.EarthTextDark
-import com.zenith.focus.core.designsystem.EarthTextMuted
+import com.zenith.focus.core.designsystem.*
 import com.zenith.focus.domain.model.BlockEvent
 import com.zenith.focus.domain.model.ContentCategory
 import com.zenith.focus.domain.repository.DailyStat
@@ -74,6 +65,7 @@ fun StatisticsScreen(
     onExportCsv: suspend () -> String,
     onClearStats: suspend () -> Unit
 ) {
+    val earth = EarthTheme.colors
     val scrollState = rememberScrollState()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -81,28 +73,28 @@ fun StatisticsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(EarthCanvasCream)
+            .background(earth.canvas)
             .verticalScroll(scrollState)
             .padding(horizontal = 20.dp, vertical = 20.dp)
     ) {
         // TOP HEADER
         Text(
             text = "AUDIT TRAIL & METRICS",
-            color = EarthForestGreen,
+            color = earth.forestGreen,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.5.sp
         )
         Text(
             text = "Focus Intelligence",
-            color = EarthForestDark,
+            color = earth.forestDark,
             fontSize = 28.sp,
             fontFamily = FontFamily.Serif,
             fontWeight = FontWeight.Normal
         )
         Text(
             text = "Verified SQLite event ledger. 100% on-device, zero estimation, zero telemetry.",
-            color = EarthTextMuted,
+            color = earth.textMuted,
             fontSize = 12.5.sp,
             modifier = Modifier.padding(top = 4.dp, bottom = 18.dp)
         )
@@ -115,15 +107,15 @@ fun StatisticsScreen(
             // Card 1: Today's Kicks
             Card(
                 shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
+                colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
                 modifier = Modifier
                     .weight(1f)
-                    .border(1.dp, EarthBorderLinen, RoundedCornerShape(18.dp))
+                    .border(1.dp, earth.border, RoundedCornerShape(18.dp))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "TOTAL KICKS TODAY",
-                        color = EarthTextMuted,
+                        color = earth.textMuted,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp
@@ -131,14 +123,14 @@ fun StatisticsScreen(
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = "$todayTotalBlocks",
-                        color = EarthForestDark,
+                        color = earth.forestDark,
                         fontSize = 28.sp,
                         fontFamily = FontFamily.Serif,
                         fontWeight = FontWeight.Normal
                     )
                     Text(
                         text = "Distractions Blocked",
-                        color = EarthCamelOchre,
+                        color = earth.camelOchre,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -148,15 +140,15 @@ fun StatisticsScreen(
             // Card 2: Streak
             Card(
                 shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
+                colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
                 modifier = Modifier
                     .weight(1f)
-                    .border(1.dp, EarthBorderLinen, RoundedCornerShape(18.dp))
+                    .border(1.dp, earth.border, RoundedCornerShape(18.dp))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "DISCIPLINE STREAK",
-                        color = EarthTextMuted,
+                        color = earth.textMuted,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp
@@ -164,14 +156,14 @@ fun StatisticsScreen(
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = if (focusStreakDays > 0) "$focusStreakDays Days" else "0 Days",
-                        color = EarthForestDark,
+                        color = earth.forestDark,
                         fontSize = 28.sp,
                         fontFamily = FontFamily.Serif,
                         fontWeight = FontWeight.Normal
                     )
                     Text(
                         text = if (focusStreakDays > 1) "Active Streak" else "Protection Active",
-                        color = EarthForestGreen,
+                        color = earth.forestGreen,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -184,7 +176,7 @@ fun StatisticsScreen(
         // 7-DAY VISUAL ACTIVITY BAR CHART
         Text(
             text = "7-DAY INTERCEPTION HISTORY",
-            color = EarthForestGreen,
+            color = earth.forestGreen,
             fontSize = 11.5.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.sp
@@ -193,10 +185,10 @@ fun StatisticsScreen(
 
         Card(
             shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
+            colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, EarthBorderLinen, RoundedCornerShape(18.dp))
+                .border(1.dp, earth.border, RoundedCornerShape(18.dp))
         ) {
             Column(
                 modifier = Modifier
@@ -216,10 +208,10 @@ fun StatisticsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("7 Days Ago", color = EarthTextMuted, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                    Text("7 Days Ago", color = earth.textMuted, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                     Text(
                         "Today ($todayTotalBlocks kicks)",
-                        color = EarthCamelOchre,
+                        color = earth.camelOchre,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -232,22 +224,22 @@ fun StatisticsScreen(
         // PLATFORM BREAKDOWN SECTION
         Text(
             text = "TODAY'S KICKS BY TARGET",
-            color = EarthForestGreen,
+            color = earth.forestGreen,
             fontSize = 11.5.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.sp
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        PlatformBreakdownRow("YouTube Shorts", todayShorts, EarthForestGreen)
-        PlatformBreakdownRow("Instagram Reels", todayReels, EarthCamelOchre)
-        PlatformBreakdownRow("Facebook Reels", 0, EarthSageOlive)
-        PlatformBreakdownRow("Adult & Explicit Websites", todayAdult, EarthForestDark)
+        PlatformBreakdownRow("YouTube Shorts", todayShorts, earth.forestGreen)
+        PlatformBreakdownRow("Instagram Reels", todayReels, earth.camelOchre)
+        PlatformBreakdownRow("Facebook Reels", 0, earth.sageOlive)
+        PlatformBreakdownRow("Adult & Explicit Websites", todayAdult, earth.forestDark)
         if (todayTamper > 0) {
-            PlatformBreakdownRow("Anti-Tamper Lockouts", todayTamper, EarthCamelOchre)
+            PlatformBreakdownRow("Anti-Tamper Lockouts", todayTamper, earth.camelOchre)
         }
         if (todaySpotlight > 0) {
-            PlatformBreakdownRow("Snapchat Spotlight", todaySpotlight, EarthSageOlive)
+            PlatformBreakdownRow("Snapchat Spotlight", todaySpotlight, earth.sageOlive)
         }
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -255,7 +247,7 @@ fun StatisticsScreen(
         // LIVE INTERCEPTION AUDIT FEED
         Text(
             text = "RECENT INTERCEPTIONS AUDIT LOG",
-            color = EarthForestGreen,
+            color = earth.forestGreen,
             fontSize = 11.5.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.sp
@@ -265,10 +257,10 @@ fun StatisticsScreen(
         if (recentEvents.isEmpty()) {
             Card(
                 shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
+                colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, EarthBorderLinen, RoundedCornerShape(18.dp))
+                    .border(1.dp, earth.border, RoundedCornerShape(18.dp))
             ) {
                 Column(
                     modifier = Modifier
@@ -278,14 +270,14 @@ fun StatisticsScreen(
                 ) {
                     Text(
                         text = "🛡️ Pure Focus Maintained",
-                        color = EarthForestDark,
+                        color = earth.forestDark,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "No addictive feeds or tamper attempts intercepted yet today.",
-                        color = EarthTextMuted,
+                        color = earth.textMuted,
                         fontSize = 12.sp
                     )
                 }
@@ -293,10 +285,10 @@ fun StatisticsScreen(
         } else {
             Card(
                 shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
+                colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, EarthBorderLinen, RoundedCornerShape(18.dp))
+                    .border(1.dp, earth.border, RoundedCornerShape(18.dp))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     recentEvents.take(15).forEachIndexed { index, event ->
@@ -316,13 +308,13 @@ fun StatisticsScreen(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = categoryName,
-                                    color = EarthTextDark,
+                                    color = earth.textPrimary,
                                     fontSize = 13.5.sp,
                                     fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
                                     text = "$timeStr • Auto-Ejected",
-                                    color = EarthTextMuted,
+                                    color = earth.textMuted,
                                     fontSize = 11.sp
                                 )
                             }
@@ -330,17 +322,17 @@ fun StatisticsScreen(
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(if (isTamper) EarthCamelOchre.copy(alpha = 0.15f) else EarthForestGreen.copy(alpha = 0.15f))
+                                    .background(if (isTamper) earth.camelOchre.copy(alpha = 0.15f) else earth.forestGreen.copy(alpha = 0.15f))
                                     .border(
                                         1.dp,
-                                        if (isTamper) EarthCamelOchre.copy(alpha = 0.4f) else EarthForestGreen.copy(alpha = 0.35f),
+                                        if (isTamper) earth.camelOchre.copy(alpha = 0.4f) else earth.forestGreen.copy(alpha = 0.35f),
                                         RoundedCornerShape(8.dp)
                                     )
                                     .padding(horizontal = 8.dp, vertical = 4.dp)
                             ) {
                                 Text(
                                     text = if (isTamper) "LOCKED" else "KICKED",
-                                    color = if (isTamper) EarthCamelOchre else EarthForestGreen,
+                                    color = if (isTamper) earth.camelOchre else earth.forestGreen,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                     letterSpacing = 0.5.sp
@@ -381,7 +373,7 @@ fun StatisticsScreen(
                 modifier = Modifier
                     .weight(1f)
                     .height(46.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = EarthForestGreen),
+                colors = ButtonDefaults.buttonColors(containerColor = earth.forestGreen),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text("Export CSV", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
@@ -397,26 +389,27 @@ fun StatisticsScreen(
                 modifier = Modifier
                     .weight(1f)
                     .height(46.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = EarthSurfaceLinen),
+                colors = ButtonDefaults.buttonColors(containerColor = earth.surface),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Clear History", color = EarthTextMuted, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text("Clear History", color = earth.textMuted, fontSize = 13.sp, fontWeight = FontWeight.Bold)
             }
         }
 
-        Spacer(modifier = Modifier.height(64.dp))
+        Spacer(modifier = Modifier.height(110.dp))
     }
 }
 
 @Composable
 fun PlatformBreakdownRow(name: String, count: Int, color: Color) {
+    val earth = EarthTheme.colors
     Card(
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
+        colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .border(1.dp, EarthBorderLinen, RoundedCornerShape(16.dp))
+            .border(1.dp, earth.border, RoundedCornerShape(16.dp))
     ) {
         Row(
             modifier = Modifier
@@ -433,7 +426,7 @@ fun PlatformBreakdownRow(name: String, count: Int, color: Color) {
                         .background(color)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
-                Text(text = name, color = EarthTextDark, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
+                Text(text = name, color = earth.textPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
             }
             Text(
                 text = "$count kicks",
@@ -450,6 +443,7 @@ fun WeeklyActivityChart(
     stats: List<DailyStat>,
     modifier: Modifier = Modifier
 ) {
+    val earth = EarthTheme.colors
     Canvas(modifier = modifier) {
         val w = size.width
         val h = size.height
@@ -465,7 +459,7 @@ fun WeeklyActivityChart(
             val x = index * gap + (gap - barWidth) / 2f
             val y = h - barHeight
 
-            val barColor = if (index == stats.size - 1) Color(0xFFBC9259) else Color(0xFF204844)
+            val barColor = if (index == stats.size - 1) earth.camelOchre else earth.forestGreen
 
             drawRoundRect(
                 color = barColor,

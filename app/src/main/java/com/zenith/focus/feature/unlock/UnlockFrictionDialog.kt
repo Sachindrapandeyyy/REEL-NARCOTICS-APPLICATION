@@ -1,5 +1,6 @@
 package com.zenith.focus.feature.unlock
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,8 +21,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.zenith.focus.core.designsystem.ZenithEmeraldAccent
-import com.zenith.focus.core.designsystem.ZenithNavy
+import com.zenith.focus.core.designsystem.*
 import com.zenith.focus.domain.model.LockState
 import com.zenith.focus.domain.model.ProtectionConfig
 
@@ -34,12 +34,16 @@ fun UnlockFrictionDialog(
     onUnlockConfirmed: () -> Unit,
     onVerifyPin: suspend (String) -> Boolean = { true }
 ) {
+    val earth = EarthTheme.colors
+
     if (isNuclearActive) {
         Dialog(onDismissRequest = onDismiss) {
             Surface(
                 shape = RoundedCornerShape(20.dp),
-                color = Color(0xFF0F172A),
-                modifier = Modifier.fillMaxWidth()
+                color = earth.surfaceSoft,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.5.dp, earth.camelOchre, RoundedCornerShape(20.dp))
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp),
@@ -49,7 +53,7 @@ fun UnlockFrictionDialog(
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = "NUCLEAR MODE ACTIVE",
-                        color = Color(0xFFF43F5E),
+                        color = earth.camelOchre,
                         fontWeight = FontWeight.Black,
                         fontSize = 17.sp,
                         letterSpacing = 0.5.sp
@@ -57,7 +61,7 @@ fun UnlockFrictionDialog(
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Early unlock is permanently disabled. You committed to this session until the countdown timer concludes.",
-                        color = Color(0xFF94A3B8),
+                        color = earth.textMuted,
                         fontSize = 13.sp,
                         lineHeight = 18.sp,
                         textAlign = TextAlign.Center
@@ -65,7 +69,7 @@ fun UnlockFrictionDialog(
                     Spacer(modifier = Modifier.height(20.dp))
                     Button(
                         onClick = onDismiss,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E293B)),
+                        colors = ButtonDefaults.buttonColors(containerColor = earth.forestGreen),
                         shape = RoundedCornerShape(14.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -81,8 +85,10 @@ fun UnlockFrictionDialog(
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(20.dp),
-            color = ZenithNavy,
-            modifier = Modifier.fillMaxWidth()
+            color = earth.surfaceSoft,
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.dp, earth.border, RoundedCornerShape(20.dp))
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -95,7 +101,7 @@ fun UnlockFrictionDialog(
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "FOCUS SESSION ACTIVE",
-                    color = ZenithEmeraldAccent,
+                    color = earth.forestGreen,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
@@ -103,7 +109,7 @@ fun UnlockFrictionDialog(
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = "End Focus Session Early?",
-                    color = Color.White,
+                    color = earth.forestDark,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Black,
                     textAlign = TextAlign.Center
@@ -111,7 +117,7 @@ fun UnlockFrictionDialog(
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Are you sure you want to end this focus session? Distraction feeds will be unblocked.",
-                    color = Color(0xFF94A3B8),
+                    color = earth.textMuted,
                     fontSize = 13.sp,
                     lineHeight = 18.sp,
                     textAlign = TextAlign.Center
@@ -125,7 +131,7 @@ fun UnlockFrictionDialog(
                         .fillMaxWidth()
                         .height(48.dp),
                     shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = com.zenith.focus.core.designsystem.SpiderBlue)
+                    colors = ButtonDefaults.buttonColors(containerColor = earth.forestGreen)
                 ) {
                     Text(
                         text = "KEEP FOCUSING ✓",
@@ -146,11 +152,11 @@ fun UnlockFrictionDialog(
                         .fillMaxWidth()
                         .height(44.dp),
                     shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = com.zenith.focus.core.designsystem.SpiderRedAccent)
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = earth.camelOchre)
                 ) {
                     Text(
                         text = "End Session Now",
-                        color = com.zenith.focus.core.designsystem.SpiderRedAccent,
+                        color = earth.camelOchre,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.5.sp
                     )

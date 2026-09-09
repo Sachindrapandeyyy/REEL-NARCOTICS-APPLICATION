@@ -16,7 +16,7 @@ import androidx.compose.ui.graphics.Color
 // 9. EarthAccentRule: Warm Ochre Divider (#BC9B6D)
 // ============================================================================
 
-// ORGANIC EARTH PALETTE TOKENS
+// ORGANIC EARTH PALETTE TOKENS (LIGHT)
 val EarthCanvasCream = Color(0xFFF3EBE5)
 val EarthCanvasCreamLight = Color(0xFFFAF7F2)
 val EarthSurfaceLinen = Color(0xFFEDE8E2)
@@ -45,6 +45,91 @@ val EarthTextSubtle = Color(0xFF8C9590)
 
 val EarthBorderLinen = Color(0xFFDDD4C6)
 val EarthBorderSubtle = Color(0xFFE8E1D5)
+
+// SCANDINAVIAN MIDNIGHT PALETTE TOKENS (NIGHT / DARK)
+val EarthNightBg = Color(0xFF101715)
+val EarthNightBgElevated = Color(0xFF15201D)
+val EarthNightSurface = Color(0xFF182421)
+val EarthNightSurfaceSoft = Color(0xFF1F2E2A)
+val EarthNightSurfaceVariant = Color(0xFF253732)
+val EarthNightBorder = Color(0xFF2C3E38)
+val EarthNightBorderSubtle = Color(0xFF384D46)
+
+val EarthNightText = Color(0xFFF2ECE6)
+val EarthNightTextMuted = Color(0xFF9BA8A1)
+val EarthNightTextSubtle = Color(0xFF7A8780)
+
+val EarthNightGreen = Color(0xFF357A6F)
+val EarthNightGreenDark = Color(0xFF23554D)
+val EarthNightCamel = Color(0xFFD6A76E)
+val EarthNightCamelLight = Color(0xFFE5BF8F)
+val EarthNightSage = Color(0xFF9AA593)
+
+// SEMANTIC EARTH COLORS FOR DAY & NIGHT
+data class EarthColors(
+    val canvas: Color,
+    val canvasElevated: Color,
+    val surface: Color,
+    val surfaceSoft: Color,
+    val surfaceVariant: Color,
+    val border: Color,
+    val borderSubtle: Color,
+    val textPrimary: Color,
+    val textMuted: Color,
+    val textSubtle: Color,
+    val forestGreen: Color,
+    val forestDark: Color,
+    val camelOchre: Color,
+    val camelLight: Color,
+    val sageOlive: Color,
+    val isDark: Boolean
+)
+
+val LightEarthColors = EarthColors(
+    canvas = EarthCanvasCream,
+    canvasElevated = EarthCanvasCreamLight,
+    surface = EarthSurfaceLinen,
+    surfaceSoft = EarthSurfaceLinenSoft,
+    surfaceVariant = EarthSandCard,
+    border = EarthBorderLinen,
+    borderSubtle = EarthBorderSubtle,
+    textPrimary = EarthTextDark,
+    textMuted = EarthTextMuted,
+    textSubtle = EarthTextSubtle,
+    forestGreen = EarthForestGreen,
+    forestDark = EarthForestDark,
+    camelOchre = EarthCamelOchre,
+    camelLight = EarthCamelLight,
+    sageOlive = EarthSageOlive,
+    isDark = false
+)
+
+val DarkEarthColors = EarthColors(
+    canvas = EarthNightBg,
+    canvasElevated = EarthNightBgElevated,
+    surface = EarthNightSurface,
+    surfaceSoft = EarthNightSurfaceSoft,
+    surfaceVariant = EarthNightSurfaceVariant,
+    border = EarthNightBorder,
+    borderSubtle = EarthNightBorderSubtle,
+    textPrimary = EarthNightText,
+    textMuted = EarthNightTextMuted,
+    textSubtle = EarthNightTextSubtle,
+    forestGreen = EarthNightGreen,
+    forestDark = EarthNightGreenDark,
+    camelOchre = EarthNightCamel,
+    camelLight = EarthNightCamelLight,
+    sageOlive = EarthNightSage,
+    isDark = true
+)
+
+val LocalEarthColors = androidx.compose.runtime.staticCompositionLocalOf { LightEarthColors }
+
+object EarthTheme {
+    val colors: EarthColors
+        @androidx.compose.runtime.Composable
+        get() = LocalEarthColors.current
+}
 
 // SPIDER-MAN BACKWARD COMPATIBLE BINDINGS (Redirected to Organic Earth)
 val SpiderRed = EarthForestGreen

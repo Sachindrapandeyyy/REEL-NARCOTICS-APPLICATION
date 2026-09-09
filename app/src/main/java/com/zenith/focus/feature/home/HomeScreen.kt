@@ -79,6 +79,8 @@ fun HomeScreen(
     todayReelsBlocks: Int,
     todayAdultBlocks: Int,
     focusStreakDays: Int,
+    isDarkTheme: Boolean = false,
+    onToggleTheme: () -> Unit = {},
     onArmNuclearClicked: () -> Unit,
     onStartLockClicked: () -> Unit,
     onUnlockClicked: () -> Unit,
@@ -87,6 +89,7 @@ fun HomeScreen(
     onEnableAccessibility: () -> Unit = {},
     onEnableDeviceAdmin: () -> Unit = {}
 ) {
+    val earth = EarthTheme.colors
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
 
     LaunchedEffect(Unit) {
@@ -119,11 +122,11 @@ fun HomeScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(EarthCanvasCream)
+            .background(earth.canvas)
             .verticalScroll(scrollState)
             .padding(horizontal = 20.dp, vertical = 18.dp)
     ) {
-        // TOP APP BAR: Brand & Time Greeting
+        // TOP APP BAR: Brand, Day/Night Toggle & Status
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -139,44 +142,64 @@ fun HomeScreen(
                     modifier = Modifier
                         .size(42.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .border(1.dp, EarthBorderLinen, RoundedCornerShape(12.dp))
+                        .border(1.dp, earth.border, RoundedCornerShape(12.dp))
                 )
                 Spacer(modifier = Modifier.width(10.dp))
                 Column {
                     Text(
                         text = "REEL NARCOTICS",
-                        color = EarthForestGreen,
+                        color = earth.forestGreen,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 1.2.sp
                     )
                     Text(
                         text = "Break the scroll.",
-                        color = EarthTextMuted,
+                        color = earth.textMuted,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium
                     )
                 }
             }
 
-            // Clarity Status Chip
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(EarthSurfaceLinen)
-                    .border(1.dp, EarthBorderLinen, RoundedCornerShape(14.dp))
-                    .padding(horizontal = 10.dp, vertical = 6.dp)
-            ) {
-                Text(
-                    text = if (isNuclearActive) "☢️ NUCLEAR"
-                    else if (isRegularLocked) "🔒 FOCUS LOCK"
-                    else "STANDBY (OPEN)",
-                    color = if (isNuclearActive) EarthCamelOchre
-                    else if (isRegularLocked) EarthForestGreen
-                    else EarthTextMuted,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Clarity Status Chip
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(earth.surfaceSoft)
+                        .border(1.dp, earth.border, RoundedCornerShape(14.dp))
+                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = if (isNuclearActive) "☢️ NUCLEAR"
+                        else if (isRegularLocked) "🔒 FOCUS LOCK"
+                        else "STANDBY (OPEN)",
+                        color = if (isNuclearActive) earth.camelOchre
+                        else if (isRegularLocked) earth.forestGreen
+                        else earth.textMuted,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // Quick Day / Night Mode Toggle
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(CircleShape)
+                        .background(earth.surfaceSoft)
+                        .border(1.dp, earth.border, CircleShape)
+                        .clickable { onToggleTheme() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (isDarkTheme) "☀️" else "🌙",
+                        fontSize = 14.sp
+                    )
+                }
             }
         }
 
@@ -186,7 +209,7 @@ fun HomeScreen(
         Column {
             Text(
                 text = "Be present.",
-                color = EarthForestGreen,
+                color = earth.forestGreen,
                 fontSize = 36.sp,
                 fontFamily = FontFamily.Serif,
                 fontWeight = FontWeight.Normal,
@@ -195,7 +218,7 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "Reclaim your attention & peace of mind.",
-                color = EarthTextMuted,
+                color = earth.textMuted,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Normal
             )
@@ -206,7 +229,7 @@ fun HomeScreen(
                     .width(38.dp)
                     .height(3.dp)
                     .clip(RoundedCornerShape(2.dp))
-                    .background(EarthAccentRule)
+                    .background(earth.camelOchre)
             )
         }
 
@@ -222,21 +245,21 @@ fun HomeScreen(
             SquircleActionButton(
                 title = "FOCUS LOCK",
                 icon = Icons.Outlined.Lock,
-                containerColor = EarthForestGreen,
+                containerColor = earth.forestGreen,
                 iconTint = Color.White,
                 onClick = onStartLockClicked
             )
             SquircleActionButton(
                 title = "NUCLEAR",
                 icon = Icons.Outlined.Timer,
-                containerColor = EarthCamelOchre,
+                containerColor = earth.camelOchre,
                 iconTint = Color.White,
                 onClick = onArmNuclearClicked
             )
             SquircleActionButton(
                 title = "SHIELDS",
                 icon = Icons.Outlined.Shield,
-                containerColor = EarthSageOlive,
+                containerColor = earth.sageOlive,
                 iconTint = Color.White,
                 onClick = onNavigateProtection
             )
@@ -253,15 +276,15 @@ fun HomeScreen(
             SquircleActionButton(
                 title = "INSIGHTS",
                 icon = Icons.Outlined.AutoStories,
-                containerColor = EarthSandCard,
-                iconTint = EarthForestGreen,
+                containerColor = earth.surfaceVariant,
+                iconTint = earth.forestGreen,
                 onClick = onNavigateStats
             )
             Spacer(modifier = Modifier.width(28.dp))
             SquircleActionButton(
                 title = "GUIDE",
                 icon = Icons.Outlined.HelpOutline,
-                containerColor = EarthForestGreen,
+                containerColor = earth.forestGreen,
                 iconTint = Color.White,
                 onClick = onEnableAccessibility
             )
@@ -275,10 +298,10 @@ fun HomeScreen(
         if (allShieldsOperational) {
             Card(
                 shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
+                colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, EarthBorderLinen, RoundedCornerShape(18.dp))
+                    .border(1.dp, earth.border, RoundedCornerShape(18.dp))
             ) {
                 Row(
                     modifier = Modifier
@@ -296,9 +319,9 @@ fun HomeScreen(
                                 .size(10.dp)
                                 .clip(CircleShape)
                                 .background(
-                                    if (isNuclearActive) EarthCamelOchre
-                                    else if (isRegularLocked) EarthForestGreen
-                                    else EarthSageOlive
+                                    if (isNuclearActive) earth.camelOchre
+                                    else if (isRegularLocked) earth.forestGreen
+                                    else earth.sageOlive
                                 )
                         )
                         Spacer(modifier = Modifier.width(10.dp))
@@ -307,9 +330,9 @@ fun HomeScreen(
                                 text = if (isNuclearActive) "NUCLEAR ENFORCEMENT ACTIVE ☢️"
                                 else if (isRegularLocked) "FOCUS RESTRICTIONS ACTIVE 🔒"
                                 else "SHIELDS ARMED & READY (STANDBY)",
-                                color = if (isNuclearActive) EarthCamelOchre
-                                else if (isRegularLocked) EarthForestGreen
-                                else EarthForestGreen,
+                                color = if (isNuclearActive) earth.camelOchre
+                                else if (isRegularLocked) earth.forestGreen
+                                else earth.forestGreen,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 0.5.sp
@@ -318,7 +341,7 @@ fun HomeScreen(
                                 text = if (isNuclearActive) "Strict zero-bypass mode active until timer ends"
                                 else if (isRegularLocked) "Short-form feeds blocked during session"
                                 else "No lock active = No restrictions. Tap any card above to start.",
-                                color = EarthTextMuted,
+                                color = earth.textMuted,
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(top = 2.dp)
                             )
@@ -326,7 +349,7 @@ fun HomeScreen(
                     }
                     Text(
                         text = if (isNuclearActive || isRegularLocked) "LOCKED" else "READY",
-                        color = if (isNuclearActive) EarthCamelOchre else EarthForestGreen,
+                        color = if (isNuclearActive) earth.camelOchre else earth.forestGreen,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -336,10 +359,10 @@ fun HomeScreen(
             val missingCount = (if (!isServiceConnected) 1 else 0) + (if (!isDeviceAdminActive) 1 else 0)
             Card(
                 shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
+                colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.5.dp, EarthCamelOchre, RoundedCornerShape(18.dp))
+                    .border(1.5.dp, earth.camelOchre, RoundedCornerShape(18.dp))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
@@ -352,12 +375,12 @@ fun HomeScreen(
                                 modifier = Modifier
                                     .size(10.dp)
                                     .clip(CircleShape)
-                                    .background(EarthCamelOchre)
+                                    .background(earth.camelOchre)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "SYSTEM SETUP REQUIRED ($missingCount/2 PENDING)",
-                                color = EarthCamelOchre,
+                                color = earth.camelOchre,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 0.5.sp
@@ -370,7 +393,7 @@ fun HomeScreen(
                     if (!isServiceConnected) {
                         Card(
                             shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinen),
+                            colors = CardDefaults.cardColors(containerColor = earth.surface),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 4.dp)
@@ -378,20 +401,20 @@ fun HomeScreen(
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Text(
                                     text = "⚡ 1. Accessibility Shield",
-                                    color = EarthForestDark,
+                                    color = earth.textPrimary,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
                                     text = "Required to detect and immediately close YouTube Shorts & Instagram Reels feeds. 100% offline — zero personal data collected.",
-                                    color = EarthTextMuted,
+                                    color = earth.textMuted,
                                     fontSize = 11.5.sp,
                                     lineHeight = 15.sp,
                                     modifier = Modifier.padding(vertical = 4.dp)
                                 )
                                 Button(
                                     onClick = onEnableAccessibility,
-                                    colors = ButtonDefaults.buttonColors(containerColor = EarthForestGreen),
+                                    colors = ButtonDefaults.buttonColors(containerColor = earth.forestGreen),
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -406,7 +429,7 @@ fun HomeScreen(
                                 }
                                 Text(
                                     text = "💡 Tap button -> 'Installed apps' -> 'Reel Narcotics Shield' -> Turn ON",
-                                    color = EarthCamelDeep,
+                                    color = earth.camelOchre,
                                     fontSize = 10.5.sp,
                                     modifier = Modifier.padding(top = 4.dp)
                                 )
@@ -418,7 +441,7 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.height(4.dp))
                         Card(
                             shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinen),
+                            colors = CardDefaults.cardColors(containerColor = earth.surface),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 4.dp)
@@ -426,20 +449,20 @@ fun HomeScreen(
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Text(
                                     text = "🛡️ 2. Uninstall Protection (Device Admin)",
-                                    color = EarthForestDark,
+                                    color = earth.textPrimary,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
                                     text = "Prevents deleting or bypassing Reel Narcotics during active Nuclear Mode focus sessions.",
-                                    color = EarthTextMuted,
+                                    color = earth.textMuted,
                                     fontSize = 11.5.sp,
                                     lineHeight = 15.sp,
                                     modifier = Modifier.padding(vertical = 4.dp)
                                 )
                                 Button(
                                     onClick = onEnableDeviceAdmin,
-                                    colors = ButtonDefaults.buttonColors(containerColor = EarthCamelOchre),
+                                    colors = ButtonDefaults.buttonColors(containerColor = earth.camelOchre),
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -454,7 +477,7 @@ fun HomeScreen(
                                 }
                                 Text(
                                     text = "💡 Pops up Android system prompt directly — simply tap 'Activate'",
-                                    color = EarthCamelDeep,
+                                    color = earth.camelOchre,
                                     fontSize = 10.5.sp,
                                     modifier = Modifier.padding(top = 4.dp)
                                 )
@@ -472,10 +495,10 @@ fun HomeScreen(
             // NUCLEAR MODE ACTIVE CARD
             Card(
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
+                colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.5.dp, EarthCamelOchre, RoundedCornerShape(20.dp))
+                    .border(1.5.dp, earth.camelOchre, RoundedCornerShape(20.dp))
             ) {
                 Column(
                     modifier = Modifier
@@ -488,7 +511,7 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "NUCLEAR MODE ACTIVE",
-                            color = EarthCamelOchre,
+                            color = earth.camelOchre,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp
@@ -500,7 +523,7 @@ fun HomeScreen(
                     // Large Countdown in Serif Font
                     Text(
                         text = DateTimeUtils.formatRemaining(remainingNuclearMillis),
-                        color = EarthForestDark,
+                        color = earth.forestGreen,
                         fontSize = 40.sp,
                         fontFamily = FontFamily.Serif,
                         fontWeight = FontWeight.Normal,
@@ -513,7 +536,7 @@ fun HomeScreen(
 
                     Text(
                         text = "Ends at $nuclearEndTime",
-                        color = EarthTextMuted,
+                        color = earth.textMuted,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier.padding(top = 2.dp)
@@ -527,8 +550,8 @@ fun HomeScreen(
                             .fillMaxWidth()
                             .height(6.dp)
                             .clip(RoundedCornerShape(3.dp)),
-                        color = EarthCamelOchre,
-                        trackColor = EarthSurfaceLinen
+                        color = earth.camelOchre,
+                        trackColor = earth.surface
                     )
 
                     Spacer(modifier = Modifier.height(14.dp))
@@ -537,14 +560,14 @@ fun HomeScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .background(EarthSurfaceLinen)
-                            .border(1.dp, EarthBorderLinen, RoundedCornerShape(12.dp))
+                            .background(earth.surface)
+                            .border(1.dp, earth.border, RoundedCornerShape(12.dp))
                             .padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "LOCKED UNTIL TIMER EXPIRATION",
-                            color = EarthTextMuted,
+                            color = earth.textMuted,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.8.sp
@@ -556,10 +579,10 @@ fun HomeScreen(
             // REGULAR FOCUS LOCK ACTIVE CARD
             Card(
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
+                colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.5.dp, EarthForestGreen, RoundedCornerShape(20.dp))
+                    .border(1.5.dp, earth.forestGreen, RoundedCornerShape(20.dp))
             ) {
                 Column(
                     modifier = Modifier
@@ -569,7 +592,7 @@ fun HomeScreen(
                 ) {
                     Text(
                         text = "FOCUS LOCK ACTIVE",
-                        color = EarthForestGreen,
+                        color = earth.forestGreen,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
@@ -577,7 +600,7 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = DateTimeUtils.formatRemaining(remainingLockMillis),
-                        color = EarthForestDark,
+                        color = earth.forestGreen,
                         fontSize = 38.sp,
                         fontFamily = FontFamily.Serif,
                         fontWeight = FontWeight.Normal
@@ -591,8 +614,8 @@ fun HomeScreen(
                             .fillMaxWidth()
                             .height(6.dp)
                             .clip(RoundedCornerShape(3.dp)),
-                        color = EarthForestGreen,
-                        trackColor = EarthSurfaceLinen
+                        color = earth.forestGreen,
+                        trackColor = earth.surface
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -602,7 +625,7 @@ fun HomeScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(44.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = EarthForestGreen),
+                        colors = ButtonDefaults.buttonColors(containerColor = earth.forestGreen),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(text = "UNLOCK CHALLENGE", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
@@ -613,10 +636,10 @@ fun HomeScreen(
             // INACTIVE STATE: TRANQUIL MINIMALIST STATUS
             Card(
                 shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
+                colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, EarthBorderLinen, RoundedCornerShape(18.dp))
+                    .border(1.dp, earth.border, RoundedCornerShape(18.dp))
             ) {
                 Row(
                     modifier = Modifier
@@ -628,13 +651,13 @@ fun HomeScreen(
                         modifier = Modifier
                             .size(42.dp)
                             .clip(CircleShape)
-                            .background(EarthSurfaceLinen),
+                            .background(earth.surface),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Shield,
                             contentDescription = "Standby",
-                            tint = EarthForestGreen,
+                            tint = earth.forestGreen,
                             modifier = Modifier.size(22.dp)
                         )
                     }
@@ -642,13 +665,13 @@ fun HomeScreen(
                     Column {
                         Text(
                             text = "Distraction-Free Mindset",
-                            color = EarthForestGreen,
+                            color = earth.forestGreen,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = "No lock active. Tap any card above or tap '+' to start focusing.",
-                            color = EarthTextMuted,
+                            color = earth.textMuted,
                             fontSize = 11.5.sp,
                             modifier = Modifier.padding(top = 2.dp)
                         )
@@ -662,7 +685,7 @@ fun HomeScreen(
         // SECTION: TODAY'S PROTECTION
         Text(
             text = "TODAY'S PROTECTION",
-            color = EarthTextMuted,
+            color = earth.textMuted,
             fontSize = 11.5.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.sp
@@ -672,10 +695,10 @@ fun HomeScreen(
 
         Card(
             shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
+            colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, EarthBorderLinen, RoundedCornerShape(18.dp))
+                .border(1.dp, earth.border, RoundedCornerShape(18.dp))
         ) {
             Column(modifier = Modifier.padding(18.dp)) {
                 val isShortsEnforced = if (isNuclearActive) {
@@ -718,7 +741,7 @@ fun HomeScreen(
         // SECTION: FOCUS OVERVIEW
         Text(
             text = "FOCUS OVERVIEW",
-            color = EarthTextMuted,
+            color = earth.textMuted,
             fontSize = 11.5.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.sp
@@ -733,15 +756,15 @@ fun HomeScreen(
             // Card 1: Distractions Kicked Today
             Card(
                 shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
+                colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
                 modifier = Modifier
                     .weight(1f)
-                    .border(1.dp, EarthBorderLinen, RoundedCornerShape(18.dp))
+                    .border(1.dp, earth.border, RoundedCornerShape(18.dp))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "KICKS RECORDED",
-                        color = EarthTextMuted,
+                        color = earth.textMuted,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp
@@ -749,14 +772,14 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = "$todayTotalBlocks",
-                        color = EarthForestDark,
+                        color = earth.forestGreen,
                         fontSize = 28.sp,
                         fontFamily = FontFamily.Serif,
                         fontWeight = FontWeight.Normal
                     )
                     Text(
                         text = "Distractions Blocked",
-                        color = EarthCamelOchre,
+                        color = earth.camelOchre,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -766,15 +789,15 @@ fun HomeScreen(
             // Card 2: Protection Protocol
             Card(
                 shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
+                colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
                 modifier = Modifier
                     .weight(1f)
-                    .border(1.dp, EarthBorderLinen, RoundedCornerShape(18.dp))
+                    .border(1.dp, earth.border, RoundedCornerShape(18.dp))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "SHIELD PROTOCOL",
-                        color = EarthTextMuted,
+                        color = earth.textMuted,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp
@@ -782,14 +805,14 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = if (isNuclearActive) "NUCLEAR" else if (isRegularLocked) "STANDARD" else "STANDBY",
-                        color = if (isNuclearActive) EarthCamelOchre else if (isRegularLocked) EarthForestGreen else EarthTextDark,
+                        color = if (isNuclearActive) earth.camelOchre else if (isRegularLocked) earth.forestGreen else earth.textPrimary,
                         fontSize = 17.sp,
                         fontFamily = FontFamily.Serif,
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
                         text = if (isNuclearActive) "Strict Zero-Bypass" else if (isRegularLocked) "Focus Active" else "No Restrictions",
-                        color = EarthTextMuted,
+                        color = earth.textMuted,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Normal
                     )
@@ -799,14 +822,77 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // LANDSCAPE ARTWORK (Mountains + Sun minimalist illustration matching reference)
-        OrganicLandscapeArtwork(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(130.dp)
+        // SCANDINAVIAN LANDSCAPE ARTWORK CARD (DAY / NIGHT ADAPTIVE)
+        OrganicLandscapeCard(
+            isDark = isDarkTheme,
+            modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(64.dp)) // Clearance for floating bottom bar
+        Spacer(modifier = Modifier.height(110.dp)) // Complete clearance for floating bottom nav bar
+    }
+}
+
+@Composable
+fun OrganicLandscapeCard(
+    isDark: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val drawableRes = if (isDark) {
+        com.zenith.focus.R.drawable.bg_earth_landscape_night
+    } else {
+        com.zenith.focus.R.drawable.bg_earth_landscape_day
+    }
+    val earth = EarthTheme.colors
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(180.dp)
+            .clip(RoundedCornerShape(22.dp))
+            .border(1.dp, earth.border, RoundedCornerShape(22.dp))
+    ) {
+        androidx.compose.foundation.Image(
+            painter = androidx.compose.ui.res.painterResource(id = drawableRes),
+            contentDescription = "Scandinavian Landscape Artwork",
+            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        // Subtle gradient overlay for harmonious blend with canvas
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            earth.canvas.copy(alpha = 0.65f)
+                        ),
+                        startY = 60f
+                    )
+                )
+        )
+
+        // Inspirational zen quote overlay
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(16.dp)
+        ) {
+            Text(
+                text = if (isDark) "Peace under the stars." else "Still waters run deep.",
+                color = if (isDark) EarthNightText else EarthForestDark,
+                fontFamily = FontFamily.Serif,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = if (isDark) "Night protection is active. Rest your mind." else "Protected clarity for your mindful workflow.",
+                color = if (isDark) EarthNightTextMuted else EarthTextMuted,
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.Normal
+            )
+        }
     }
 }
 
@@ -818,6 +904,7 @@ fun SquircleActionButton(
     iconTint: Color,
     onClick: () -> Unit
 ) {
+    val earth = EarthTheme.colors
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -843,7 +930,7 @@ fun SquircleActionButton(
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = title,
-            color = EarthTextDark,
+            color = earth.textPrimary,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 0.6.sp
@@ -857,6 +944,7 @@ fun ProtectionItemRow(
     count: Int,
     isEnforced: Boolean
 ) {
+    val earth = EarthTheme.colors
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -865,14 +953,14 @@ fun ProtectionItemRow(
         Column {
             Text(
                 text = name,
-                color = EarthTextDark,
+                color = earth.textPrimary,
                 fontSize = 13.5.sp,
                 fontWeight = FontWeight.SemiBold
             )
             if (count > 0) {
                 Text(
                     text = "$count kicks recorded today",
-                    color = EarthTextMuted,
+                    color = earth.textMuted,
                     fontSize = 11.sp
                 )
             }
@@ -881,54 +969,17 @@ fun ProtectionItemRow(
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(10.dp))
-                .background(if (isEnforced) EarthForestGreen.copy(alpha = 0.12f) else EarthSurfaceLinen)
-                .border(1.dp, if (isEnforced) EarthForestGreen.copy(alpha = 0.35f) else EarthBorderLinen, RoundedCornerShape(10.dp))
+                .background(if (isEnforced) earth.forestGreen.copy(alpha = 0.12f) else earth.surface)
+                .border(1.dp, if (isEnforced) earth.forestGreen.copy(alpha = 0.35f) else earth.border, RoundedCornerShape(10.dp))
                 .padding(horizontal = 12.dp, vertical = 5.dp)
         ) {
             Text(
                 text = if (isEnforced) "BLOCKED 🔒" else "READY 🔓",
-                color = if (isEnforced) EarthForestGreen else EarthTextMuted,
+                color = if (isEnforced) earth.forestGreen else earth.textMuted,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 0.5.sp
             )
         }
-    }
-}
-
-@Composable
-fun OrganicLandscapeArtwork(modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier) {
-        val width = size.width
-        val height = size.height
-
-        // Soft sun in warm golden camel
-        drawCircle(
-            color = Color(0xFFC9A97E).copy(alpha = 0.35f),
-            radius = height * 0.32f,
-            center = androidx.compose.ui.geometry.Offset(width * 0.72f, height * 0.40f)
-        )
-
-        // Background gentle hills (sage olive tone)
-        val hillPathBack = androidx.compose.ui.graphics.Path().apply {
-            moveTo(0f, height * 0.75f)
-            quadraticBezierTo(width * 0.25f, height * 0.50f, width * 0.55f, height * 0.70f)
-            quadraticBezierTo(width * 0.80f, height * 0.82f, width, height * 0.60f)
-            lineTo(width, height)
-            lineTo(0f, height)
-            close()
-        }
-        drawPath(hillPathBack, color = Color(0xFF868D7D).copy(alpha = 0.32f))
-
-        // Foreground layered hills (forest pine tone)
-        val hillPathFront = androidx.compose.ui.graphics.Path().apply {
-            moveTo(0f, height * 0.88f)
-            quadraticBezierTo(width * 0.35f, height * 0.68f, width * 0.68f, height * 0.85f)
-            quadraticBezierTo(width * 0.88f, height * 0.94f, width, height * 0.80f)
-            lineTo(width, height)
-            lineTo(0f, height)
-            close()
-        }
-        drawPath(hillPathFront, color = Color(0xFF204844).copy(alpha = 0.22f))
     }
 }

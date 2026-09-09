@@ -1,4 +1,4 @@
-﻿package com.zenith.focus.core.ui
+package com.zenith.focus.core.ui
 
 import android.content.Context
 import android.content.Intent
@@ -35,9 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.zenith.focus.core.designsystem.ZenithEmeraldAccent
-import com.zenith.focus.core.designsystem.ZenithNavy
-import com.zenith.focus.core.designsystem.ZenithNavyDark
+import com.zenith.focus.core.designsystem.*
 
 /**
  * Android 13+ (API 33+) Restricted Settings Helper Banner & Dialog.
@@ -48,32 +46,33 @@ fun RestrictedSettingsBanner(
     modifier: Modifier = Modifier,
     onOpenDialog: () -> Unit
 ) {
+    val earth = EarthTheme.colors
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         Card(
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B).copy(alpha = 0.85f)),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = earth.surface),
             modifier = modifier
                 .fillMaxWidth()
-                .border(1.dp, Color(0xFF38BDF8).copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                .border(1.dp, earth.camelOchre, RoundedCornerShape(14.dp))
                 .clickable { onOpenDialog() }
         ) {
             Row(
-                modifier = Modifier.padding(12.dp),
+                modifier = Modifier.padding(14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("💡", fontSize = 16.sp)
+                Text("💡", fontSize = 18.sp)
                 Spacer(modifier = Modifier.width(10.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "Android 13, 14 & 15 Notice",
-                        color = Color(0xFF38BDF8),
-                        fontSize = 11.5.sp,
+                        color = earth.camelOchre,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = "Seeing 'App was denied access'? Tap for 5-sec fix ➔",
-                        color = Color(0xFFE2E8F0),
-                        fontSize = 11.sp
+                        color = earth.textPrimary,
+                        fontSize = 11.5.sp
                     )
                 }
             }
@@ -85,12 +84,13 @@ fun RestrictedSettingsBanner(
 fun RestrictedSettingsGuideDialog(
     onDismiss: () -> Unit
 ) {
+    val earth = EarthTheme.colors
     val context = LocalContext.current
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(20.dp),
-            color = ZenithNavy,
+            color = earth.surfaceSoft,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
@@ -103,7 +103,7 @@ fun RestrictedSettingsGuideDialog(
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
                         text = "Fix 'App Was Denied Access'",
-                        color = Color.White,
+                        color = earth.forestDark,
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Black
                     )
@@ -113,7 +113,7 @@ fun RestrictedSettingsGuideDialog(
 
                 Text(
                     text = "Android 13, 14 & 15 displays a security warning for newly installed apps outside the Play Store. Follow these 3 simple steps to unlock:",
-                    color = Color(0xFF94A3B8),
+                    color = earth.textMuted,
                     fontSize = 12.sp,
                     lineHeight = 17.sp
                 )
@@ -123,8 +123,10 @@ fun RestrictedSettingsGuideDialog(
                 // Steps Card
                 Card(
                     shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = ZenithNavyDark),
-                    modifier = Modifier.fillMaxWidth()
+                    colors = CardDefaults.cardColors(containerColor = earth.surface),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, earth.border, RoundedCornerShape(14.dp))
                 ) {
                     Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         StepRow(number = "1", title = "Tap 'Open App Info' below", subtitle = "Opens Reel Narcotics app settings directly.")
@@ -144,7 +146,7 @@ fun RestrictedSettingsGuideDialog(
                         }
                         context.startActivity(intent)
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = ZenithEmeraldAccent),
+                    colors = ButtonDefaults.buttonColors(containerColor = earth.forestGreen),
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -152,7 +154,7 @@ fun RestrictedSettingsGuideDialog(
                 ) {
                     Text(
                         text = "OPEN APP INFO NOW ➔",
-                        color = Color.Black,
+                        color = Color.White,
                         fontWeight = FontWeight.Black,
                         fontSize = 13.sp
                     )
@@ -167,7 +169,7 @@ fun RestrictedSettingsGuideDialog(
                         .fillMaxWidth()
                         .height(42.dp)
                 ) {
-                    Text("CLOSE", color = Color(0xFF94A3B8), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("CLOSE", color = earth.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -176,19 +178,20 @@ fun RestrictedSettingsGuideDialog(
 
 @Composable
 private fun StepRow(number: String, title: String, subtitle: String) {
+    val earth = EarthTheme.colors
     Row(verticalAlignment = Alignment.Top) {
         Box(
             modifier = Modifier
                 .size(24.dp)
-                .background(ZenithEmeraldAccent, RoundedCornerShape(12.dp)),
+                .background(earth.forestGreen, RoundedCornerShape(12.dp)),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = number, color = Color.Black, fontWeight = FontWeight.Black, fontSize = 12.sp)
+            Text(text = number, color = Color.White, fontWeight = FontWeight.Black, fontSize = 12.sp)
         }
         Spacer(modifier = Modifier.width(10.dp))
         Column {
-            Text(text = title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.5.sp)
-            Text(text = subtitle, color = Color(0xFF94A3B8), fontSize = 11.sp, lineHeight = 15.sp)
+            Text(text = title, color = earth.textPrimary, fontWeight = FontWeight.Bold, fontSize = 12.5.sp)
+            Text(text = subtitle, color = earth.textMuted, fontSize = 11.sp, lineHeight = 15.sp)
         }
     }
 }
