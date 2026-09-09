@@ -64,14 +64,14 @@ import com.zenith.focus.core.update.ui.UpdateDialog
 
 @Composable
 fun SettingsScreen(
-    config: ProtectionConfig,
+    @Suppress("UNUSED_PARAMETER") config: ProtectionConfig,
     isServiceConnected: Boolean,
     isNuclearActive: Boolean = false,
     currentTheme: String = "",
     updateManager: UpdateManager? = null,
-    onSelectFrictionType: (FrictionType) -> Unit = {},
-    onSetPin: suspend (String) -> Unit = {},
-    onClearPin: suspend () -> Unit = {},
+    @Suppress("UNUSED_PARAMETER") onSelectFrictionType: (FrictionType) -> Unit = {},
+    @Suppress("UNUSED_PARAMETER") onSetPin: suspend (String) -> Unit = {},
+    @Suppress("UNUSED_PARAMETER") onClearPin: suspend () -> Unit = {},
     onSetTheme: (String) -> Unit = {}
 ) {
     val earth = EarthTheme.colors

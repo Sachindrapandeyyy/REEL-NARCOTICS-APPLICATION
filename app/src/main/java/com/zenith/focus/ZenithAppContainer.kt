@@ -33,4 +33,8 @@ class ZenithAppContainer(context: Context) {
     val updateManager: com.zenith.focus.core.update.UpdateManager by lazy {
         com.zenith.focus.core.update.UpdateManager(context.applicationContext)
     }
+
+    val permissionOrchestrator: com.zenith.focus.core.permission.PermissionOrchestrator by lazy {
+        com.zenith.focus.core.permission.PermissionOrchestrator(context.applicationContext)
+    }
 }

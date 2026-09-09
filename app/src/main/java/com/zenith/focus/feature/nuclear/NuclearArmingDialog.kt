@@ -68,14 +68,12 @@ fun NuclearArmingDialog(
     val earth = EarthTheme.colors
     val EarthSurfaceLinenSoft = earth.surfaceSoft
     val EarthSurfaceLinen = earth.surface
-    val EarthCanvasCream = earth.canvas
     val EarthBorderLinen = earth.border
     val EarthTextDark = earth.textPrimary
     val EarthTextMuted = earth.textMuted
     val EarthForestDark = earth.forestDark
     val EarthForestGreen = earth.forestGreen
     val EarthCamelOchre = earth.camelOchre
-    val EarthSageOlive = earth.sageOlive
 
     var step by remember { mutableIntStateOf(0) } // 0: Config & Shields, 1: Ready & Hold to Activate
     var selectedDurationMillis by remember { mutableStateOf(2 * 60 * 60 * 1000L) } // default 2 hours

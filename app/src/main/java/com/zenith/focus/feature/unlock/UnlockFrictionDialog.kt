@@ -27,12 +27,12 @@ import com.zenith.focus.domain.model.ProtectionConfig
 
 @Composable
 fun UnlockFrictionDialog(
-    lockState: LockState,
-    config: ProtectionConfig,
+    @Suppress("UNUSED_PARAMETER") lockState: LockState,
+    @Suppress("UNUSED_PARAMETER") config: ProtectionConfig,
     isNuclearActive: Boolean = false,
     onDismiss: () -> Unit,
     onUnlockConfirmed: () -> Unit,
-    onVerifyPin: suspend (String) -> Boolean = { true }
+    @Suppress("UNUSED_PARAMETER") onVerifyPin: suspend (String) -> Boolean = { true }
 ) {
     val earth = EarthTheme.colors
 

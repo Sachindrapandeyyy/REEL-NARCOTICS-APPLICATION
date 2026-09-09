@@ -28,7 +28,7 @@ class BootCompletedReceiver : BroadcastReceiver() {
 
                 val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
 
-                // Schedule Nuclear Mode expiration wake-up if active
+                // Schedule Nuclear Mode expiration wake-up if active using standard inexact alarm
                 if (nuclearSession.isCurrentlyActive(now)) {
                     val nucIntent = Intent(context, LockAlarmReceiver::class.java).apply {
                         putExtra("IS_NUCLEAR", true)
@@ -39,19 +39,11 @@ class BootCompletedReceiver : BroadcastReceiver() {
                         nucIntent,
                         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                     )
-                    runCatching {
-                        alarmManager?.setExactAndAllowWhileIdle(
-                            AlarmManager.RTC_WAKEUP,
-                            nuclearSession.endTimeMillis,
-                            nucPending
-                        )
-                    }.onFailure {
-                        alarmManager?.set(AlarmManager.RTC_WAKEUP, nuclearSession.endTimeMillis, nucPending)
-                    }
+                    alarmManager?.set(AlarmManager.RTC_WAKEUP, nuclearSession.endTimeMillis, nucPending)
                 }
 
                 if (state.isActive && now < state.endTimeMillis) {
-                    // Reschedule Alarm for normal lock expiration
+                    // Reschedule Alarm for normal lock expiration using standard inexact alarm
                     val alarmIntent = Intent(context, LockAlarmReceiver::class.java)
                     val pendingIntent = PendingIntent.getBroadcast(
                         context,
@@ -59,15 +51,7 @@ class BootCompletedReceiver : BroadcastReceiver() {
                         alarmIntent,
                         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                     )
-                    runCatching {
-                        alarmManager?.setExactAndAllowWhileIdle(
-                            AlarmManager.RTC_WAKEUP,
-                            state.endTimeMillis,
-                            pendingIntent
-                        )
-                    }.onFailure {
-                        alarmManager?.set(AlarmManager.RTC_WAKEUP, state.endTimeMillis, pendingIntent)
-                    }
+                    alarmManager?.set(AlarmManager.RTC_WAKEUP, state.endTimeMillis, pendingIntent)
                 } else if (state.isActive && now >= state.endTimeMillis) {
                     lockRepo.endLock()
                 }

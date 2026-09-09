@@ -2,11 +2,11 @@ package com.zenith.focus.accessibility.analyzer
 
 data class ScreenContext(
     val packageName: String,
-    val className: String,
-    val viewIds: Set<String>,
-    val visibleTexts: List<String>,
-    val contentDescriptions: List<String>,
-    val allNormalizedTokens: Set<String>,
+    val className: String = "",
+    val viewIds: Set<String> = emptySet(),
+    val visibleTexts: List<String> = emptyList(),
+    val contentDescriptions: List<String> = emptyList(),
+    val allNormalizedTokens: Set<String> = emptySet(),
     val selectedTexts: Set<String> = emptySet(),
     val selectedDescriptions: Set<String> = emptySet(),
     val timestamp: Long = System.currentTimeMillis()

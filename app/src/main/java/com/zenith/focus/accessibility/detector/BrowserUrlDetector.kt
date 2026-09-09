@@ -9,9 +9,12 @@ import java.io.InputStreamReader
 import java.net.URI
 import java.util.Locale
 
-class BrowserUrlDetector(context: Context) : ContentDetector {
+class BrowserUrlDetector(
+    context: Context? = null,
+    initialBlockedDomains: Set<String> = emptySet()
+) : ContentDetector {
     override val name = "BrowserUrlDetector"
-    override val version = "1.3.0"
+    override val version = "1.3.1"
 
     private val blockedDomains = mutableSetOf<String>()
     private val blockedSuffixes = setOf(".porn", ".xxx", ".adult", ".cam", ".sex")
@@ -48,7 +51,8 @@ class BrowserUrlDetector(context: Context) : ContentDetector {
     }
 
     init {
-        loadBlocklist(context)
+        blockedDomains.addAll(initialBlockedDomains)
+        context?.let { loadBlocklist(it) }
     }
 
     private fun loadBlocklist(context: Context) {
@@ -146,7 +150,7 @@ class BrowserUrlDetector(context: Context) : ContentDetector {
 
         // Subdomain matching (e.g. video.pornhub.com -> pornhub.com)
         for (blocked in blockedDomains) {
-            if (domain.endsWith(".")) {
+            if (domain.endsWith(".$blocked")) {
                 return true
             }
         }

@@ -71,7 +71,7 @@ import java.util.Locale
 fun HomeScreen(
     nuclearSession: NuclearSession,
     lockState: LockState,
-    config: ProtectionConfig,
+    @Suppress("UNUSED_PARAMETER") config: ProtectionConfig,
     isServiceConnected: Boolean = true,
     isDeviceAdminActive: Boolean = true,
     todayTotalBlocks: Int,
@@ -154,7 +154,7 @@ fun HomeScreen(
                         letterSpacing = 1.2.sp
                     )
                     Text(
-                        text = "Break the scroll.",
+                        text = "$greeting Break the scroll.",
                         color = earth.textMuted,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium
@@ -174,6 +174,7 @@ fun HomeScreen(
                     Text(
                         text = if (isNuclearActive) "☢️ NUCLEAR"
                         else if (isRegularLocked) "🔒 FOCUS LOCK"
+                        else if (focusStreakDays > 0) "🔥 ${focusStreakDays}D STREAK"
                         else "STANDBY (OPEN)",
                         color = if (isNuclearActive) earth.camelOchre
                         else if (isRegularLocked) earth.forestGreen

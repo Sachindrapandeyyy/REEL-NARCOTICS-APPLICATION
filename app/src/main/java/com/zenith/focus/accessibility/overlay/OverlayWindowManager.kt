@@ -205,7 +205,9 @@ fun BlockOverlayContent(
 
             // Motto & Explanation
             Text(
-                text = if (isAdult) {
+                text = if (reason.isNotBlank()) {
+                    reason
+                } else if (isAdult) {
                     "This destination is blocked by your Adult Protection shield. Your mind deserves peace."
                 } else {
                     "Break the scroll. Take back your attention.\nAddictive vertical feeds are terminated to preserve your dopamine baseline."

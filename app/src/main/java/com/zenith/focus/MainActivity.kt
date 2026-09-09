@@ -395,12 +395,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun checkAccessibilityStatus() {
-        val am = getSystemService(Context.ACCESSIBILITY_SERVICE) as? AccessibilityManager ?: return
-        val enabledServices = am.getEnabledAccessibilityServiceList(android.accessibilityservice.AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
-        val isEnabled = enabledServices.any {
-            it.resolveInfo?.serviceInfo?.packageName == packageName
-        }
-        ServiceStateBroadcaster.updateConnected(isEnabled)
+        val app = application as? ZenithApplication ?: return
+        val orch = app.container.permissionOrchestrator
+        val state = orch.refresh(this)
+        ServiceStateBroadcaster.updateConnected(state.isAccessibilityGranted)
     }
 }
 
