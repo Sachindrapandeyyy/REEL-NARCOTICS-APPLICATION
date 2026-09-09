@@ -13,11 +13,23 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.MoreHoriz
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -40,6 +52,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -87,6 +100,18 @@ class MainActivity : ComponentActivity() {
             }
 
             ZenithFocusTheme(darkTheme = isDarkTheme) {
+                val view = androidx.compose.ui.platform.LocalView.current
+                if (!view.isInEditMode) {
+                    androidx.compose.runtime.SideEffect {
+                        val window = (view.context as android.app.Activity).window
+                        window.statusBarColor = com.zenith.focus.core.designsystem.EarthCanvasCream.toArgb()
+                        window.navigationBarColor = com.zenith.focus.core.designsystem.EarthSurfaceLinen.toArgb()
+                        val insets = androidx.core.view.WindowCompat.getInsetsController(window, view)
+                        insets.isAppearanceLightStatusBars = true
+                        insets.isAppearanceLightNavigationBars = true
+                    }
+                }
+
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -187,7 +212,8 @@ class MainActivity : ComponentActivity() {
                             bottomBar = {
                                 ZenithBottomNavigation(
                                     selectedTab = selectedTab,
-                                    onTabSelected = { selectedTab = it }
+                                    onTabSelected = { selectedTab = it },
+                                    onFabClicked = { showLockDialog = true }
                                 )
                             }
                         ) { paddingValues ->
@@ -372,12 +398,13 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun ZenithBottomNavigation(
     selectedTab: Int,
-    onTabSelected: (Int) -> Unit
+    onTabSelected: (Int) -> Unit,
+    onFabClicked: () -> Unit
 ) {
-    val items = listOf("HOME", "SHIELD", "ANALYTICS", "SETTINGS")
-
     Surface(
-        color = com.zenith.focus.core.designsystem.SpiderStealthBg,
+        color = com.zenith.focus.core.designsystem.EarthSurfaceLinen,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        shadowElevation = 8.dp,
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -385,37 +412,92 @@ fun ZenithBottomNavigation(
                 .fillMaxWidth()
                 .border(
                     width = 1.dp,
-                    color = com.zenith.focus.core.designsystem.SpiderBorderDark,
-                    shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)
+                    color = com.zenith.focus.core.designsystem.EarthBorderLinen,
+                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                 )
-                .padding(vertical = 12.dp, horizontal = 16.dp),
+                .padding(horizontal = 14.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            items.forEachIndexed { index, title ->
-                val isSelected = selectedTab == index
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(if (isSelected) com.zenith.focus.core.designsystem.SpiderCardDark else Color.Transparent)
-                        .border(
-                            1.dp,
-                            if (isSelected) com.zenith.focus.core.designsystem.SpiderRedDark.copy(alpha = 0.6f) else Color.Transparent,
-                            RoundedCornerShape(14.dp)
-                        )
-                        .clickable { onTabSelected(index) }
-                        .padding(horizontal = 14.dp, vertical = 8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = title,
-                        color = if (isSelected) com.zenith.focus.core.designsystem.SpiderRedAccent else Color(0xFF64748B),
-                        fontSize = 11.sp,
-                        fontWeight = if (isSelected) FontWeight.Black else FontWeight.Medium,
-                        letterSpacing = 0.8.sp
-                    )
-                }
+            // 0: HOME
+            BottomNavItem(
+                label = "Home",
+                icon = androidx.compose.material.icons.Icons.Outlined.Home,
+                isSelected = selectedTab == 0,
+                onClick = { onTabSelected(0) }
+            )
+
+            // 1: SHIELDS
+            BottomNavItem(
+                label = "Shields",
+                icon = androidx.compose.material.icons.Icons.Outlined.Shield,
+                isSelected = selectedTab == 1,
+                onClick = { onTabSelected(1) }
+            )
+
+            // CENTER FAB: Quick Lock (+)
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(CircleShape)
+                    .background(com.zenith.focus.core.designsystem.EarthCamelOchre)
+                    .clickable { onFabClicked() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = androidx.compose.material.icons.Icons.Default.Add,
+                    contentDescription = "Quick Lock",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
             }
+
+            // 2: INSIGHTS (ANALYTICS)
+            BottomNavItem(
+                label = "Insights",
+                icon = androidx.compose.material.icons.Icons.Outlined.BarChart,
+                isSelected = selectedTab == 2,
+                onClick = { onTabSelected(2) }
+            )
+
+            // 3: MORE (SETTINGS)
+            BottomNavItem(
+                label = "More",
+                icon = androidx.compose.material.icons.Icons.Outlined.MoreHoriz,
+                isSelected = selectedTab == 3,
+                onClick = { onTabSelected(3) }
+            )
         }
+    }
+}
+
+@Composable
+private fun BottomNavItem(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable { onClick() }
+            .padding(horizontal = 10.dp, vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = if (isSelected) com.zenith.focus.core.designsystem.EarthForestGreen else com.zenith.focus.core.designsystem.EarthTextMuted,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = label,
+            color = if (isSelected) com.zenith.focus.core.designsystem.EarthForestGreen else com.zenith.focus.core.designsystem.EarthTextMuted,
+            fontSize = 11.sp,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+        )
     }
 }

@@ -3,6 +3,7 @@ package com.zenith.focus.feature.home
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,10 +22,17 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AutoStories
+import androidx.compose.material.icons.outlined.HelpOutline
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -37,20 +45,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.zenith.focus.core.designsystem.ZenithAlabaster
-import com.zenith.focus.core.designsystem.ZenithBurgundy
-import com.zenith.focus.core.designsystem.ZenithBurgundyDeep
-import com.zenith.focus.core.designsystem.ZenithCardDark
-import com.zenith.focus.core.designsystem.ZenithEmerald
-import com.zenith.focus.core.designsystem.ZenithEmeraldAccent
-import com.zenith.focus.core.designsystem.ZenithNavy
-import com.zenith.focus.core.designsystem.ZenithNavyDark
-import com.zenith.focus.core.designsystem.ZenithNavyLight
+import com.zenith.focus.core.designsystem.*
 import com.zenith.focus.core.time.DateTimeUtils
 import com.zenith.focus.domain.model.LockState
 import com.zenith.focus.domain.model.ProtectionConfig
@@ -114,9 +119,9 @@ fun HomeScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(ZenithNavyDark)
+            .background(EarthCanvasCream)
             .verticalScroll(scrollState)
-            .padding(horizontal = 20.dp, vertical = 20.dp)
+            .padding(horizontal = 20.dp, vertical = 18.dp)
     ) {
         // TOP APP BAR: Brand & Time Greeting
         Row(
@@ -132,90 +137,153 @@ fun HomeScreen(
                     painter = androidx.compose.ui.res.painterResource(id = com.zenith.focus.R.drawable.ic_reel_narcotics_logo),
                     contentDescription = "Reel Narcotics",
                     modifier = Modifier
-                        .size(46.dp)
+                        .size(42.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .border(1.5.dp, Color(0xFF334155), RoundedCornerShape(12.dp))
+                        .border(1.dp, EarthBorderLinen, RoundedCornerShape(12.dp))
                 )
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(10.dp))
                 Column {
                     Text(
                         text = "REEL NARCOTICS",
-                        color = com.zenith.focus.core.designsystem.SpiderRedAccent,
+                        color = EarthForestGreen,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Black,
-                        letterSpacing = 1.5.sp
+                        letterSpacing = 1.2.sp
                     )
                     Text(
                         text = "Break the scroll.",
-                        color = Color(0xFF94A3B8),
+                        color = EarthTextMuted,
                         fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.width(8.dp))
 
             // Clarity Status Chip
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(14.dp))
-                    .background(ZenithNavyLight)
-                    .border(
-                        1.dp,
-                        if (isNuclearActive) com.zenith.focus.core.designsystem.SpiderRedDark
-                        else if (isRegularLocked) com.zenith.focus.core.designsystem.SpiderBlue.copy(alpha = 0.6f)
-                        else com.zenith.focus.core.designsystem.SpiderBorderDark,
-                        RoundedCornerShape(14.dp)
-                    )
+                    .background(EarthSurfaceLinen)
+                    .border(1.dp, EarthBorderLinen, RoundedCornerShape(14.dp))
                     .padding(horizontal = 10.dp, vertical = 6.dp)
             ) {
                 Text(
-                    text = if (isNuclearActive) "☢️ NUCLEAR (STRICT)"
-                    else if (isRegularLocked) "🔒 STANDARD LOCK"
-                    else "🕸️ STANDBY (NO LOCK)",
-                    color = if (isNuclearActive) com.zenith.focus.core.designsystem.SpiderRedAccent
-                    else if (isRegularLocked) com.zenith.focus.core.designsystem.SpiderBlueAccent
-                    else Color(0xFF94A3B8),
+                    text = if (isNuclearActive) "☢️ NUCLEAR"
+                    else if (isRegularLocked) "🔒 FOCUS LOCK"
+                    else "STANDBY (OPEN)",
+                    color = if (isNuclearActive) EarthCamelOchre
+                    else if (isRegularLocked) EarthForestGreen
+                    else EarthTextMuted,
                     fontSize = 10.sp,
-                    fontWeight = FontWeight.Black
+                    fontWeight = FontWeight.Bold
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // EDITORIAL SERIF HEADER (Matching reference image)
         Column {
             Text(
-                text = greeting,
-                color = Color.White,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Black
+                text = "Be present.",
+                color = EarthForestGreen,
+                fontSize = 36.sp,
+                fontFamily = FontFamily.Serif,
+                fontWeight = FontWeight.Normal,
+                letterSpacing = (-0.5).sp
             )
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Take back your attention.",
-                color = Color(0xFF94A3B8),
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.padding(top = 2.dp)
+                text = "Reclaim your attention & peace of mind.",
+                color = EarthTextMuted,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Normal
+            )
+            Spacer(modifier = Modifier.height(14.dp))
+            // Camel Accent Line matching reference
+            Box(
+                modifier = Modifier
+                    .width(38.dp)
+                    .height(3.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(EarthAccentRule)
             )
         }
 
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // 5-SQUIRCLE ACTION GRID (Directly matching reference image layout)
+        // Row 1: 3 squircle buttons (Focus Lock, Nuclear, Shields)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            SquircleActionButton(
+                title = "FOCUS LOCK",
+                icon = Icons.Outlined.Lock,
+                containerColor = EarthForestGreen,
+                iconTint = Color.White,
+                onClick = onStartLockClicked
+            )
+            SquircleActionButton(
+                title = "NUCLEAR",
+                icon = Icons.Outlined.Timer,
+                containerColor = EarthCamelOchre,
+                iconTint = Color.White,
+                onClick = onArmNuclearClicked
+            )
+            SquircleActionButton(
+                title = "SHIELDS",
+                icon = Icons.Outlined.Shield,
+                containerColor = EarthSageOlive,
+                iconTint = Color.White,
+                onClick = onNavigateProtection
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Row 2: 2 centered squircle buttons (Insights, Guide)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            SquircleActionButton(
+                title = "INSIGHTS",
+                icon = Icons.Outlined.AutoStories,
+                containerColor = EarthSandCard,
+                iconTint = EarthForestGreen,
+                onClick = onNavigateStats
+            )
+            Spacer(modifier = Modifier.width(28.dp))
+            SquircleActionButton(
+                title = "GUIDE",
+                icon = Icons.Outlined.HelpOutline,
+                containerColor = EarthForestGreen,
+                iconTint = Color.White,
+                onClick = onEnableAccessibility
+            )
+        }
+
+        Spacer(modifier = Modifier.height(22.dp))
+
         // SYSTEM SHIELD STATUS & ACTIVATION ASSISTANT
         val allShieldsOperational = isServiceConnected && isDeviceAdminActive
-        Spacer(modifier = Modifier.height(14.dp))
 
         if (allShieldsOperational) {
             Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, Color(0xFF1E293B), RoundedCornerShape(16.dp))
+                    .border(1.dp, EarthBorderLinen, RoundedCornerShape(18.dp))
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -227,24 +295,30 @@ fun HomeScreen(
                             modifier = Modifier
                                 .size(10.dp)
                                 .clip(CircleShape)
-                                .background(if (isNuclearActive) com.zenith.focus.core.designsystem.SpiderRedAccent else com.zenith.focus.core.designsystem.SpiderBlueAccent)
+                                .background(
+                                    if (isNuclearActive) EarthCamelOchre
+                                    else if (isRegularLocked) EarthForestGreen
+                                    else EarthSageOlive
+                                )
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
-                                text = if (isNuclearActive) "NUCLEAR RESTRICTIONS STRICTLY ENFORCED ☢️"
-                                else if (isRegularLocked) "STANDARD FOCUS RESTRICTIONS ACTIVE 🔒"
-                                else "SHIELDS ARMED & READY (STANDBY) 🛡️",
-                                color = if (isNuclearActive) com.zenith.focus.core.designsystem.SpiderRedAccent else com.zenith.focus.core.designsystem.SpiderBlueAccent,
+                                text = if (isNuclearActive) "NUCLEAR ENFORCEMENT ACTIVE ☢️"
+                                else if (isRegularLocked) "FOCUS RESTRICTIONS ACTIVE 🔒"
+                                else "SHIELDS ARMED & READY (STANDBY)",
+                                color = if (isNuclearActive) EarthCamelOchre
+                                else if (isRegularLocked) EarthForestGreen
+                                else EarthForestGreen,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 0.5.sp
                             )
                             Text(
-                                text = if (isNuclearActive) "Nuclear Lock: Strict zero-bypass mode active until timer ends"
-                                else if (isRegularLocked) "Standard Focus: Short-form feeds blocked during session"
-                                else "No lock active = No restrictions. Start a lock to block shorts.",
-                                color = Color(0xFF94A3B8),
+                                text = if (isNuclearActive) "Strict zero-bypass mode active until timer ends"
+                                else if (isRegularLocked) "Short-form feeds blocked during session"
+                                else "No lock active = No restrictions. Tap any card above to start.",
+                                color = EarthTextMuted,
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(top = 2.dp)
                             )
@@ -252,20 +326,20 @@ fun HomeScreen(
                     }
                     Text(
                         text = if (isNuclearActive || isRegularLocked) "LOCKED" else "READY",
-                        color = if (isNuclearActive) com.zenith.focus.core.designsystem.SpiderRedAccent else com.zenith.focus.core.designsystem.SpiderBlueAccent,
+                        color = if (isNuclearActive) EarthCamelOchre else EarthForestGreen,
                         fontSize = 11.sp,
-                        fontWeight = FontWeight.Black
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
         } else {
             val missingCount = (if (!isServiceConnected) 1 else 0) + (if (!isDeviceAdminActive) 1 else 0)
             Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1018)),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.5.dp, Color(0xFFE11D48), RoundedCornerShape(16.dp))
+                    .border(1.5.dp, EarthCamelOchre, RoundedCornerShape(18.dp))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
@@ -278,14 +352,14 @@ fun HomeScreen(
                                 modifier = Modifier
                                     .size(10.dp)
                                     .clip(CircleShape)
-                                    .background(Color(0xFFF43F5E))
+                                    .background(EarthCamelOchre)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "SYSTEM SETUP REQUIRED ($missingCount/2 PENDING)",
-                                color = Color(0xFFFECACA),
+                                color = EarthCamelOchre,
                                 fontSize = 12.sp,
-                                fontWeight = FontWeight.Black,
+                                fontWeight = FontWeight.Bold,
                                 letterSpacing = 0.5.sp
                             )
                         }
@@ -295,8 +369,8 @@ fun HomeScreen(
 
                     if (!isServiceConnected) {
                         Card(
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF2C1622)),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinen),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 4.dp)
@@ -304,20 +378,20 @@ fun HomeScreen(
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Text(
                                     text = "⚡ 1. Accessibility Shield",
-                                    color = Color.White,
+                                    color = EarthForestDark,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
                                     text = "Required to detect and immediately close YouTube Shorts & Instagram Reels feeds. 100% offline — zero personal data collected.",
-                                    color = Color(0xFFCBD5E1),
+                                    color = EarthTextMuted,
                                     fontSize = 11.5.sp,
                                     lineHeight = 15.sp,
                                     modifier = Modifier.padding(vertical = 4.dp)
                                 )
                                 Button(
                                     onClick = onEnableAccessibility,
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE11D48)),
+                                    colors = ButtonDefaults.buttonColors(containerColor = EarthForestGreen),
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -332,7 +406,7 @@ fun HomeScreen(
                                 }
                                 Text(
                                     text = "💡 Tap button -> 'Installed apps' -> 'Reel Narcotics Shield' -> Turn ON",
-                                    color = Color(0xFFFDA4AF),
+                                    color = EarthCamelDeep,
                                     fontSize = 10.5.sp,
                                     modifier = Modifier.padding(top = 4.dp)
                                 )
@@ -343,8 +417,8 @@ fun HomeScreen(
                     if (!isDeviceAdminActive) {
                         Spacer(modifier = Modifier.height(4.dp))
                         Card(
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF2A1C14)),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinen),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 4.dp)
@@ -352,20 +426,20 @@ fun HomeScreen(
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Text(
                                     text = "🛡️ 2. Uninstall Protection (Device Admin)",
-                                    color = Color.White,
+                                    color = EarthForestDark,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
                                     text = "Prevents deleting or bypassing Reel Narcotics during active Nuclear Mode focus sessions.",
-                                    color = Color(0xFFCBD5E1),
+                                    color = EarthTextMuted,
                                     fontSize = 11.5.sp,
                                     lineHeight = 15.sp,
                                     modifier = Modifier.padding(vertical = 4.dp)
                                 )
                                 Button(
                                     onClick = onEnableDeviceAdmin,
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706)),
+                                    colors = ButtonDefaults.buttonColors(containerColor = EarthCamelOchre),
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -380,7 +454,7 @@ fun HomeScreen(
                                 }
                                 Text(
                                     text = "💡 Pops up Android system prompt directly — simply tap 'Activate'",
-                                    color = Color(0xFFFDE68A),
+                                    color = EarthCamelDeep,
                                     fontSize = 10.5.sp,
                                     modifier = Modifier.padding(top = 4.dp)
                                 )
@@ -397,16 +471,16 @@ fun HomeScreen(
         if (isNuclearActive) {
             // NUCLEAR MODE ACTIVE CARD
             Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = ZenithBurgundyDeep.copy(alpha = 0.85f)),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(2.dp, ZenithBurgundy, RoundedCornerShape(16.dp))
+                    .border(1.5.dp, EarthCamelOchre, RoundedCornerShape(20.dp))
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(24.dp),
+                        .padding(22.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -414,22 +488,23 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "NUCLEAR MODE ACTIVE",
-                            color = Color(0xFFFECACA),
+                            color = EarthCamelOchre,
                             fontSize = 13.sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 1.5.sp
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.2.sp
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                    // Large Countdown
+                    // Large Countdown in Serif Font
                     Text(
                         text = DateTimeUtils.formatRemaining(remainingNuclearMillis),
-                        color = Color.White,
-                        fontSize = 42.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 2.sp
+                        color = EarthForestDark,
+                        fontSize = 40.sp,
+                        fontFamily = FontFamily.Serif,
+                        fontWeight = FontWeight.Normal,
+                        letterSpacing = 1.sp
                     )
 
                     val nuclearEndTime = remember(nuclearSession.endTimeMillis) {
@@ -438,13 +513,13 @@ fun HomeScreen(
 
                     Text(
                         text = "Ends at $nuclearEndTime",
-                        color = Color(0xFFE2E8F0),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(top = 4.dp)
+                        color = EarthTextMuted,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(top = 2.dp)
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
 
                     LinearProgressIndicator(
                         progress = nuclearProgress,
@@ -452,28 +527,27 @@ fun HomeScreen(
                             .fillMaxWidth()
                             .height(6.dp)
                             .clip(RoundedCornerShape(3.dp)),
-                        color = Color(0xFFF43F5E),
-                        trackColor = ZenithNavyDark
+                        color = EarthCamelOchre,
+                        trackColor = EarthSurfaceLinen
                     )
 
-                    Spacer(modifier = Modifier.height(18.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
 
-                    // Calm Status Indicator: LOCKED UNTIL TIMER EXPIRATION
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .background(ZenithNavyDark.copy(alpha = 0.8f))
-                            .border(1.dp, Color(0xFF334155), RoundedCornerShape(12.dp))
-                            .padding(vertical = 12.dp),
+                            .background(EarthSurfaceLinen)
+                            .border(1.dp, EarthBorderLinen, RoundedCornerShape(12.dp))
+                            .padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "LOCKED UNTIL TIMER EXPIRATION",
-                            color = Color(0xFF94A3B8),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 1.sp
+                            color = EarthTextMuted,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.8.sp
                         )
                     }
                 }
@@ -481,34 +555,35 @@ fun HomeScreen(
         } else if (isRegularLocked) {
             // REGULAR FOCUS LOCK ACTIVE CARD
             Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = ZenithCardDark),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(2.dp, com.zenith.focus.core.designsystem.SpiderBlue, RoundedCornerShape(16.dp))
+                    .border(1.5.dp, EarthForestGreen, RoundedCornerShape(20.dp))
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(24.dp),
+                        .padding(22.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
                         text = "FOCUS LOCK ACTIVE",
-                        color = com.zenith.focus.core.designsystem.SpiderBlueAccent,
+                        color = EarthForestGreen,
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.Black,
+                        fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     )
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = DateTimeUtils.formatRemaining(remainingLockMillis),
-                        color = Color.White,
+                        color = EarthForestDark,
                         fontSize = 38.sp,
-                        fontWeight = FontWeight.Black
+                        fontFamily = FontFamily.Serif,
+                        fontWeight = FontWeight.Normal
                     )
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     LinearProgressIndicator(
                         progress = lockProgress,
@@ -516,111 +591,66 @@ fun HomeScreen(
                             .fillMaxWidth()
                             .height(6.dp)
                             .clip(RoundedCornerShape(3.dp)),
-                        color = com.zenith.focus.core.designsystem.SpiderBlue,
-                        trackColor = ZenithNavyDark
+                        color = EarthForestGreen,
+                        trackColor = EarthSurfaceLinen
                     )
 
-                    Spacer(modifier = Modifier.height(18.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Button(
                         onClick = onUnlockClicked,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(44.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = ZenithNavyLight),
+                        colors = ButtonDefaults.buttonColors(containerColor = EarthForestGreen),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text(text = "UNLOCK CHALLENGE", color = Color(0xFF94A3B8), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "UNLOCK CHALLENGE", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
         } else {
-            // INACTIVE STATE: NUCLEAR COMMITMENT HERO + QUICK LOCK
+            // INACTIVE STATE: TRANQUIL MINIMALIST STATUS
             Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = ZenithNavy),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, Color(0xFF1E293B), RoundedCornerShape(16.dp))
+                    .border(1.dp, EarthBorderLinen, RoundedCornerShape(18.dp))
             ) {
-                Column(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(20.dp)
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = "IRREVERSIBLE DISCIPLINE",
-                                color = Color(0xFFF43F5E),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Black,
-                                letterSpacing = 1.sp
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "Nuclear Mode",
-                                color = Color.White,
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Black
-                            )
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(ZenithBurgundyDeep),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(text = "☢️", fontSize = 18.sp)
-                        }
-                    }
-
-                    Text(
-                        text = "Locks your device into pure productivity. Zero pause, zero cancel, zero bypass until the timer expires.",
-                        color = Color(0xFF94A3B8),
-                        fontSize = 12.sp,
-                        lineHeight = 17.sp,
-                        modifier = Modifier.padding(top = 8.dp, bottom = 18.dp)
-                    )
-
-                    // NUCLEAR MODE CALL TO ACTION
-                    Button(
-                        onClick = onArmNuclearClicked,
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = com.zenith.focus.core.designsystem.SpiderRed),
-                        shape = RoundedCornerShape(14.dp)
+                            .size(42.dp)
+                            .clip(CircleShape)
+                            .background(EarthSurfaceLinen),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "ARM NUCLEAR MODE ☢️",
-                            color = Color.White,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 0.5.sp
+                        Icon(
+                            imageVector = Icons.Outlined.Shield,
+                            contentDescription = "Standby",
+                            tint = EarthForestGreen,
+                            modifier = Modifier.size(22.dp)
                         )
                     }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    OutlinedButton(
-                        onClick = onStartLockClicked,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(46.dp),
-                        shape = RoundedCornerShape(14.dp)
-                    ) {
+                    Spacer(modifier = Modifier.width(14.dp))
+                    Column {
                         Text(
-                            text = "STANDARD FOCUS LOCK 🔒",
-                            color = com.zenith.focus.core.designsystem.SpiderBlueAccent,
-                            fontSize = 12.sp,
+                            text = "Distraction-Free Mindset",
+                            color = EarthForestGreen,
+                            fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "No lock active. Tap any card above or tap '+' to start focusing.",
+                            color = EarthTextMuted,
+                            fontSize = 11.5.sp,
+                            modifier = Modifier.padding(top = 2.dp)
                         )
                     }
                 }
@@ -629,25 +659,25 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // SECTION: TODAY'S PROTECTION (With Muted Deep Burgundy Badges)
+        // SECTION: TODAY'S PROTECTION
         Text(
             text = "TODAY'S PROTECTION",
-            color = Color(0xFF94A3B8),
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Black,
+            color = EarthTextMuted,
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.Bold,
             letterSpacing = 1.sp
         )
 
         Spacer(modifier = Modifier.height(10.dp))
 
         Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = ZenithNavy),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, com.zenith.focus.core.designsystem.SpiderBorderDark, RoundedCornerShape(16.dp))
+                .border(1.dp, EarthBorderLinen, RoundedCornerShape(18.dp))
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(18.dp)) {
                 val isShortsEnforced = if (isNuclearActive) {
                     nuclearSession.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.YOUTUBE_SHORTS)
                 } else if (isRegularLocked) {
@@ -688,9 +718,9 @@ fun HomeScreen(
         // SECTION: FOCUS OVERVIEW
         Text(
             text = "FOCUS OVERVIEW",
-            color = Color(0xFF94A3B8),
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Black,
+            color = EarthTextMuted,
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.Bold,
             letterSpacing = 1.sp
         )
 
@@ -702,30 +732,31 @@ fun HomeScreen(
         ) {
             // Card 1: Distractions Kicked Today
             Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = ZenithNavy),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
                 modifier = Modifier
                     .weight(1f)
-                    .border(1.dp, com.zenith.focus.core.designsystem.SpiderBorderDark, RoundedCornerShape(16.dp))
+                    .border(1.dp, EarthBorderLinen, RoundedCornerShape(18.dp))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "KICKS RECORDED",
-                        color = Color(0xFF94A3B8),
+                        color = EarthTextMuted,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = "$todayTotalBlocks",
-                        color = Color.White,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Black
+                        color = EarthForestDark,
+                        fontSize = 28.sp,
+                        fontFamily = FontFamily.Serif,
+                        fontWeight = FontWeight.Normal
                     )
                     Text(
-                        text = "Distractions Terminated",
-                        color = com.zenith.focus.core.designsystem.SpiderRedAccent,
+                        text = "Distractions Blocked",
+                        color = EarthCamelOchre,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -734,36 +765,89 @@ fun HomeScreen(
 
             // Card 2: Protection Protocol
             Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = ZenithNavy),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
                 modifier = Modifier
                     .weight(1f)
-                    .border(1.dp, com.zenith.focus.core.designsystem.SpiderBorderDark, RoundedCornerShape(16.dp))
+                    .border(1.dp, EarthBorderLinen, RoundedCornerShape(18.dp))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "SHIELD PROTOCOL",
-                        color = Color(0xFF94A3B8),
+                        color = EarthTextMuted,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = if (isNuclearActive) "NUCLEAR" else if (isRegularLocked) "STANDARD" else "STANDBY",
-                        color = if (isNuclearActive) com.zenith.focus.core.designsystem.SpiderRedAccent else if (isRegularLocked) com.zenith.focus.core.designsystem.SpiderBlueAccent else Color(0xFF94A3B8),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Black
+                        color = if (isNuclearActive) EarthCamelOchre else if (isRegularLocked) EarthForestGreen else EarthTextDark,
+                        fontSize = 17.sp,
+                        fontFamily = FontFamily.Serif,
+                        fontWeight = FontWeight.SemiBold
                     )
                     Text(
-                        text = if (isNuclearActive) "Selective Strict" else if (isRegularLocked) "Focus Active" else "No Restrictions",
-                        color = Color(0xFF94A3B8),
+                        text = if (isNuclearActive) "Strict Zero-Bypass" else if (isRegularLocked) "Focus Active" else "No Restrictions",
+                        color = EarthTextMuted,
                         fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.Normal
                     )
                 }
             }
         }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // LANDSCAPE ARTWORK (Mountains + Sun minimalist illustration matching reference)
+        OrganicLandscapeArtwork(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(130.dp)
+        )
+
+        Spacer(modifier = Modifier.height(64.dp)) // Clearance for floating bottom bar
+    }
+}
+
+@Composable
+fun SquircleActionButton(
+    title: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    containerColor: Color,
+    iconTint: Color,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clip(RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick)
+            .padding(4.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(68.dp)
+                .clip(RoundedCornerShape(22.dp))
+                .background(containerColor)
+                .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(22.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                tint = iconTint,
+                modifier = Modifier.size(30.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = title,
+            color = EarthTextDark,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.6.sp
+        )
     }
 }
 
@@ -781,14 +865,14 @@ fun ProtectionItemRow(
         Column {
             Text(
                 text = name,
-                color = Color.White,
-                fontSize = 13.sp,
+                color = EarthTextDark,
+                fontSize = 13.5.sp,
                 fontWeight = FontWeight.SemiBold
             )
             if (count > 0) {
                 Text(
                     text = "$count kicks recorded today",
-                    color = Color(0xFF94A3B8),
+                    color = EarthTextMuted,
                     fontSize = 11.sp
                 )
             }
@@ -796,18 +880,55 @@ fun ProtectionItemRow(
 
         Box(
             modifier = Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .background(if (isEnforced) com.zenith.focus.core.designsystem.SpiderRedDeep else com.zenith.focus.core.designsystem.SpiderCardDark)
-                .border(1.dp, if (isEnforced) com.zenith.focus.core.designsystem.SpiderRedDark else com.zenith.focus.core.designsystem.SpiderBorderDark, RoundedCornerShape(8.dp))
-                .padding(horizontal = 10.dp, vertical = 4.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(if (isEnforced) EarthForestGreen.copy(alpha = 0.12f) else EarthSurfaceLinen)
+                .border(1.dp, if (isEnforced) EarthForestGreen.copy(alpha = 0.35f) else EarthBorderLinen, RoundedCornerShape(10.dp))
+                .padding(horizontal = 12.dp, vertical = 5.dp)
         ) {
             Text(
                 text = if (isEnforced) "BLOCKED 🔒" else "READY 🔓",
-                color = if (isEnforced) com.zenith.focus.core.designsystem.SpiderRedAccent else Color(0xFF94A3B8),
+                color = if (isEnforced) EarthForestGreen else EarthTextMuted,
                 fontSize = 11.sp,
-                fontWeight = FontWeight.Black,
+                fontWeight = FontWeight.Bold,
                 letterSpacing = 0.5.sp
             )
         }
+    }
+}
+
+@Composable
+fun OrganicLandscapeArtwork(modifier: Modifier = Modifier) {
+    Canvas(modifier = modifier) {
+        val width = size.width
+        val height = size.height
+
+        // Soft sun in warm golden camel
+        drawCircle(
+            color = Color(0xFFC9A97E).copy(alpha = 0.35f),
+            radius = height * 0.32f,
+            center = androidx.compose.ui.geometry.Offset(width * 0.72f, height * 0.40f)
+        )
+
+        // Background gentle hills (sage olive tone)
+        val hillPathBack = androidx.compose.ui.graphics.Path().apply {
+            moveTo(0f, height * 0.75f)
+            quadraticBezierTo(width * 0.25f, height * 0.50f, width * 0.55f, height * 0.70f)
+            quadraticBezierTo(width * 0.80f, height * 0.82f, width, height * 0.60f)
+            lineTo(width, height)
+            lineTo(0f, height)
+            close()
+        }
+        drawPath(hillPathBack, color = Color(0xFF868D7D).copy(alpha = 0.32f))
+
+        // Foreground layered hills (forest pine tone)
+        val hillPathFront = androidx.compose.ui.graphics.Path().apply {
+            moveTo(0f, height * 0.88f)
+            quadraticBezierTo(width * 0.35f, height * 0.68f, width * 0.68f, height * 0.85f)
+            quadraticBezierTo(width * 0.88f, height * 0.94f, width, height * 0.80f)
+            lineTo(width, height)
+            lineTo(0f, height)
+            close()
+        }
+        drawPath(hillPathFront, color = Color(0xFF204844).copy(alpha = 0.22f))
     }
 }

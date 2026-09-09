@@ -46,15 +46,19 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontFamily
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.zenith.focus.R
-import com.zenith.focus.core.designsystem.ZenithBurgundy
-import com.zenith.focus.core.designsystem.ZenithBurgundyDeep
-import com.zenith.focus.core.designsystem.ZenithEmerald
-import com.zenith.focus.core.designsystem.ZenithEmeraldAccent
-import com.zenith.focus.core.designsystem.ZenithNavy
-import com.zenith.focus.core.designsystem.ZenithNavyDark
+import com.zenith.focus.core.designsystem.EarthBorderLinen
+import com.zenith.focus.core.designsystem.EarthCamelOchre
+import com.zenith.focus.core.designsystem.EarthCanvasCream
+import com.zenith.focus.core.designsystem.EarthForestDark
+import com.zenith.focus.core.designsystem.EarthForestGreen
+import com.zenith.focus.core.designsystem.EarthSurfaceLinen
+import com.zenith.focus.core.designsystem.EarthSurfaceLinenSoft
+import com.zenith.focus.core.designsystem.EarthTextDark
+import com.zenith.focus.core.designsystem.EarthTextMuted
 import com.zenith.focus.core.ui.RestrictedSettingsBanner
 import com.zenith.focus.core.ui.RestrictedSettingsGuideDialog
 import com.zenith.focus.domain.model.FrictionType
@@ -100,38 +104,39 @@ fun SettingsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(ZenithNavyDark)
+            .background(EarthCanvasCream)
             .verticalScroll(scrollState)
             .padding(horizontal = 20.dp, vertical = 24.dp)
     ) {
         Text(
             text = "SECURITY & CONTROLS",
-            color = Color(0xFF94A3B8),
-            fontSize = 12.sp,
+            color = EarthForestGreen,
+            fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.sp
         )
         Text(
             text = "Settings",
-            color = Color.White,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Black
+            color = EarthForestDark,
+            fontSize = 28.sp,
+            fontFamily = FontFamily.Serif,
+            fontWeight = FontWeight.Normal
         )
         Text(
             text = "Manage system permissions and anti-impulse unlock barriers.",
-            color = Color(0xFF94A3B8),
-            fontSize = 13.sp,
+            color = EarthTextMuted,
+            fontSize = 12.5.sp,
             modifier = Modifier.padding(top = 4.dp, bottom = 20.dp)
         )
 
         // NUCLEAR MODE ACTIVE BANNER (IF ACTIVE)
         if (isNuclearActive) {
             Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = ZenithBurgundyDeep),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.5.dp, ZenithBurgundy, RoundedCornerShape(16.dp))
+                    .border(1.5.dp, EarthCamelOchre, RoundedCornerShape(18.dp))
             ) {
                 Row(
                     modifier = Modifier
@@ -144,14 +149,14 @@ fun SettingsScreen(
                     Column {
                         Text(
                             text = "NUCLEAR MODE ACTIVE",
-                            color = Color(0xFFFECACA),
+                            color = EarthCamelOchre,
                             fontSize = 13.sp,
-                            fontWeight = FontWeight.Black,
+                            fontWeight = FontWeight.Bold,
                             letterSpacing = 0.5.sp
                         )
                         Text(
                             text = "Security and unlock friction settings are locked until the session expires.",
-                            color = Color(0xFFE2E8F0),
+                            color = EarthTextDark,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(top = 2.dp)
                         )
@@ -164,20 +169,20 @@ fun SettingsScreen(
         // SYSTEM STATUS
         Text(
             text = "SYSTEM STATUS",
-            color = ZenithEmeraldAccent,
-            fontSize = 12.sp,
+            color = EarthForestGreen,
+            fontSize = 11.5.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.sp
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         // Accessibility Service Card
         Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = ZenithNavy),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, Color(0xFF1E293B), RoundedCornerShape(16.dp))
+                .border(1.dp, EarthBorderLinen, RoundedCornerShape(18.dp))
         ) {
             Column(modifier = Modifier.padding(18.dp)) {
                 Row(
@@ -186,10 +191,10 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Accessibility Shield Service", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                        Text("Accessibility Shield Service", color = EarthTextDark, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                         Text(
                             text = if (isServiceConnected) "Online: Instant zero-tolerance ejection active" else "Inactive: Required for short-form video blocking",
-                            color = if (isServiceConnected) ZenithEmeraldAccent else Color(0xFFF43F5E),
+                            color = if (isServiceConnected) EarthForestGreen else Color(0xFFB91C1C),
                             fontSize = 12.sp,
                             modifier = Modifier.padding(top = 2.dp)
                         )
@@ -199,7 +204,7 @@ fun SettingsScreen(
                         modifier = Modifier
                             .size(12.dp)
                             .clip(CircleShape)
-                            .background(if (isServiceConnected) ZenithEmeraldAccent else Color(0xFFF43F5E))
+                            .background(if (isServiceConnected) EarthForestGreen else Color(0xFFB91C1C))
                     )
                 }
 
@@ -212,11 +217,11 @@ fun SettingsScreen(
                             }
                             context.startActivity(intent)
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF43F5E)),
+                        colors = ButtonDefaults.buttonColors(containerColor = EarthForestGreen),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("ACTIVATE ACCESSIBILITY PERMISSION", fontWeight = FontWeight.Bold)
+                        Text("ACTIVATE ACCESSIBILITY PERMISSION", color = Color.White, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     RestrictedSettingsBanner(
@@ -229,11 +234,11 @@ fun SettingsScreen(
         // Uninstall Protection (Device Administrator) Card
         Spacer(modifier = Modifier.height(12.dp))
         Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = ZenithNavy),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, Color(0xFF1E293B), RoundedCornerShape(16.dp))
+                .border(1.dp, EarthBorderLinen, RoundedCornerShape(18.dp))
         ) {
             Column(modifier = Modifier.padding(18.dp)) {
                 Row(
@@ -242,10 +247,10 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Uninstall Protection (Device Admin)", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                        Text("Uninstall Protection (Device Admin)", color = EarthTextDark, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                         Text(
                             text = if (isDeviceAdminActive) "Active: OS-level deletion block armed" else "Inactive: Grant Device Admin to prevent uninstallation",
-                            color = if (isDeviceAdminActive) ZenithEmeraldAccent else Color(0xFFF59E0B),
+                            color = if (isDeviceAdminActive) EarthForestGreen else EarthCamelOchre,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(top = 2.dp)
                         )
@@ -255,7 +260,7 @@ fun SettingsScreen(
                         modifier = Modifier
                             .size(12.dp)
                             .clip(CircleShape)
-                            .background(if (isDeviceAdminActive) ZenithEmeraldAccent else Color(0xFFF59E0B))
+                            .background(if (isDeviceAdminActive) EarthForestGreen else EarthCamelOchre)
                     )
                 }
 
@@ -265,11 +270,11 @@ fun SettingsScreen(
                         onClick = {
                             ZenithDeviceAdminReceiver.openDeviceAdminActivation(context)
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706)),
+                        colors = ButtonDefaults.buttonColors(containerColor = EarthCamelOchre),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("ACTIVATE UNINSTALL PROTECTION", fontWeight = FontWeight.Bold)
+                        Text("ACTIVATE UNINSTALL PROTECTION", color = Color.White, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     RestrictedSettingsBanner(
@@ -279,7 +284,7 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
                         text = "🔒 Locked by Nuclear Mode. Deactivation is forbidden until session expires.",
-                        color = Color(0xFFFECACA),
+                        color = EarthCamelOchre,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -289,48 +294,46 @@ fun SettingsScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Spacer(modifier = Modifier.height(24.dp))
-
         // DEVELOPER & SUPPORT
         Text(
             text = "DEVELOPER & SUPPORT",
-            color = Color(0xFF38BDF8),
-            fontSize = 12.sp,
+            color = EarthForestGreen,
+            fontSize = 11.5.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.sp
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = ZenithNavy),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, Color(0xFF1E293B), RoundedCornerShape(16.dp))
+                .border(1.dp, EarthBorderLinen, RoundedCornerShape(18.dp))
         ) {
             Column(modifier = Modifier.padding(18.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(42.dp)
+                            .size(44.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFF0F172A))
-                            .border(1.5.dp, ZenithEmeraldAccent, CircleShape),
+                            .background(EarthSurfaceLinen)
+                            .border(1.5.dp, EarthCamelOchre, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(text = "👨‍💻", fontSize = 20.sp)
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(14.dp))
                     Column {
                         Text(
                             text = "Sachindra Shekhar Pandey",
-                            color = Color.White,
+                            color = EarthForestDark,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.ExtraBold
                         )
                         Text(
                             text = "Creator & Lead Android Engineer",
-                            color = ZenithEmeraldAccent,
+                            color = EarthCamelOchre,
                             fontSize = 12.sp
                         )
                     }
@@ -343,8 +346,8 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFF0F172A))
-                        .border(1.dp, Color(0xFF1E293B), RoundedCornerShape(12.dp))
+                        .background(EarthSurfaceLinen)
+                        .border(1.dp, EarthBorderLinen, RoundedCornerShape(12.dp))
                         .clickable {
                             val intent = Intent(Intent.ACTION_SENDTO).apply {
                                 data = Uri.parse("mailto:Sachindrapandey328@gmail.com")
@@ -358,10 +361,10 @@ fun SettingsScreen(
                     Text(text = "✉️", fontSize = 16.sp)
                     Spacer(modifier = Modifier.width(10.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "Support Email", color = Color(0xFF94A3B8), fontSize = 11.sp)
-                        Text(text = "Sachindrapandey328@gmail.com", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Text(text = "Support Email", color = EarthTextMuted, fontSize = 11.sp)
+                        Text(text = "Sachindrapandey328@gmail.com", color = EarthTextDark, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     }
-                    Text(text = "➔", color = ZenithEmeraldAccent, fontSize = 14.sp)
+                    Text(text = "➔", color = EarthCamelOchre, fontSize = 14.sp)
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -371,8 +374,8 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFF0F172A))
-                        .border(1.dp, Color(0xFF1E293B), RoundedCornerShape(12.dp))
+                        .background(EarthSurfaceLinen)
+                        .border(1.dp, EarthBorderLinen, RoundedCornerShape(12.dp))
                         .clickable {
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Sachindrapandeyyy"))
                             context.startActivity(intent)
@@ -383,10 +386,10 @@ fun SettingsScreen(
                     Text(text = "🐙", fontSize = 16.sp)
                     Spacer(modifier = Modifier.width(10.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "GitHub Repository & Profile", color = Color(0xFF94A3B8), fontSize = 11.sp)
-                        Text(text = "github.com/Sachindrapandeyyy", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Text(text = "GitHub Repository & Profile", color = EarthTextMuted, fontSize = 11.sp)
+                        Text(text = "github.com/Sachindrapandeyyy", color = EarthTextDark, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     }
-                    Text(text = "➔", color = ZenithEmeraldAccent, fontSize = 14.sp)
+                    Text(text = "➔", color = EarthCamelOchre, fontSize = 14.sp)
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -396,8 +399,8 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFF0F172A))
-                        .border(1.dp, Color(0xFF1E293B), RoundedCornerShape(12.dp))
+                        .background(EarthSurfaceLinen)
+                        .border(1.dp, EarthBorderLinen, RoundedCornerShape(12.dp))
                         .clickable {
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.linkedin.com/in/sachindra-shekhar-pandey-73b45427b/"))
                             context.startActivity(intent)
@@ -408,10 +411,10 @@ fun SettingsScreen(
                     Text(text = "💼", fontSize = 16.sp)
                     Spacer(modifier = Modifier.width(10.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "LinkedIn Profile", color = Color(0xFF94A3B8), fontSize = 11.sp)
-                        Text(text = "Sachindra Shekhar Pandey", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Text(text = "LinkedIn Profile", color = EarthTextMuted, fontSize = 11.sp)
+                        Text(text = "Sachindra Shekhar Pandey", color = EarthTextDark, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     }
-                    Text(text = "➔", color = ZenithEmeraldAccent, fontSize = 14.sp)
+                    Text(text = "➔", color = EarthCamelOchre, fontSize = 14.sp)
                 }
             }
         }
@@ -420,11 +423,11 @@ fun SettingsScreen(
 
         // ABOUT & PRIVACY GUARANTEE
         Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = ZenithNavy),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinenSoft),
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, Color(0xFF1E293B), RoundedCornerShape(16.dp))
+                .border(1.dp, EarthBorderLinen, RoundedCornerShape(18.dp))
         ) {
             Row(
                 modifier = Modifier
@@ -437,17 +440,17 @@ fun SettingsScreen(
                     contentDescription = "Reel Narcotics Logo",
                     modifier = Modifier
                         .size(52.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .border(1.5.dp, Color(0xFF334155), RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(14.dp))
+                        .border(1.dp, EarthBorderLinen, RoundedCornerShape(14.dp))
                 )
                 Spacer(modifier = Modifier.width(14.dp))
                 Column {
-                    Text("Reel Narcotics v2.0.1", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Black)
-                    Text("Break the scroll. Take back your attention.", color = ZenithEmeraldAccent, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Reel Narcotics v2.2.0", color = EarthForestDark, fontSize = 15.sp, fontWeight = FontWeight.Black)
+                    Text("Break the scroll. Take back your attention.", color = EarthForestGreen, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "100% Offline | Zero Telemetry | Zero Accounts\nNo internet permission requested or needed.",
-                        color = Color(0xFF94A3B8),
+                        color = EarthTextMuted,
                         fontSize = 11.sp,
                         lineHeight = 15.sp
                     )
@@ -455,6 +458,6 @@ fun SettingsScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(30.dp))
+        Spacer(modifier = Modifier.height(64.dp))
     }
 }

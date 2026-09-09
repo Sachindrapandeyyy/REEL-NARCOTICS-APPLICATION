@@ -39,13 +39,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.zenith.focus.core.designsystem.SpiderBlue
-import com.zenith.focus.core.designsystem.SpiderBlueAccent
-import com.zenith.focus.core.designsystem.SpiderBorderDark
-import com.zenith.focus.core.designsystem.SpiderCardDark
-import com.zenith.focus.core.designsystem.SpiderRed
-import com.zenith.focus.core.designsystem.SpiderRedAccent
-import com.zenith.focus.core.designsystem.SpiderSurfaceDark
+import com.zenith.focus.core.designsystem.EarthBorderLinen
+import com.zenith.focus.core.designsystem.EarthCamelOchre
+import com.zenith.focus.core.designsystem.EarthForestDark
+import com.zenith.focus.core.designsystem.EarthForestGreen
+import com.zenith.focus.core.designsystem.EarthSurfaceLinen
+import com.zenith.focus.core.designsystem.EarthSurfaceLinenSoft
+import com.zenith.focus.core.designsystem.EarthTextDark
+import com.zenith.focus.core.designsystem.EarthTextMuted
 import com.zenith.focus.domain.model.LockMode
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -106,7 +107,7 @@ fun LockSetupDialog(
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(24.dp),
-            color = SpiderSurfaceDark,
+            color = EarthSurfaceLinenSoft,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
@@ -117,21 +118,22 @@ fun LockSetupDialog(
             ) {
                 Text(
                     text = "🔒 ARM FOCUS LOCK",
-                    color = SpiderBlueAccent,
+                    color = EarthForestGreen,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 1.sp
                 )
                 Text(
                     text = "Lock In Your Focus",
-                    color = Color.White,
+                    color = EarthForestDark,
                     fontSize = 22.sp,
-                    fontWeight = FontWeight.Black
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Serif,
+                    fontWeight = FontWeight.Normal
                 )
 
                 Text(
                     text = "Shorts & Reels will be instantly ejected. You retain full access to essential calls, messages & tools.",
-                    color = Color(0xFF94A3B8),
+                    color = EarthTextMuted,
                     fontSize = 12.sp,
                     lineHeight = 16.sp,
                     modifier = Modifier.padding(top = 4.dp, bottom = 14.dp)
@@ -142,21 +144,21 @@ fun LockSetupDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
-                        .background(SpiderCardDark)
+                        .background(EarthSurfaceLinen)
                         .padding(4.dp)
                 ) {
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(if (!isCustomMode) SpiderBlue else Color.Transparent)
+                            .background(if (!isCustomMode) EarthForestGreen else Color.Transparent)
                             .clickable { isCustomMode = false }
                             .padding(vertical = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "PRESETS",
-                            color = if (!isCustomMode) Color.White else Color(0xFF94A3B8),
+                            color = if (!isCustomMode) Color.White else EarthTextMuted,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Black
                         )
@@ -166,14 +168,14 @@ fun LockSetupDialog(
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(if (isCustomMode) SpiderBlue else Color.Transparent)
+                            .background(if (isCustomMode) EarthForestGreen else Color.Transparent)
                             .clickable { isCustomMode = true }
                             .padding(vertical = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "CUSTOM TIMER ⏱️",
-                            color = if (isCustomMode) Color.White else Color(0xFF94A3B8),
+                            color = if (isCustomMode) Color.White else EarthTextMuted,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Black
                         )
@@ -195,15 +197,15 @@ fun LockSetupDialog(
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(if (isSelected) SpiderBlue else SpiderCardDark)
-                                    .border(1.dp, if (isSelected) SpiderBlueAccent else SpiderBorderDark, RoundedCornerShape(12.dp))
+                                    .background(if (isSelected) EarthForestGreen else EarthSurfaceLinen)
+                                    .border(1.dp, if (isSelected) EarthForestDark else EarthBorderLinen, RoundedCornerShape(12.dp))
                                     .clickable { selectedPreset = preset }
                                     .padding(vertical = 12.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
                                     text = preset.label,
-                                    color = if (isSelected) Color.White else Color(0xFFE2E8F0),
+                                    color = if (isSelected) Color.White else EarthTextDark,
                                     fontSize = 12.sp,
                                     fontWeight = if (isSelected) FontWeight.Black else FontWeight.SemiBold
                                 )
@@ -216,9 +218,9 @@ fun LockSetupDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(18.dp))
-                            .background(SpiderCardDark)
-                            .border(1.dp, SpiderBorderDark, RoundedCornerShape(18.dp))
-                            .padding(14.dp)
+                            .background(EarthSurfaceLinen)
+                            .border(1.dp, EarthBorderLinen, RoundedCornerShape(18.dp))
+                            .padding(10.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -227,115 +229,115 @@ fun LockSetupDialog(
                         ) {
                             // DAYS STEPPER (0 to 90 Days / 3 Months)
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("DAYS", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                Text("DAYS", color = EarthTextMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Box(
                                         modifier = Modifier
-                                            .size(30.dp)
+                                            .size(28.dp)
                                             .clip(CircleShape)
-                                            .background(SpiderSurfaceDark)
+                                            .background(Color.White.copy(alpha = 0.7f))
                                             .clickable { customDays = (customDays - 1).coerceAtLeast(0) },
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text("-", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black)
+                                        Text("-", color = EarthTextDark, fontSize = 15.sp, fontWeight = FontWeight.Black)
                                     }
 
                                     Text(
                                         text = "${customDays}d",
-                                        color = Color.White,
-                                        fontSize = 18.sp,
+                                        color = EarthTextDark,
+                                        fontSize = 15.sp,
                                         fontWeight = FontWeight.Black,
-                                        modifier = Modifier.padding(horizontal = 8.dp)
+                                        modifier = Modifier.padding(horizontal = 4.dp)
                                     )
 
                                     Box(
                                         modifier = Modifier
-                                            .size(30.dp)
+                                            .size(28.dp)
                                             .clip(CircleShape)
-                                            .background(SpiderSurfaceDark)
+                                            .background(Color.White.copy(alpha = 0.7f))
                                             .clickable { customDays = (customDays + 1).coerceAtMost(90) },
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text("+", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black)
+                                        Text("+", color = EarthTextDark, fontSize = 15.sp, fontWeight = FontWeight.Black)
                                     }
                                 }
                             }
 
                             // HOURS STEPPER (0 to 23 Hours)
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("HOURS", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                Text("HOURS", color = EarthTextMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Box(
                                         modifier = Modifier
-                                            .size(30.dp)
+                                            .size(28.dp)
                                             .clip(CircleShape)
-                                            .background(SpiderSurfaceDark)
+                                            .background(Color.White.copy(alpha = 0.7f))
                                             .clickable { customHours = (customHours - 1).coerceAtLeast(0) },
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text("-", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black)
+                                        Text("-", color = EarthTextDark, fontSize = 15.sp, fontWeight = FontWeight.Black)
                                     }
 
                                     Text(
                                         text = "${customHours}h",
-                                        color = Color.White,
-                                        fontSize = 18.sp,
+                                        color = EarthTextDark,
+                                        fontSize = 15.sp,
                                         fontWeight = FontWeight.Black,
-                                        modifier = Modifier.padding(horizontal = 8.dp)
+                                        modifier = Modifier.padding(horizontal = 4.dp)
                                     )
 
                                     Box(
                                         modifier = Modifier
-                                            .size(30.dp)
+                                            .size(28.dp)
                                             .clip(CircleShape)
-                                            .background(SpiderSurfaceDark)
+                                            .background(Color.White.copy(alpha = 0.7f))
                                             .clickable { customHours = (customHours + 1).coerceAtMost(23) },
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text("+", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black)
+                                        Text("+", color = EarthTextDark, fontSize = 15.sp, fontWeight = FontWeight.Black)
                                     }
                                 }
                             }
 
                             // MINUTES STEPPER (0 to 55 Minutes)
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("MINUTES", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                Text("MINUTES", color = EarthTextMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Box(
                                         modifier = Modifier
-                                            .size(30.dp)
+                                            .size(28.dp)
                                             .clip(CircleShape)
-                                            .background(SpiderSurfaceDark)
+                                            .background(Color.White.copy(alpha = 0.7f))
                                             .clickable {
                                                 customMinutes = if (customMinutes <= 0) 55 else customMinutes - 5
                                             },
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text("-", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black)
+                                        Text("-", color = EarthTextDark, fontSize = 15.sp, fontWeight = FontWeight.Black)
                                     }
 
                                     Text(
                                         text = "${customMinutes}m",
-                                        color = Color.White,
-                                        fontSize = 18.sp,
+                                        color = EarthTextDark,
+                                        fontSize = 15.sp,
                                         fontWeight = FontWeight.Black,
-                                        modifier = Modifier.padding(horizontal = 8.dp)
+                                        modifier = Modifier.padding(horizontal = 4.dp)
                                     )
 
                                     Box(
                                         modifier = Modifier
-                                            .size(30.dp)
+                                            .size(28.dp)
                                             .clip(CircleShape)
-                                            .background(SpiderSurfaceDark)
+                                            .background(Color.White.copy(alpha = 0.7f))
                                             .clickable {
                                                 customMinutes = (customMinutes + 5) % 60
                                             },
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text("+", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black)
+                                        Text("+", color = EarthTextDark, fontSize = 15.sp, fontWeight = FontWeight.Black)
                                     }
                                 }
                             }
@@ -353,8 +355,8 @@ fun LockSetupDialog(
                                     modifier = Modifier
                                         .weight(1f)
                                         .clip(RoundedCornerShape(8.dp))
-                                        .background(SpiderSurfaceDark)
-                                        .border(1.dp, SpiderBorderDark, RoundedCornerShape(8.dp))
+                                        .background(Color.White.copy(alpha = 0.6f))
+                                        .border(1.dp, EarthBorderLinen, RoundedCornerShape(8.dp))
                                         .clickable {
                                             customDays = 0
                                             customHours = 0
@@ -363,7 +365,7 @@ fun LockSetupDialog(
                                         .padding(vertical = 6.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text("${mins}m", color = SpiderBlueAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    Text("${mins}m", color = EarthForestGreen, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -377,14 +379,14 @@ fun LockSetupDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(SpiderCardDark)
-                        .border(1.dp, SpiderBorderDark, RoundedCornerShape(12.dp))
+                        .background(EarthSurfaceLinen)
+                        .border(1.dp, EarthBorderLinen, RoundedCornerShape(12.dp))
                         .padding(horizontal = 14.dp, vertical = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "⏳ Target End: $targetTimeFormatted",
-                        color = SpiderBlueAccent,
+                        color = EarthForestGreen,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center
@@ -398,8 +400,8 @@ fun LockSetupDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(SpiderCardDark)
-                        .border(1.dp, SpiderBorderDark, RoundedCornerShape(12.dp))
+                        .background(EarthSurfaceLinen)
+                        .border(1.dp, EarthBorderLinen, RoundedCornerShape(12.dp))
                         .clickable {
                             onStartUntilTomorrow()
                             onDismiss()
@@ -409,7 +411,7 @@ fun LockSetupDialog(
                 ) {
                     Text(
                         text = "🌙 LOCK UNTIL 4:00 AM (TOMORROW)",
-                        color = Color(0xFFE2E8F0),
+                        color = EarthForestDark,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -425,10 +427,10 @@ fun LockSetupDialog(
                     Button(
                         onClick = onDismiss,
                         modifier = Modifier.weight(1f).height(48.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = SpiderCardDark),
+                        colors = ButtonDefaults.buttonColors(containerColor = EarthSurfaceLinen),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("CANCEL", color = Color(0xFF94A3B8), fontWeight = FontWeight.Bold)
+                        Text("CANCEL", color = EarthTextMuted, fontWeight = FontWeight.Bold)
                     }
 
                     Button(
@@ -449,7 +451,7 @@ fun LockSetupDialog(
                             onDismiss()
                         },
                         modifier = Modifier.weight(1f).height(48.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = SpiderBlue),
+                        colors = ButtonDefaults.buttonColors(containerColor = EarthForestGreen),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text("ARM LOCK 🔒", color = Color.White, fontWeight = FontWeight.Black)

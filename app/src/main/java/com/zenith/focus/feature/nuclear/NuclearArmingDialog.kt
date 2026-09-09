@@ -46,18 +46,20 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.zenith.focus.core.designsystem.SpiderBlue
-import com.zenith.focus.core.designsystem.SpiderBlueAccent
-import com.zenith.focus.core.designsystem.SpiderBorderDark
-import com.zenith.focus.core.designsystem.SpiderCardDark
-import com.zenith.focus.core.designsystem.SpiderRed
-import com.zenith.focus.core.designsystem.SpiderRedAccent
-import com.zenith.focus.core.designsystem.SpiderRedDark
-import com.zenith.focus.core.designsystem.SpiderRedDeep
-import com.zenith.focus.core.designsystem.SpiderSurfaceDark
+import com.zenith.focus.core.designsystem.EarthBorderLinen
+import com.zenith.focus.core.designsystem.EarthCamelOchre
+import com.zenith.focus.core.designsystem.EarthCanvasCream
+import com.zenith.focus.core.designsystem.EarthForestDark
+import com.zenith.focus.core.designsystem.EarthForestGreen
+import com.zenith.focus.core.designsystem.EarthSageOlive
+import com.zenith.focus.core.designsystem.EarthSurfaceLinen
+import com.zenith.focus.core.designsystem.EarthSurfaceLinenSoft
+import com.zenith.focus.core.designsystem.EarthTextDark
+import com.zenith.focus.core.designsystem.EarthTextMuted
 import com.zenith.focus.core.time.DateTimeUtils
 import com.zenith.focus.domain.model.ContentCategory
 import com.zenith.focus.receiver.ZenithDeviceAdminReceiver
@@ -120,11 +122,11 @@ fun NuclearArmingDialog(
     }
 
     Dialog(onDismissRequest = {
-        if (step == 0) onDismiss()
+        if (step == 0) onDismiss() else step = 0
     }) {
         Surface(
-            shape = RoundedCornerShape(20.dp),
-            color = SpiderSurfaceDark,
+            shape = RoundedCornerShape(22.dp),
+            color = EarthSurfaceLinenSoft,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
@@ -140,7 +142,7 @@ fun NuclearArmingDialog(
                             modifier = Modifier
                                 .size(28.dp)
                                 .clip(CircleShape)
-                                .background(SpiderRedDeep),
+                                .background(EarthCamelOchre.copy(alpha = 0.2f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(text = "☢️", fontSize = 14.sp)
@@ -148,35 +150,36 @@ fun NuclearArmingDialog(
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             text = "NUCLEAR MODE",
-                            color = SpiderRedAccent,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Black,
+                            color = EarthCamelOchre,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
                         text = "Custom Nuclear Lock",
-                        color = Color.White,
+                        color = EarthForestDark,
                         fontSize = 22.sp,
-                        fontWeight = FontWeight.Black
+                        fontFamily = FontFamily.Serif,
+                        fontWeight = FontWeight.Normal
                     )
 
                     // EXPLANATION CARD
                     Card(
-                        shape = RoundedCornerShape(14.dp),
-                        colors = CardDefaults.cardColors(containerColor = SpiderRedDeep.copy(alpha = 0.6f)),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinen),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 12.dp)
-                            .border(1.dp, SpiderRedDark, RoundedCornerShape(14.dp))
+                            .border(1.dp, EarthCamelOchre.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
                             Text(
                                 text = "STRICT IRREVERSIBLE COMMITMENT:",
-                                color = Color(0xFFFECACA),
+                                color = EarthCamelOchre,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Black,
                                 letterSpacing = 0.5.sp
@@ -187,10 +190,10 @@ fun NuclearArmingDialog(
                                        "• Unselected apps remain accessible for your workflow.\n" +
                                        "• Once armed, the lock CANNOT be stopped early.\n" +
                                        "• Anti-tamper & reboot persistence active for locked items.",
-                                color = Color(0xFFE2E8F0),
-                                fontSize = 11.sp,
+                                color = EarthTextDark,
+                                fontSize = 11.5.sp,
                                 lineHeight = 16.sp,
-                                fontWeight = FontWeight.Medium
+                                fontWeight = FontWeight.Normal
                             )
                         }
                     }
@@ -199,12 +202,12 @@ fun NuclearArmingDialog(
                     val isAdminActive = remember { ZenithDeviceAdminReceiver.isAdminActive(context) }
                     if (!isAdminActive) {
                         Card(
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF451A03)),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinen),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(bottom = 12.dp)
-                                .border(1.dp, Color(0xFFD97706), RoundedCornerShape(12.dp))
+                                .border(1.dp, EarthCamelOchre, RoundedCornerShape(14.dp))
                                 .clickable {
                                     val intent = ZenithDeviceAdminReceiver.createAddAdminIntent(context)
                                     context.startActivity(intent)
@@ -219,14 +222,14 @@ fun NuclearArmingDialog(
                                 Column {
                                     Text(
                                         "UNINSTALL PROTECTION RECOMMENDED",
-                                        color = Color(0xFFFDE68A),
+                                        color = EarthCamelOchre,
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
                                         "Tap to grant Device Admin so the app cannot be uninstalled during this session.",
-                                        color = Color(0xFFFEF3C7),
-                                        fontSize = 10.sp
+                                        color = EarthTextMuted,
+                                        fontSize = 10.5.sp
                                     )
                                 }
                             }
@@ -238,15 +241,15 @@ fun NuclearArmingDialog(
                     // =========================================================
                     Text(
                         text = "CHOOSE WHAT TO LOCK 🛡️",
-                        color = SpiderRedAccent,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Black,
+                        color = EarthForestGreen,
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     )
                     Text(
                         text = "Tap to enable/disable shields for this Nuclear Lock session:",
-                        color = Color(0xFF94A3B8),
-                        fontSize = 11.sp,
+                        color = EarthTextMuted,
+                        fontSize = 11.5.sp,
                         modifier = Modifier.padding(top = 2.dp, bottom = 8.dp)
                     )
 
@@ -266,12 +269,12 @@ fun NuclearArmingDialog(
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(if (isSelected) SpiderRedDeep else SpiderCardDark)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (isSelected) EarthCamelOchre.copy(alpha = 0.15f) else EarthSurfaceLinen)
                                     .border(
                                         1.dp,
-                                        if (isSelected) SpiderRedAccent else SpiderBorderDark,
-                                        RoundedCornerShape(10.dp)
+                                        if (isSelected) EarthCamelOchre else EarthBorderLinen,
+                                        RoundedCornerShape(12.dp)
                                     )
                                     .clickable {
                                         val newSet = selectedCategories.toMutableSet()
@@ -288,7 +291,7 @@ fun NuclearArmingDialog(
                                         }
                                         selectedCategories = newSet
                                     }
-                                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                                    .padding(horizontal = 12.dp, vertical = 10.dp)
                             ) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -300,17 +303,17 @@ fun NuclearArmingDialog(
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(
                                             text = title,
-                                            color = if (isSelected) Color.White else Color(0xFF94A3B8),
-                                            fontSize = 12.sp,
+                                            color = if (isSelected) EarthForestDark else EarthTextMuted,
+                                            fontSize = 12.5.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                                         )
                                     }
 
                                     Text(
                                         text = if (isSelected) "LOCK 🔒" else "OPEN 🔓",
-                                        color = if (isSelected) SpiderRedAccent else Color(0xFF64748B),
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Black
+                                        color = if (isSelected) EarthCamelOchre else EarthTextMuted,
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.Bold
                                     )
                                 }
                             }
@@ -324,9 +327,9 @@ fun NuclearArmingDialog(
                     // =========================================================
                     Text(
                         text = "SELECT COMMITMENT DURATION",
-                        color = Color(0xFF94A3B8),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Black,
+                        color = EarthForestGreen,
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -346,10 +349,10 @@ fun NuclearArmingDialog(
                                     .weight(1f)
                                     .height(40.dp)
                                     .clip(RoundedCornerShape(10.dp))
-                                    .background(if (isSel1) SpiderRed else SpiderCardDark)
+                                    .background(if (isSel1) EarthCamelOchre else EarthSurfaceLinen)
                                     .border(
                                         1.dp,
-                                        if (isSel1) SpiderRedAccent else SpiderBorderDark,
+                                        if (isSel1) EarthCamelOchre else EarthBorderLinen,
                                         RoundedCornerShape(10.dp)
                                     )
                                     .clickable {
@@ -360,8 +363,8 @@ fun NuclearArmingDialog(
                             ) {
                                 Text(
                                     text = item1.first,
-                                    color = if (isSel1) Color.White else Color(0xFFE2E8F0),
-                                    fontSize = 11.sp,
+                                    color = if (isSel1) Color.White else EarthTextDark,
+                                    fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -374,10 +377,10 @@ fun NuclearArmingDialog(
                                         .weight(1f)
                                         .height(40.dp)
                                         .clip(RoundedCornerShape(10.dp))
-                                        .background(if (isSel2) SpiderRed else SpiderCardDark)
+                                        .background(if (isSel2) EarthCamelOchre else EarthSurfaceLinen)
                                         .border(
                                             1.dp,
-                                            if (isSel2) SpiderRedAccent else SpiderBorderDark,
+                                            if (isSel2) EarthCamelOchre else EarthBorderLinen,
                                             RoundedCornerShape(10.dp)
                                         )
                                         .clickable {
@@ -388,8 +391,8 @@ fun NuclearArmingDialog(
                                 ) {
                                     Text(
                                         text = item2.first,
-                                        color = if (isSel2) Color.White else Color(0xFFE2E8F0),
-                                        fontSize = 11.sp,
+                                        color = if (isSel2) Color.White else EarthTextDark,
+                                        fontSize = 11.5.sp,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
@@ -407,8 +410,8 @@ fun NuclearArmingDialog(
                             .fillMaxWidth()
                             .height(42.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(if (isCustomPickerOpen) SpiderBlue else SpiderCardDark)
-                            .border(1.dp, if (isCustomPickerOpen) SpiderBlueAccent else SpiderBorderDark, RoundedCornerShape(10.dp))
+                            .background(if (isCustomPickerOpen) EarthForestGreen else EarthSurfaceLinen)
+                            .border(1.dp, if (isCustomPickerOpen) EarthForestGreen else EarthBorderLinen, RoundedCornerShape(10.dp))
                             .clickable {
                                 isCustomPickerOpen = !isCustomPickerOpen
                                 if (isCustomPickerOpen) {
@@ -420,9 +423,9 @@ fun NuclearArmingDialog(
                     ) {
                         Text(
                             text = if (isCustomPickerOpen) "CUSTOM DURATION ACTIVE ⏱️" else "SET CUSTOM DURATION (UP TO 3 MONTHS) ⏱️",
-                            color = Color.White,
+                            color = if (isCustomPickerOpen) Color.White else EarthForestDark,
                             fontSize = 11.sp,
-                            fontWeight = FontWeight.Black
+                            fontWeight = FontWeight.Bold
                         )
                     }
 
@@ -430,10 +433,10 @@ fun NuclearArmingDialog(
                         Spacer(modifier = Modifier.height(8.dp))
                         Card(
                             shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(containerColor = SpiderCardDark),
+                            colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinen),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .border(1.dp, SpiderBorderDark, RoundedCornerShape(14.dp))
+                                .border(1.dp, EarthBorderLinen, RoundedCornerShape(14.dp))
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Row(
@@ -443,14 +446,14 @@ fun NuclearArmingDialog(
                                 ) {
                                     // DAYS (0-90)
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text("DAYS", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                        Text("DAYS", color = EarthTextMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Box(
                                                 modifier = Modifier
                                                     .size(28.dp)
                                                     .clip(CircleShape)
-                                                    .background(SpiderSurfaceDark)
+                                                    .background(Color.White.copy(alpha = 0.7f))
                                                     .clickable {
                                                         if (customDays > 0) {
                                                             customDays--
@@ -460,11 +463,11 @@ fun NuclearArmingDialog(
                                                     },
                                                 contentAlignment = Alignment.Center
                                             ) {
-                                                Text("-", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                                Text("-", color = EarthTextDark, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                             }
                                             Text(
                                                 text = "${customDays}d",
-                                                color = Color.White,
+                                                color = EarthTextDark,
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 14.sp,
                                                 modifier = Modifier.padding(horizontal = 6.dp)
@@ -473,7 +476,7 @@ fun NuclearArmingDialog(
                                                 modifier = Modifier
                                                     .size(28.dp)
                                                     .clip(CircleShape)
-                                                    .background(SpiderSurfaceDark)
+                                                    .background(Color.White.copy(alpha = 0.7f))
                                                     .clickable {
                                                         if (customDays < 90) {
                                                             customDays++
@@ -483,21 +486,21 @@ fun NuclearArmingDialog(
                                                     },
                                                 contentAlignment = Alignment.Center
                                             ) {
-                                                Text("+", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                                Text("+", color = EarthTextDark, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                             }
                                         }
                                     }
 
                                     // HOURS (0-23)
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text("HOURS", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                        Text("HOURS", color = EarthTextMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Box(
                                                 modifier = Modifier
                                                     .size(28.dp)
                                                     .clip(CircleShape)
-                                                    .background(SpiderSurfaceDark)
+                                                    .background(Color.White.copy(alpha = 0.7f))
                                                     .clickable {
                                                         if (customHours > 0) {
                                                             customHours--
@@ -507,11 +510,11 @@ fun NuclearArmingDialog(
                                                     },
                                                 contentAlignment = Alignment.Center
                                             ) {
-                                                Text("-", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                                Text("-", color = EarthTextDark, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                             }
                                             Text(
                                                 text = "${customHours}h",
-                                                color = Color.White,
+                                                color = EarthTextDark,
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 14.sp,
                                                 modifier = Modifier.padding(horizontal = 6.dp)
@@ -520,7 +523,7 @@ fun NuclearArmingDialog(
                                                 modifier = Modifier
                                                     .size(28.dp)
                                                     .clip(CircleShape)
-                                                    .background(SpiderSurfaceDark)
+                                                    .background(Color.White.copy(alpha = 0.7f))
                                                     .clickable {
                                                         if (customHours < 23) {
                                                             customHours++
@@ -530,21 +533,21 @@ fun NuclearArmingDialog(
                                                     },
                                                 contentAlignment = Alignment.Center
                                             ) {
-                                                Text("+", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                                Text("+", color = EarthTextDark, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                             }
                                         }
                                     }
 
-                                    // MINUTES (0-55) - BUG FIX: NO 15-MINUTE COERCION
+                                    // MINUTES (0-55)
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text("MINUTES", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                        Text("MINUTES", color = EarthTextMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Box(
                                                 modifier = Modifier
                                                     .size(28.dp)
                                                     .clip(CircleShape)
-                                                    .background(SpiderSurfaceDark)
+                                                    .background(Color.White.copy(alpha = 0.7f))
                                                     .clickable {
                                                         if (customMinutes >= 5) {
                                                             customMinutes -= 5
@@ -554,11 +557,11 @@ fun NuclearArmingDialog(
                                                     },
                                                 contentAlignment = Alignment.Center
                                             ) {
-                                                Text("-", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                                Text("-", color = EarthTextDark, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                             }
                                             Text(
                                                 text = "${customMinutes}m",
-                                                color = Color.White,
+                                                color = EarthTextDark,
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 14.sp,
                                                 modifier = Modifier.padding(horizontal = 6.dp)
@@ -567,7 +570,7 @@ fun NuclearArmingDialog(
                                                 modifier = Modifier
                                                     .size(28.dp)
                                                     .clip(CircleShape)
-                                                    .background(SpiderSurfaceDark)
+                                                    .background(Color.White.copy(alpha = 0.7f))
                                                     .clickable {
                                                         if (customMinutes < 55) {
                                                             customMinutes += 5
@@ -577,7 +580,7 @@ fun NuclearArmingDialog(
                                                     },
                                                 contentAlignment = Alignment.Center
                                             ) {
-                                                Text("+", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                                Text("+", color = EarthTextDark, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                             }
                                         }
                                     }
@@ -593,14 +596,14 @@ fun NuclearArmingDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .background(SpiderCardDark)
-                            .border(1.dp, SpiderBorderDark, RoundedCornerShape(12.dp))
+                            .background(EarthSurfaceLinen)
+                            .border(1.dp, EarthBorderLinen, RoundedCornerShape(12.dp))
                             .padding(12.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "⏳ Target End: $targetTimeFormatted",
-                            color = SpiderBlueAccent,
+                            color = EarthCamelOchre,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -619,7 +622,7 @@ fun NuclearArmingDialog(
                                 .height(48.dp),
                             shape = RoundedCornerShape(14.dp)
                         ) {
-                            Text(text = "CANCEL", color = Color(0xFF94A3B8), fontWeight = FontWeight.Bold)
+                            Text(text = "CANCEL", color = EarthTextMuted, fontWeight = FontWeight.Bold)
                         }
 
                         val canProceed = selectedCategories.isNotEmpty()
@@ -634,7 +637,7 @@ fun NuclearArmingDialog(
                             modifier = Modifier
                                 .weight(1f)
                                 .height(48.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = SpiderRed),
+                            colors = ButtonDefaults.buttonColors(containerColor = EarthCamelOchre),
                             shape = RoundedCornerShape(14.dp)
                         ) {
                             Text(
@@ -652,7 +655,7 @@ fun NuclearArmingDialog(
                             modifier = Modifier
                                 .size(28.dp)
                                 .clip(CircleShape)
-                                .background(SpiderRedDeep),
+                                .background(EarthCamelOchre.copy(alpha = 0.2f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(text = "☢️", fontSize = 14.sp)
@@ -660,9 +663,9 @@ fun NuclearArmingDialog(
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             text = "FINAL CONFIRMATION",
-                            color = SpiderRedAccent,
+                            color = EarthCamelOchre,
                             fontSize = 13.sp,
-                            fontWeight = FontWeight.Black,
+                            fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
                         )
                     }
@@ -671,20 +674,20 @@ fun NuclearArmingDialog(
 
                     Card(
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = SpiderCardDark),
+                        colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinen),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .border(1.dp, SpiderBorderDark, RoundedCornerShape(16.dp))
+                            .border(1.dp, EarthBorderLinen, RoundedCornerShape(16.dp))
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text(text = "Commitment Duration:", color = Color(0xFF94A3B8), fontSize = 12.sp)
+                                Text(text = "Commitment Duration:", color = EarthTextMuted, fontSize = 12.sp)
                                 Text(
                                     text = DateTimeUtils.formatRemaining(selectedDurationMillis),
-                                    color = Color.White,
+                                    color = EarthForestDark,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -694,10 +697,10 @@ fun NuclearArmingDialog(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text(text = "Ends at:", color = Color(0xFF94A3B8), fontSize = 12.sp)
+                                Text(text = "Ends at:", color = EarthTextMuted, fontSize = 12.sp)
                                 Text(
                                     text = targetTimeFormatted,
-                                    color = SpiderBlueAccent,
+                                    color = EarthCamelOchre,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -705,15 +708,15 @@ fun NuclearArmingDialog(
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = "LOCKED SHIELDS (${selectedCategories.size}):",
-                                color = SpiderRedAccent,
+                                color = EarthForestGreen,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Black
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = selectedCategories.joinToString(", ") { it.displayName },
-                                color = Color(0xFFE2E8F0),
-                                fontSize = 11.sp
+                                color = EarthTextDark,
+                                fontSize = 11.5.sp
                             )
                         }
                     }
@@ -722,7 +725,7 @@ fun NuclearArmingDialog(
 
                     Text(
                         text = "⚠️ Once activated, you CANNOT cancel or unlock until the timer reaches zero. Hold below to seal your focus.",
-                        color = Color(0xFFFECACA),
+                        color = EarthCamelOchre,
                         fontSize = 11.sp,
                         lineHeight = 16.sp,
                         textAlign = TextAlign.Center,
@@ -748,7 +751,7 @@ fun NuclearArmingDialog(
                             .height(44.dp),
                         shape = RoundedCornerShape(14.dp)
                     ) {
-                        Text(text = "BACK TO DURATION & SHIELDS", color = Color(0xFF94A3B8), fontSize = 11.sp)
+                        Text(text = "BACK TO DURATION & SHIELDS", color = EarthTextMuted, fontSize = 11.sp)
                     }
                 }
             }
@@ -795,8 +798,8 @@ fun HoldToActivateButton(
             .fillMaxWidth()
             .height(60.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(SpiderRedDeep)
-            .border(2.dp, if (isHolding) SpiderRedAccent else SpiderRedDark, RoundedCornerShape(14.dp))
+            .background(EarthCamelOchre.copy(alpha = 0.2f))
+            .border(2.dp, if (isHolding) EarthCamelOchre else EarthBorderLinen, RoundedCornerShape(14.dp))
             .pointerInput(Unit) {
                 awaitEachGesture {
                     awaitFirstDown(requireUnconsumed = false)
@@ -814,7 +817,7 @@ fun HoldToActivateButton(
             modifier = Modifier
                 .fillMaxWidth(animatedProgress)
                 .height(60.dp)
-                .background(SpiderRed.copy(alpha = 0.85f))
+                .background(EarthCamelOchre)
                 .align(Alignment.CenterStart)
         )
 
@@ -824,7 +827,7 @@ fun HoldToActivateButton(
         ) {
             Text(
                 text = if (isHolding) "KEEP HOLDING... (${(animatedProgress * 100).toInt()}%)" else "HOLD TO ACTIVATE ☢️",
-                color = Color.White,
+                color = if (animatedProgress > 0.4f) Color.White else EarthForestDark,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Black,
                 letterSpacing = 1.sp
