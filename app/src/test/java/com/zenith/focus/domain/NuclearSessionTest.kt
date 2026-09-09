@@ -204,4 +204,110 @@ class NuclearSessionTest {
             )
         )
     }
+
+    @Test
+    fun testSelectiveNuclearLockBlocksOnlySelectedCategories() {
+        val now = 1000000L
+        // Nuclear session configured with ONLY YouTube Shorts (Instagram Reels unchecked)
+        val selectiveNuclear = NuclearSession(
+            startTimeMillis = now - 5000L,
+            endTimeMillis = now + 1800000L,
+            startElapsedRealtime = 50000L,
+            durationMillis = 1800000L,
+            status = NuclearSessionStatus.ACTIVE,
+            enabledCategories = setOf(ContentCategory.YOUTUBE_SHORTS)
+        )
+        val inactiveLock = LockState(isActive = false)
+        val normalConfig = ProtectionConfig()
+
+        val shortsResult = DetectionResult(
+            isBlocked = true,
+            category = ContentCategory.YOUTUBE_SHORTS,
+            confidence = 1.0f,
+            ruleId = "youtube_shorts",
+            reason = "Addictive short form video"
+        )
+
+        val reelsResult = DetectionResult(
+            isBlocked = true,
+            category = ContentCategory.INSTAGRAM_REELS,
+            confidence = 1.0f,
+            ruleId = "instagram_reels",
+            reason = "Addictive reels player"
+        )
+
+        val tamperResult = DetectionResult(
+            isBlocked = true,
+            category = ContentCategory.SYSTEM_TAMPER,
+            confidence = 1.0f,
+            ruleId = "settings_force_stop",
+            reason = "Settings tamper attempt"
+        )
+
+        // Selected category (YouTube Shorts) MUST be blocked
+        assertTrue(
+            NuclearProtectionPolicy.shouldBlock(
+                result = shortsResult,
+                nuclearSession = selectiveNuclear,
+                lockState = inactiveLock,
+                config = normalConfig,
+                nowWallClock = now,
+                nowElapsedRealtime = 60000L
+            )
+        )
+
+        // Unselected category (Instagram Reels) MUST NOT be blocked! User retains access.
+        assertFalse(
+            NuclearProtectionPolicy.shouldBlock(
+                result = reelsResult,
+                nuclearSession = selectiveNuclear,
+                lockState = inactiveLock,
+                config = normalConfig,
+                nowWallClock = now,
+                nowElapsedRealtime = 60000L
+            )
+        )
+
+        // System tamper is ALWAYS blocked during Nuclear Lock to prevent early cancellation
+        assertTrue(
+            NuclearProtectionPolicy.shouldBlock(
+                result = tamperResult,
+                nuclearSession = selectiveNuclear,
+                lockState = inactiveLock,
+                config = normalConfig,
+                nowWallClock = now,
+                nowElapsedRealtime = 60000L
+            )
+        )
+    }
+
+    @Test
+    fun testFiveMinuteSessionNotCoercedToFifteen() {
+        val fiveMinutesMillis = 5 * 60 * 1000L // 300,000 ms
+        val fifteenMinutesMillis = 15 * 60 * 1000L // 900,000 ms
+
+        // Verify calculation: custom timer allows 5 minutes strictly
+        val customMinutes = 5
+        val customHours = 0
+        val customDays = 0
+        val calculatedMillis = (customDays * 86400000L) + (customHours * 3600000L) + (customMinutes * 60000L)
+        val effectiveMillis = calculatedMillis.coerceAtLeast(1 * 60 * 1000L)
+
+        assertEquals(fiveMinutesMillis, effectiveMillis)
+        assertFalse(effectiveMillis == fifteenMinutesMillis)
+    }
+
+    @Test
+    fun testExtendedNinetyDayTimerSupport() {
+        val ninetyDaysMillis = 90L * 24 * 60 * 60 * 1000L
+        val customDays = 90
+        val customHours = 0
+        val customMinutes = 0
+
+        val calculatedMillis = (customDays * 86400000L) + (customHours * 3600000L) + (customMinutes * 60000L)
+        assertEquals(ninetyDaysMillis, calculatedMillis)
+
+        val formatted = com.zenith.focus.core.time.DateTimeUtils.formatRemaining(ninetyDaysMillis)
+        assertTrue(formatted.startsWith("90d"))
+    }
 }

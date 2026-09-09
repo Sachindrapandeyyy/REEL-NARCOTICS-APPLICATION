@@ -8,6 +8,7 @@ import android.view.accessibility.AccessibilityManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -318,9 +319,9 @@ class MainActivity : ComponentActivity() {
                                                 showNuclearArmingDialog = false
                                             }
                                         },
-                                        onArmSession = { durationMillis ->
+                                        onArmSession = { durationMillis, enabledCategories ->
                                             coroutineScope.launch {
-                                                nuclearRepo.armSession(durationMillis, todayTotal)
+                                                nuclearRepo.armSession(durationMillis, todayTotal, enabledCategories)
                                             }
                                         },
                                         onConfirmActivation = {
@@ -376,12 +377,17 @@ fun ZenithBottomNavigation(
     val items = listOf("HOME", "SHIELD", "ANALYTICS", "SETTINGS")
 
     Surface(
-        color = ZenithNavy,
+        color = com.zenith.focus.core.designsystem.SpiderStealthBg,
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .border(
+                    width = 1.dp,
+                    color = com.zenith.focus.core.designsystem.SpiderBorderDark,
+                    shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)
+                )
                 .padding(vertical = 12.dp, horizontal = 16.dp),
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
@@ -390,18 +396,23 @@ fun ZenithBottomNavigation(
                 val isSelected = selectedTab == index
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(if (isSelected) ZenithNavyLight else Color.Transparent)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(if (isSelected) com.zenith.focus.core.designsystem.SpiderCardDark else Color.Transparent)
+                        .border(
+                            1.dp,
+                            if (isSelected) com.zenith.focus.core.designsystem.SpiderRedDark.copy(alpha = 0.6f) else Color.Transparent,
+                            RoundedCornerShape(14.dp)
+                        )
                         .clickable { onTabSelected(index) }
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = title,
-                        color = if (isSelected) ZenithEmeraldAccent else Color(0xFF64748B),
+                        color = if (isSelected) com.zenith.focus.core.designsystem.SpiderRedAccent else Color(0xFF64748B),
                         fontSize = 11.sp,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        letterSpacing = 0.5.sp
+                        fontWeight = if (isSelected) FontWeight.Black else FontWeight.Medium,
+                        letterSpacing = 0.8.sp
                     )
                 }
             }

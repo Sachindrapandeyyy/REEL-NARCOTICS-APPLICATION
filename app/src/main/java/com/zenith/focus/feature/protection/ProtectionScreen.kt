@@ -154,7 +154,7 @@ fun ProtectionScreen(
         ProtectionToggleCard(
             title = "YouTube Shorts",
             subtitle = "Instantly ejects to Home Screen if Shorts button or reel player is opened",
-            isChecked = if (isNuclearActive) true else config.blockYouTubeShorts,
+            isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.YOUTUBE_SHORTS) else config.blockYouTubeShorts,
             enabled = !isNuclearActive,
             onCheckedChange = { onToggleCategory(ContentCategory.YOUTUBE_SHORTS, it) }
         )
@@ -164,7 +164,7 @@ fun ProtectionScreen(
         ProtectionToggleCard(
             title = "Instagram Reels",
             subtitle = "Instantly ejects to Home Screen if Reels tab or clips player is opened",
-            isChecked = if (isNuclearActive) true else config.blockInstagramReels,
+            isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.INSTAGRAM_REELS) else config.blockInstagramReels,
             enabled = !isNuclearActive,
             onCheckedChange = { onToggleCategory(ContentCategory.INSTAGRAM_REELS, it) }
         )
@@ -174,7 +174,7 @@ fun ProtectionScreen(
         ProtectionToggleCard(
             title = "Snapchat Spotlight",
             subtitle = "Instantly ejects if Spotlight vertical swipe feed is opened",
-            isChecked = if (isNuclearActive) true else config.blockSnapchatSpotlight,
+            isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.SNAPCHAT_SPOTLIGHT) else config.blockSnapchatSpotlight,
             enabled = !isNuclearActive,
             onCheckedChange = { onToggleCategory(ContentCategory.SNAPCHAT_SPOTLIGHT, it) }
         )
@@ -184,7 +184,7 @@ fun ProtectionScreen(
         ProtectionToggleCard(
             title = "Facebook Reels",
             subtitle = "Instantly ejects if Facebook Reels player or story reel is opened",
-            isChecked = if (isNuclearActive) true else config.blockFacebookReels,
+            isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.FACEBOOK_REELS) else config.blockFacebookReels,
             enabled = !isNuclearActive,
             onCheckedChange = { onToggleCategory(ContentCategory.FACEBOOK_REELS, it) }
         )
@@ -194,7 +194,7 @@ fun ProtectionScreen(
         ProtectionToggleCard(
             title = "TikTok App",
             subtitle = "Completely blocks TikTok app launch & swipe feed",
-            isChecked = if (isNuclearActive) true else config.blockTikTok,
+            isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.TIKTOK) else config.blockTikTok,
             enabled = !isNuclearActive,
             onCheckedChange = { onToggleCategory(ContentCategory.TIKTOK, it) }
         )
@@ -204,7 +204,7 @@ fun ProtectionScreen(
         // ADULT & EXPLICIT PROTECTION
         Text(
             text = "ADULT & EXPLICIT CONTENT",
-            color = Color(0xFFF43F5E),
+            color = com.zenith.focus.core.designsystem.SpiderRedAccent,
             fontSize = 12.sp,
             fontWeight = FontWeight.Black,
             letterSpacing = 1.sp
@@ -214,7 +214,7 @@ fun ProtectionScreen(
         ProtectionToggleCard(
             title = "Adult Web Domains",
             subtitle = "Blocks adult websites across Chrome, Firefox, Brave, Samsung Internet & Edge",
-            isChecked = if (isNuclearActive) true else config.blockAdultWebsites,
+            isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.ADULT_WEBSITE) else config.blockAdultWebsites,
             enabled = !isNuclearActive,
             onCheckedChange = { onToggleCategory(ContentCategory.ADULT_WEBSITE, it) }
         )

@@ -1,8 +1,6 @@
 package com.zenith.focus.feature.nuclear
 
 import android.view.HapticFeedbackConstants
-import com.zenith.focus.receiver.ZenithDeviceAdminReceiver
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -28,8 +26,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -40,7 +36,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,18 +49,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.zenith.focus.core.designsystem.ZenithAlabaster
-import com.zenith.focus.core.designsystem.ZenithBurgundy
-import com.zenith.focus.core.designsystem.ZenithBurgundyDeep
-import com.zenith.focus.core.designsystem.ZenithCardDark
-import com.zenith.focus.core.designsystem.ZenithEmerald
-import com.zenith.focus.core.designsystem.ZenithEmeraldAccent
-import com.zenith.focus.core.designsystem.ZenithNavy
-import com.zenith.focus.core.designsystem.ZenithNavyDark
+import com.zenith.focus.core.designsystem.SpiderBlue
+import com.zenith.focus.core.designsystem.SpiderBlueAccent
+import com.zenith.focus.core.designsystem.SpiderBorderDark
+import com.zenith.focus.core.designsystem.SpiderCardDark
+import com.zenith.focus.core.designsystem.SpiderRed
+import com.zenith.focus.core.designsystem.SpiderRedAccent
+import com.zenith.focus.core.designsystem.SpiderRedDark
+import com.zenith.focus.core.designsystem.SpiderRedDeep
+import com.zenith.focus.core.designsystem.SpiderSurfaceDark
 import com.zenith.focus.core.time.DateTimeUtils
-import kotlinx.coroutines.Job
+import com.zenith.focus.domain.model.ContentCategory
+import com.zenith.focus.receiver.ZenithDeviceAdminReceiver
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -73,13 +69,28 @@ import java.util.Locale
 @Composable
 fun NuclearArmingDialog(
     onDismiss: () -> Unit,
-    onArmSession: (durationMillis: Long) -> Unit,
+    onArmSession: (durationMillis: Long, enabledCategories: Set<ContentCategory>) -> Unit,
     onConfirmActivation: () -> Unit
 ) {
-    var step by remember { mutableIntStateOf(0) } // 0: Warning & Duration, 1: Ready & Hold to Activate
+    var step by remember { mutableIntStateOf(0) } // 0: Config & Shields, 1: Ready & Hold to Activate
     var selectedDurationMillis by remember { mutableStateOf(2 * 60 * 60 * 1000L) } // default 2 hours
 
-    // Custom Hours & Minutes
+    // Selective Nuclear Lock Shields: User decides what to lock
+    var selectedCategories by remember {
+        mutableStateOf(
+            setOf(
+                ContentCategory.YOUTUBE_SHORTS,
+                ContentCategory.INSTAGRAM_REELS,
+                ContentCategory.FACEBOOK_REELS,
+                ContentCategory.SNAPCHAT_SPOTLIGHT,
+                ContentCategory.ADULT_WEBSITE,
+                ContentCategory.ADULT_KEYWORD
+            )
+        )
+    }
+
+    // Extended Custom Timer: Days (0-90), Hours (0-23), Minutes (0-55)
+    var customDays by remember { mutableIntStateOf(0) }
     var customHours by remember { mutableIntStateOf(2) }
     var customMinutes by remember { mutableIntStateOf(0) }
     var isCustomPickerOpen by remember { mutableStateOf(false) }
@@ -90,43 +101,46 @@ fun NuclearArmingDialog(
 
     val durations = remember {
         listOf(
+            "5 MIN" to (5 * 60 * 1000L),
             "15 MIN" to (15 * 60 * 1000L),
             "30 MIN" to (30 * 60 * 1000L),
             "1 HOUR" to (60 * 60 * 1000L),
             "2 HOURS" to (2 * 60 * 60 * 1000L),
             "6 HOURS" to (6 * 60 * 60 * 1000L),
-            "12 HOURS" to (12 * 60 * 60 * 1000L),
-            "24 HOURS" to (24 * 60 * 60 * 1000L)
+            "24 HOURS" to (24 * 60 * 60 * 1000L),
+            "7 DAYS" to (7 * 24 * 60 * 60 * 1000L),
+            "30 DAYS (1 MO)" to (30 * 24 * 60 * 60 * 1000L),
+            "90 DAYS (3 MO)" to (90 * 24 * 60 * 60 * 1000L)
         )
     }
 
     val targetTimeFormatted = remember(selectedDurationMillis) {
         val target = System.currentTimeMillis() + selectedDurationMillis
-        SimpleDateFormat("h:mm a (MMM d)", Locale.getDefault()).format(Date(target))
+        SimpleDateFormat("h:mm a (MMM d, yyyy)", Locale.getDefault()).format(Date(target))
     }
 
     Dialog(onDismissRequest = {
         if (step == 0) onDismiss()
     }) {
         Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = ZenithNavy,
+            shape = RoundedCornerShape(20.dp),
+            color = SpiderSurfaceDark,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(scrollState)
-                    .padding(24.dp)
+                    .padding(22.dp)
             ) {
                 if (step == 0) {
-                    // STEP 1: WARNING & DURATION SELECTION
+                    // STEP 1: WARNING, SELECTIVE SHIELDS & DURATION SELECTION
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
                                 .size(28.dp)
                                 .clip(CircleShape)
-                                .background(ZenithBurgundyDeep),
+                                .background(SpiderRedDeep),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(text = "☢️", fontSize = 14.sp)
@@ -134,7 +148,7 @@ fun NuclearArmingDialog(
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             text = "NUCLEAR MODE",
-                            color = Color(0xFFF43F5E),
+                            color = SpiderRedAccent,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Black,
                             letterSpacing = 1.sp
@@ -144,46 +158,44 @@ fun NuclearArmingDialog(
                     Spacer(modifier = Modifier.height(10.dp))
 
                     Text(
-                        text = "Irreversible Focus Commitment",
+                        text = "Custom Nuclear Lock",
                         color = Color.White,
-                        fontSize = 20.sp,
+                        fontSize = 22.sp,
                         fontWeight = FontWeight.Black
                     )
 
                     // EXPLANATION CARD
                     Card(
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = ZenithBurgundyDeep.copy(alpha = 0.5f)),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = SpiderRedDeep.copy(alpha = 0.6f)),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 12.dp)
-                            .border(1.dp, ZenithBurgundy, RoundedCornerShape(16.dp))
+                            .border(1.dp, SpiderRedDark, RoundedCornerShape(14.dp))
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
+                        Column(modifier = Modifier.padding(14.dp)) {
                             Text(
-                                text = "YOU ARE COMMITTING TO THIS SESSION:",
+                                text = "STRICT IRREVERSIBLE COMMITMENT:",
                                 color = Color(0xFFFECACA),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Black,
                                 letterSpacing = 0.5.sp
                             )
-                            Spacer(modifier = Modifier.height(6.dp))
+                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "• You CANNOT turn Nuclear Mode off once started.\n" +
-                                       "• You CANNOT shorten or pause the timer.\n" +
-                                       "• All addictive feeds will remain 100% blocked.\n" +
-                                       "• Force closing or reopening will NOT cancel it.\n" +
-                                       "• Deleting or tampering with the app is blocked.\n" +
-                                       "• Reboots will NOT bypass it.\n" +
-                                       "• Ends automatically when the timer expires.",
+                                text = "• You choose what to lock below. Selected feeds are 100% blocked.\n" +
+                                       "• Unselected apps remain accessible for your workflow.\n" +
+                                       "• Once armed, the lock CANNOT be stopped early.\n" +
+                                       "• Anti-tamper & reboot persistence active for locked items.",
                                 color = Color(0xFFE2E8F0),
-                                fontSize = 12.sp,
-                                lineHeight = 18.sp,
+                                fontSize = 11.sp,
+                                lineHeight = 16.sp,
                                 fontWeight = FontWeight.Medium
                             )
                         }
                     }
 
+                    // DEVICE ADMIN NOTICE
                     val isAdminActive = remember { ZenithDeviceAdminReceiver.isAdminActive(context) }
                     if (!isAdminActive) {
                         Card(
@@ -214,39 +226,105 @@ fun NuclearArmingDialog(
                                     Text(
                                         "Tap to grant Device Admin so the app cannot be uninstalled during this session.",
                                         color = Color(0xFFFEF3C7),
-                                        fontSize = 11.sp
+                                        fontSize = 10.sp
                                     )
                                 }
                             }
                         }
-                    } else {
-                        Card(
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF064E3B)),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 12.dp)
-                                .border(1.dp, ZenithEmeraldAccent.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(10.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                    }
+
+                    // =========================================================
+                    // FEATURE 1: SELECTIVE NUCLEAR SHIELDS
+                    // =========================================================
+                    Text(
+                        text = "CHOOSE WHAT TO LOCK 🛡️",
+                        color = SpiderRedAccent,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.sp
+                    )
+                    Text(
+                        text = "Tap to enable/disable shields for this Nuclear Lock session:",
+                        color = Color(0xFF94A3B8),
+                        fontSize = 11.sp,
+                        modifier = Modifier.padding(top = 2.dp, bottom = 8.dp)
+                    )
+
+                    val shieldOptions = listOf(
+                        Triple(ContentCategory.YOUTUBE_SHORTS, "YouTube Shorts", "🎬"),
+                        Triple(ContentCategory.INSTAGRAM_REELS, "Instagram Reels", "📸"),
+                        Triple(ContentCategory.FACEBOOK_REELS, "Facebook Reels", "📘"),
+                        Triple(ContentCategory.SNAPCHAT_SPOTLIGHT, "Snapchat Spotlight", "👻"),
+                        Triple(ContentCategory.ADULT_WEBSITE, "Adult & Explicit Sites", "🔞")
+                    )
+
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        shieldOptions.forEach { (category, title, icon) ->
+                            val isSelected = selectedCategories.contains(category) ||
+                                (category == ContentCategory.ADULT_WEBSITE && selectedCategories.contains(ContentCategory.ADULT_KEYWORD))
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(if (isSelected) SpiderRedDeep else SpiderCardDark)
+                                    .border(
+                                        1.dp,
+                                        if (isSelected) SpiderRedAccent else SpiderBorderDark,
+                                        RoundedCornerShape(10.dp)
+                                    )
+                                    .clickable {
+                                        val newSet = selectedCategories.toMutableSet()
+                                        if (isSelected) {
+                                            newSet.remove(category)
+                                            if (category == ContentCategory.ADULT_WEBSITE) {
+                                                newSet.remove(ContentCategory.ADULT_KEYWORD)
+                                            }
+                                        } else {
+                                            newSet.add(category)
+                                            if (category == ContentCategory.ADULT_WEBSITE) {
+                                                newSet.add(ContentCategory.ADULT_KEYWORD)
+                                            }
+                                        }
+                                        selectedCategories = newSet
+                                    }
+                                    .padding(horizontal = 12.dp, vertical = 8.dp)
                             ) {
-                                Text("🛡️", fontSize = 14.sp)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    "Uninstall Protection Armed (Device Admin active)",
-                                    color = ZenithEmeraldAccent,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(text = icon, fontSize = 14.sp)
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = title,
+                                            color = if (isSelected) Color.White else Color(0xFF94A3B8),
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                        )
+                                    }
+
+                                    Text(
+                                        text = if (isSelected) "LOCK 🔒" else "OPEN 🔓",
+                                        color = if (isSelected) SpiderRedAccent else Color(0xFF64748B),
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Black
+                                    )
+                                }
                             }
                         }
                     }
 
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // =========================================================
+                    // FEATURE 2: DURATION SELECTION (UP TO 3 MONTHS / 90 DAYS)
+                    // =========================================================
                     Text(
                         text = "SELECT COMMITMENT DURATION",
-                        color = ZenithAlabaster.copy(alpha = 0.7f),
+                        color = Color(0xFF94A3B8),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 0.5.sp
@@ -258,7 +336,7 @@ fun NuclearArmingDialog(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 4.dp),
+                                .padding(vertical = 3.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             val item1 = durations[i]
@@ -266,13 +344,13 @@ fun NuclearArmingDialog(
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .height(44.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(if (isSel1) ZenithEmerald else ZenithCardDark)
+                                    .height(40.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(if (isSel1) SpiderRed else SpiderCardDark)
                                     .border(
                                         1.dp,
-                                        if (isSel1) ZenithEmeraldAccent else Color(0xFF334155),
-                                        RoundedCornerShape(12.dp)
+                                        if (isSel1) SpiderRedAccent else SpiderBorderDark,
+                                        RoundedCornerShape(10.dp)
                                     )
                                     .clickable {
                                         isCustomPickerOpen = false
@@ -282,8 +360,8 @@ fun NuclearArmingDialog(
                             ) {
                                 Text(
                                     text = item1.first,
-                                    color = if (isSel1) Color.White else Color(0xFF94A3B8),
-                                    fontSize = 12.sp,
+                                    color = if (isSel1) Color.White else Color(0xFFE2E8F0),
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -294,24 +372,24 @@ fun NuclearArmingDialog(
                                 Box(
                                     modifier = Modifier
                                         .weight(1f)
-                                    .height(44.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(if (isSel2) ZenithEmerald else ZenithCardDark)
-                                    .border(
-                                        1.dp,
-                                        if (isSel2) ZenithEmeraldAccent else Color(0xFF334155),
-                                        RoundedCornerShape(12.dp)
-                                    )
-                                    .clickable {
-                                        isCustomPickerOpen = false
-                                        selectedDurationMillis = item2.second
-                                    },
+                                        .height(40.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(if (isSel2) SpiderRed else SpiderCardDark)
+                                        .border(
+                                            1.dp,
+                                            if (isSel2) SpiderRedAccent else SpiderBorderDark,
+                                            RoundedCornerShape(10.dp)
+                                        )
+                                        .clickable {
+                                            isCustomPickerOpen = false
+                                            selectedDurationMillis = item2.second
+                                        },
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
                                         text = item2.first,
-                                        color = if (isSel2) Color.White else Color(0xFF94A3B8),
-                                        fontSize = 12.sp,
+                                        color = if (isSel2) Color.White else Color(0xFFE2E8F0),
+                                        fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
@@ -321,120 +399,188 @@ fun NuclearArmingDialog(
                         }
                     }
 
-                    // CUSTOM DURATION ACCORDION
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // CUSTOM DURATION BUTTON
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(44.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(if (isCustomPickerOpen) ZenithEmerald else ZenithCardDark)
-                            .border(
-                                1.dp,
-                                if (isCustomPickerOpen) ZenithEmeraldAccent else Color(0xFF334155),
-                                RoundedCornerShape(12.dp)
-                            )
+                            .height(42.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (isCustomPickerOpen) SpiderBlue else SpiderCardDark)
+                            .border(1.dp, if (isCustomPickerOpen) SpiderBlueAccent else SpiderBorderDark, RoundedCornerShape(10.dp))
                             .clickable {
                                 isCustomPickerOpen = !isCustomPickerOpen
                                 if (isCustomPickerOpen) {
-                                    selectedDurationMillis = (customHours * 3600000L) + (customMinutes * 60000L)
+                                    val total = (customDays * 86400000L) + (customHours * 3600000L) + (customMinutes * 60000L)
+                                    selectedDurationMillis = total.coerceAtLeast(1 * 60000L)
                                 }
                             },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = if (isCustomPickerOpen) "CUSTOM: ${customHours}h ${customMinutes}m" else "CUSTOM DURATION ⏱️",
-                            color = if (isCustomPickerOpen) Color.White else Color(0xFF94A3B8),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
+                            text = if (isCustomPickerOpen) "CUSTOM DURATION ACTIVE ⏱️" else "SET CUSTOM DURATION (UP TO 3 MONTHS) ⏱️",
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Black
                         )
                     }
 
                     if (isCustomPickerOpen) {
                         Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.CenterVertically
+                        Card(
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = SpiderCardDark),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(1.dp, SpiderBorderDark, RoundedCornerShape(14.dp))
                         ) {
-                            // Hours Stepper
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .clip(CircleShape)
-                                        .background(ZenithNavyDark)
-                                        .clickable {
-                                            if (customHours > 0) {
-                                                customHours--
-                                                selectedDurationMillis = (customHours * 3600000L) + (customMinutes * 60000L).coerceAtLeast(15 * 60000L)
-                                            }
-                                        },
-                                    contentAlignment = Alignment.Center
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(text = "-", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                                }
-                                Text(
-                                    text = "${customHours}h",
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 10.dp)
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .clip(CircleShape)
-                                        .background(ZenithNavyDark)
-                                        .clickable {
-                                            if (customHours < 72) {
-                                                customHours++
-                                                selectedDurationMillis = (customHours * 3600000L) + (customMinutes * 60000L)
+                                    // DAYS (0-90)
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("DAYS", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(28.dp)
+                                                    .clip(CircleShape)
+                                                    .background(SpiderSurfaceDark)
+                                                    .clickable {
+                                                        if (customDays > 0) {
+                                                            customDays--
+                                                            val total = (customDays * 86400000L) + (customHours * 3600000L) + (customMinutes * 60000L)
+                                                            selectedDurationMillis = total.coerceAtLeast(1 * 60000L)
+                                                        }
+                                                    },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text("-", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                             }
-                                        },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(text = "+", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                                }
-                            }
+                                            Text(
+                                                text = "${customDays}d",
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 14.sp,
+                                                modifier = Modifier.padding(horizontal = 6.dp)
+                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(28.dp)
+                                                    .clip(CircleShape)
+                                                    .background(SpiderSurfaceDark)
+                                                    .clickable {
+                                                        if (customDays < 90) {
+                                                            customDays++
+                                                            val total = (customDays * 86400000L) + (customHours * 3600000L) + (customMinutes * 60000L)
+                                                            selectedDurationMillis = total.coerceAtLeast(1 * 60000L)
+                                                        }
+                                                    },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text("+", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                            }
+                                        }
+                                    }
 
-                            // Minutes Stepper
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .clip(CircleShape)
-                                        .background(ZenithNavyDark)
-                                        .clickable {
-                                            if (customMinutes >= 5) {
-                                                customMinutes -= 5
-                                                val total = (customHours * 3600000L) + (customMinutes * 60000L)
-                                                selectedDurationMillis = total.coerceAtLeast(15 * 60000L)
+                                    // HOURS (0-23)
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("HOURS", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(28.dp)
+                                                    .clip(CircleShape)
+                                                    .background(SpiderSurfaceDark)
+                                                    .clickable {
+                                                        if (customHours > 0) {
+                                                            customHours--
+                                                            val total = (customDays * 86400000L) + (customHours * 3600000L) + (customMinutes * 60000L)
+                                                            selectedDurationMillis = total.coerceAtLeast(1 * 60000L)
+                                                        }
+                                                    },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text("-", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                             }
-                                        },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(text = "-", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                                }
-                                Text(
-                                    text = "${customMinutes}m",
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 10.dp)
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .clip(CircleShape)
-                                        .background(ZenithNavyDark)
-                                        .clickable {
-                                            if (customMinutes < 55) {
-                                                customMinutes += 5
-                                                selectedDurationMillis = (customHours * 3600000L) + (customMinutes * 60000L)
+                                            Text(
+                                                text = "${customHours}h",
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 14.sp,
+                                                modifier = Modifier.padding(horizontal = 6.dp)
+                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(28.dp)
+                                                    .clip(CircleShape)
+                                                    .background(SpiderSurfaceDark)
+                                                    .clickable {
+                                                        if (customHours < 23) {
+                                                            customHours++
+                                                            val total = (customDays * 86400000L) + (customHours * 3600000L) + (customMinutes * 60000L)
+                                                            selectedDurationMillis = total.coerceAtLeast(1 * 60000L)
+                                                        }
+                                                    },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text("+", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                             }
-                                        },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(text = "+", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                        }
+                                    }
+
+                                    // MINUTES (0-55) - BUG FIX: NO 15-MINUTE COERCION
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("MINUTES", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(28.dp)
+                                                    .clip(CircleShape)
+                                                    .background(SpiderSurfaceDark)
+                                                    .clickable {
+                                                        if (customMinutes >= 5) {
+                                                            customMinutes -= 5
+                                                            val total = (customDays * 86400000L) + (customHours * 3600000L) + (customMinutes * 60000L)
+                                                            selectedDurationMillis = total.coerceAtLeast(1 * 60000L)
+                                                        }
+                                                    },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text("-", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                            }
+                                            Text(
+                                                text = "${customMinutes}m",
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 14.sp,
+                                                modifier = Modifier.padding(horizontal = 6.dp)
+                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(28.dp)
+                                                    .clip(CircleShape)
+                                                    .background(SpiderSurfaceDark)
+                                                    .clickable {
+                                                        if (customMinutes < 55) {
+                                                            customMinutes += 5
+                                                            val total = (customDays * 86400000L) + (customHours * 3600000L) + (customMinutes * 60000L)
+                                                            selectedDurationMillis = total.coerceAtLeast(1 * 60000L)
+                                                        }
+                                                    },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text("+", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -447,19 +593,20 @@ fun NuclearArmingDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .background(ZenithCardDark)
+                            .background(SpiderCardDark)
+                            .border(1.dp, SpiderBorderDark, RoundedCornerShape(12.dp))
                             .padding(12.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "⏳ Target End: $targetTimeFormatted",
-                            color = ZenithEmeraldAccent,
+                            color = SpiderBlueAccent,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(18.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -469,24 +616,32 @@ fun NuclearArmingDialog(
                             onClick = onDismiss,
                             modifier = Modifier
                                 .weight(1f)
-                                .height(50.dp),
-                            shape = RoundedCornerShape(16.dp)
+                                .height(48.dp),
+                            shape = RoundedCornerShape(14.dp)
                         ) {
                             Text(text = "CANCEL", color = Color(0xFF94A3B8), fontWeight = FontWeight.Bold)
                         }
 
+                        val canProceed = selectedCategories.isNotEmpty()
                         Button(
                             onClick = {
-                                onArmSession(selectedDurationMillis)
-                                step = 1
+                                if (canProceed) {
+                                    onArmSession(selectedDurationMillis, selectedCategories)
+                                    step = 1
+                                }
                             },
+                            enabled = canProceed,
                             modifier = Modifier
                                 .weight(1f)
-                                .height(50.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = ZenithEmerald),
-                            shape = RoundedCornerShape(16.dp)
+                                .height(48.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = SpiderRed),
+                            shape = RoundedCornerShape(14.dp)
                         ) {
-                            Text(text = "PROCEED ➔", color = Color.White, fontWeight = FontWeight.Black)
+                            Text(
+                                text = if (canProceed) "PROCEED ➔" else "SELECT A SHIELD",
+                                color = Color.White,
+                                fontWeight = FontWeight.Black
+                            )
                         }
                     }
 
@@ -497,80 +652,84 @@ fun NuclearArmingDialog(
                             modifier = Modifier
                                 .size(28.dp)
                                 .clip(CircleShape)
-                                .background(ZenithEmerald),
+                                .background(SpiderRedDeep),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(text = "🔒", fontSize = 14.sp)
+                            Text(text = "☢️", fontSize = 14.sp)
                         }
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             text = "FINAL CONFIRMATION",
-                            color = ZenithEmeraldAccent,
+                            color = SpiderRedAccent,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Black,
                             letterSpacing = 1.sp
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = "NUCLEAR MODE READY",
-                        color = Color.White,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Black
-                    )
-
                     Spacer(modifier = Modifier.height(14.dp))
 
                     Card(
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = ZenithNavyDark),
+                        colors = CardDefaults.cardColors(containerColor = SpiderCardDark),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
+                            .border(1.dp, SpiderBorderDark, RoundedCornerShape(16.dp))
                     ) {
-                        Column(modifier = Modifier.padding(18.dp)) {
+                        Column(modifier = Modifier.padding(16.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text(text = "Duration:", color = Color(0xFF94A3B8), fontSize = 13.sp)
+                                Text(text = "Commitment Duration:", color = Color(0xFF94A3B8), fontSize = 12.sp)
                                 Text(
                                     text = DateTimeUtils.formatRemaining(selectedDurationMillis),
                                     color = Color.White,
-                                    fontSize = 14.sp,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(text = "Ends at:", color = Color(0xFF94A3B8), fontSize = 12.sp)
+                                Text(
+                                    text = targetTimeFormatted,
+                                    color = SpiderBlueAccent,
+                                    fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
                             Spacer(modifier = Modifier.height(8.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(text = "Ends at:", color = Color(0xFF94A3B8), fontSize = 13.sp)
-                                Text(
-                                    text = targetTimeFormatted,
-                                    color = ZenithEmeraldAccent,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
+                            Text(
+                                text = "LOCKED SHIELDS (${selectedCategories.size}):",
+                                color = SpiderRedAccent,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Black
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = selectedCategories.joinToString(", ") { it.displayName },
+                                color = Color(0xFFE2E8F0),
+                                fontSize = 11.sp
+                            )
                         }
                     }
 
                     Spacer(modifier = Modifier.height(14.dp))
 
                     Text(
-                        text = "⚠️ Once activated, you CANNOT cancel, edit, or unlock until the timer hits zero. Hold below to confirm your discipline.",
+                        text = "⚠️ Once activated, you CANNOT cancel or unlock until the timer reaches zero. Hold below to seal your focus.",
                         color = Color(0xFFFECACA),
-                        fontSize = 12.sp,
-                        lineHeight = 17.sp,
+                        fontSize = 11.sp,
+                        lineHeight = 16.sp,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(18.dp))
 
                     // HOLD TO ACTIVATE BUTTON (3 SECONDS)
                     HoldToActivateButton(
@@ -589,7 +748,7 @@ fun NuclearArmingDialog(
                             .height(44.dp),
                         shape = RoundedCornerShape(14.dp)
                     ) {
-                        Text(text = "BACK TO DURATION", color = Color(0xFF94A3B8), fontSize = 12.sp)
+                        Text(text = "BACK TO DURATION & SHIELDS", color = Color(0xFF94A3B8), fontSize = 11.sp)
                     }
                 }
             }
@@ -634,10 +793,10 @@ fun HoldToActivateButton(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(64.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(ZenithBurgundyDeep)
-            .border(2.dp, if (isHolding) Color(0xFFF43F5E) else ZenithBurgundy, RoundedCornerShape(16.dp))
+            .height(60.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(SpiderRedDeep)
+            .border(2.dp, if (isHolding) SpiderRedAccent else SpiderRedDark, RoundedCornerShape(14.dp))
             .pointerInput(Unit) {
                 awaitEachGesture {
                     awaitFirstDown(requireUnconsumed = false)
@@ -654,8 +813,8 @@ fun HoldToActivateButton(
         Box(
             modifier = Modifier
                 .fillMaxWidth(animatedProgress)
-                .height(64.dp)
-                .background(Color(0xFFE11D48).copy(alpha = 0.8f))
+                .height(60.dp)
+                .background(SpiderRed.copy(alpha = 0.85f))
                 .align(Alignment.CenterStart)
         )
 
@@ -666,7 +825,7 @@ fun HoldToActivateButton(
             Text(
                 text = if (isHolding) "KEEP HOLDING... (${(animatedProgress * 100).toInt()}%)" else "HOLD TO ACTIVATE ☢️",
                 color = Color.White,
-                fontSize = 15.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Black,
                 letterSpacing = 1.sp
             )

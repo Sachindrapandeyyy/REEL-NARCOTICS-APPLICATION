@@ -26,9 +26,16 @@ object NuclearProtectionPolicy {
     ): Boolean {
         if (!result.isBlocked) return false
 
-        // PRIORITY 1: NUCLEAR LOCK (Strict Restriction: All addictive & adult content 100% blocked, zero exceptions)
+        // PRIORITY 1: NUCLEAR LOCK (Strict Restriction: Selective user platforms & adult content, zero bypass)
         if (nuclearSession.isCurrentlyActive(nowWallClock, nowElapsedRealtime)) {
-            return isAddictiveOrAdultCategory(result.category)
+            if (result.category == ContentCategory.SYSTEM_TAMPER) {
+                return true
+            }
+            return if (nuclearSession.enabledCategories.isNotEmpty()) {
+                nuclearSession.enabledCategories.contains(result.category)
+            } else {
+                isAddictiveOrAdultCategory(result.category)
+            }
         }
 
         // PRIORITY 2: STANDARD FOCUS LOCK (Standard Restriction: Active focus countdown window)

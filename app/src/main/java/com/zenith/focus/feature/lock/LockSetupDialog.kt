@@ -1,4 +1,4 @@
-﻿package com.zenith.focus.feature.lock
+package com.zenith.focus.feature.lock
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -39,6 +39,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.zenith.focus.core.designsystem.SpiderBlue
+import com.zenith.focus.core.designsystem.SpiderBlueAccent
+import com.zenith.focus.core.designsystem.SpiderBorderDark
+import com.zenith.focus.core.designsystem.SpiderCardDark
+import com.zenith.focus.core.designsystem.SpiderRed
+import com.zenith.focus.core.designsystem.SpiderRedAccent
+import com.zenith.focus.core.designsystem.SpiderSurfaceDark
 import com.zenith.focus.domain.model.LockMode
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -58,36 +65,39 @@ fun LockSetupDialog(
 ) {
     val presets = remember {
         listOf(
+            PresetDuration("5 MIN", 5 * 60 * 1000L),
             PresetDuration("15 MIN", 15 * 60 * 1000L),
             PresetDuration("25 MIN", 25 * 60 * 1000L),
             PresetDuration("45 MIN", 45 * 60 * 1000L),
             PresetDuration("1 HOUR", 60 * 60 * 1000L),
             PresetDuration("2 HOURS", 2 * 60 * 60 * 1000L),
             PresetDuration("4 HOURS", 4 * 60 * 60 * 1000L),
-            PresetDuration("8 HOURS", 8 * 60 * 60 * 1000L),
             PresetDuration("1 DAY", 24 * 60 * 60 * 1000L),
-            PresetDuration("3 DAYS", 3 * 24 * 60 * 60 * 1000L),
-            PresetDuration("7 DAYS", 7 * 24 * 60 * 60 * 1000L)
+            PresetDuration("7 DAYS", 7 * 24 * 60 * 60 * 1000L),
+            PresetDuration("30 DAYS (1 MO)", 30 * 24 * 60 * 60 * 1000L),
+            PresetDuration("90 DAYS (3 MO)", 90 * 24 * 60 * 60 * 1000L)
         )
     }
 
-    var selectedPreset by remember { mutableStateOf<PresetDuration?>(presets[3]) } // 1 Hour default
+    var selectedPreset by remember { mutableStateOf<PresetDuration?>(presets[4]) } // 1 Hour default
     var isCustomMode by remember { mutableStateOf(false) }
 
-    // Granular Custom Timer state
-    var customHours by remember { mutableIntStateOf(1) }
-    var customMinutes by remember { mutableIntStateOf(30) }
+    // Granular Custom Timer state: Days, Hours, Minutes (Supports up to 90 Days / 3 Months)
+    var customDays by remember { mutableIntStateOf(0) }
+    var customHours by remember { mutableIntStateOf(0) }
+    var customMinutes by remember { mutableIntStateOf(25) }
 
-    val calculatedCustomMillis = (customHours * 3600000L) + (customMinutes * 60000L)
+    val calculatedCustomMillis = (customDays * 86400000L) + (customHours * 3600000L) + (customMinutes * 60000L)
+    // BUG FIX: Strictly allow 1-minute and 5-minute custom timers, no hard 15m coercion!
     val effectiveDurationMillis = if (isCustomMode) {
-        calculatedCustomMillis.coerceAtLeast(15 * 60 * 1000L)
+        calculatedCustomMillis.coerceAtLeast(1 * 60 * 1000L)
     } else {
         selectedPreset?.durationMillis ?: (60 * 60 * 1000L)
     }
 
     val targetTime = System.currentTimeMillis() + effectiveDurationMillis
     val targetTimeFormatted = remember(effectiveDurationMillis) {
-        val sdf = SimpleDateFormat("h:mm a (MMM d)", Locale.getDefault())
+        val sdf = SimpleDateFormat("h:mm a (MMM d, yyyy)", Locale.getDefault())
         sdf.format(Date(targetTime))
     }
 
@@ -95,8 +105,8 @@ fun LockSetupDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(28.dp),
-            color = Color(0xFF131B2E),
+            shape = RoundedCornerShape(24.dp),
+            color = SpiderSurfaceDark,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
@@ -107,7 +117,7 @@ fun LockSetupDialog(
             ) {
                 Text(
                     text = "🔒 ARM FOCUS LOCK",
-                    color = Color(0xFF10B981),
+                    color = SpiderBlueAccent,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 1.sp
@@ -132,20 +142,20 @@ fun LockSetupDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
-                        .background(Color(0xFF0F172A))
+                        .background(SpiderCardDark)
                         .padding(4.dp)
                 ) {
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(if (!isCustomMode) Color(0xFF10B981) else Color.Transparent)
+                            .background(if (!isCustomMode) SpiderBlue else Color.Transparent)
                             .clickable { isCustomMode = false }
                             .padding(vertical = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "PRESET DURATIONS",
+                            text = "PRESETS",
                             color = if (!isCustomMode) Color.White else Color(0xFF94A3B8),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Black
@@ -156,7 +166,7 @@ fun LockSetupDialog(
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(if (isCustomMode) Color(0xFF10B981) else Color.Transparent)
+                            .background(if (isCustomMode) SpiderBlue else Color.Transparent)
                             .clickable { isCustomMode = true }
                             .padding(vertical = 8.dp),
                         contentAlignment = Alignment.Center
@@ -178,14 +188,15 @@ fun LockSetupDialog(
                         columns = GridCells.Fixed(2),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.height(180.dp)
+                        modifier = Modifier.height(200.dp)
                     ) {
                         items(presets) { preset ->
                             val isSelected = selectedPreset == preset
                             Box(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(14.dp))
-                                    .background(if (isSelected) Color(0xFF10B981) else Color(0xFF1E293B))
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (isSelected) SpiderBlue else SpiderCardDark)
+                                    .border(1.dp, if (isSelected) SpiderBlueAccent else SpiderBorderDark, RoundedCornerShape(12.dp))
                                     .clickable { selectedPreset = preset }
                                     .padding(vertical = 12.dp),
                                 contentAlignment = Alignment.Center
@@ -200,119 +211,159 @@ fun LockSetupDialog(
                         }
                     }
                 } else {
-                    // GRANULAR CUSTOM TIMER (HOURS + MINUTES)
+                    // EXTENDED CUSTOM TIMER (DAYS + HOURS + MINUTES, UP TO 3 MONTHS)
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(18.dp))
-                            .background(Color(0xFF0F172A))
-                            .border(1.dp, Color(0xFF1E293B), RoundedCornerShape(18.dp))
-                            .padding(16.dp)
+                            .background(SpiderCardDark)
+                            .border(1.dp, SpiderBorderDark, RoundedCornerShape(18.dp))
+                            .padding(14.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // HOURS STEPPER
+                            // DAYS STEPPER (0 to 90 Days / 3 Months)
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("HOURS", color = Color(0xFF94A3B8), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                Spacer(modifier = Modifier.height(6.dp))
+                                Text("DAYS", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(4.dp))
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Box(
                                         modifier = Modifier
-                                            .size(34.dp)
+                                            .size(30.dp)
                                             .clip(CircleShape)
-                                            .background(Color(0xFF1E293B))
+                                            .background(SpiderSurfaceDark)
+                                            .clickable { customDays = (customDays - 1).coerceAtLeast(0) },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text("-", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black)
+                                    }
+
+                                    Text(
+                                        text = "${customDays}d",
+                                        color = Color.White,
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Black,
+                                        modifier = Modifier.padding(horizontal = 8.dp)
+                                    )
+
+                                    Box(
+                                        modifier = Modifier
+                                            .size(30.dp)
+                                            .clip(CircleShape)
+                                            .background(SpiderSurfaceDark)
+                                            .clickable { customDays = (customDays + 1).coerceAtMost(90) },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text("+", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black)
+                                    }
+                                }
+                            }
+
+                            // HOURS STEPPER (0 to 23 Hours)
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("HOURS", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(30.dp)
+                                            .clip(CircleShape)
+                                            .background(SpiderSurfaceDark)
                                             .clickable { customHours = (customHours - 1).coerceAtLeast(0) },
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text("-", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black)
+                                        Text("-", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black)
                                     }
 
                                     Text(
                                         text = "${customHours}h",
                                         color = Color.White,
-                                        fontSize = 22.sp,
+                                        fontSize = 18.sp,
                                         fontWeight = FontWeight.Black,
-                                        modifier = Modifier.padding(horizontal = 14.dp)
+                                        modifier = Modifier.padding(horizontal = 8.dp)
                                     )
 
                                     Box(
                                         modifier = Modifier
-                                            .size(34.dp)
+                                            .size(30.dp)
                                             .clip(CircleShape)
-                                            .background(Color(0xFF1E293B))
-                                            .clickable { customHours = (customHours + 1).coerceAtMost(72) },
+                                            .background(SpiderSurfaceDark)
+                                            .clickable { customHours = (customHours + 1).coerceAtMost(23) },
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text("+", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black)
+                                        Text("+", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black)
                                     }
                                 }
                             }
 
-                            // MINUTES STEPPER
+                            // MINUTES STEPPER (0 to 55 Minutes)
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("MINUTES", color = Color(0xFF94A3B8), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                Spacer(modifier = Modifier.height(6.dp))
+                                Text("MINUTES", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(4.dp))
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Box(
                                         modifier = Modifier
-                                            .size(34.dp)
+                                            .size(30.dp)
                                             .clip(CircleShape)
-                                            .background(Color(0xFF1E293B))
+                                            .background(SpiderSurfaceDark)
                                             .clickable {
                                                 customMinutes = if (customMinutes <= 0) 55 else customMinutes - 5
                                             },
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text("-", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black)
+                                        Text("-", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black)
                                     }
 
                                     Text(
                                         text = "${customMinutes}m",
                                         color = Color.White,
-                                        fontSize = 22.sp,
+                                        fontSize = 18.sp,
                                         fontWeight = FontWeight.Black,
-                                        modifier = Modifier.padding(horizontal = 14.dp)
+                                        modifier = Modifier.padding(horizontal = 8.dp)
                                     )
 
                                     Box(
                                         modifier = Modifier
-                                            .size(34.dp)
+                                            .size(30.dp)
                                             .clip(CircleShape)
-                                            .background(Color(0xFF1E293B))
+                                            .background(SpiderSurfaceDark)
                                             .clickable {
                                                 customMinutes = (customMinutes + 5) % 60
                                             },
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text("+", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black)
+                                        Text("+", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black)
                                     }
                                 }
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(14.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                        // Quick Minute Chips
+                        // Quick Minute Chips: Includes +5 min for instant 5-minute setup!
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            listOf(15, 30, 45).forEach { mins ->
+                            listOf(5, 15, 30, 45).forEach { mins ->
                                 Box(
                                     modifier = Modifier
                                         .weight(1f)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(Color(0xFF1E293B))
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(SpiderSurfaceDark)
+                                        .border(1.dp, SpiderBorderDark, RoundedCornerShape(8.dp))
                                         .clickable {
+                                            customDays = 0
+                                            customHours = 0
                                             customMinutes = mins
                                         }
                                         .padding(vertical = 6.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text("+$mins min", color = Color(0xFF06B6D4), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    Text("${mins}m", color = SpiderBlueAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -325,15 +376,15 @@ fun LockSetupDialog(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(Color(0xFF164E63).copy(alpha = 0.4f))
-                        .border(1.dp, Color(0xFF06B6D4).copy(alpha = 0.3f), RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(SpiderCardDark)
+                        .border(1.dp, SpiderBorderDark, RoundedCornerShape(12.dp))
                         .padding(horizontal = 14.dp, vertical = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "⏳ Target End: $targetTimeFormatted",
-                        color = Color(0xFF06B6D4),
+                        color = SpiderBlueAccent,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center
@@ -346,8 +397,9 @@ fun LockSetupDialog(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(Color(0xFF1E293B))
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(SpiderCardDark)
+                        .border(1.dp, SpiderBorderDark, RoundedCornerShape(12.dp))
                         .clickable {
                             onStartUntilTomorrow()
                             onDismiss()
@@ -363,7 +415,7 @@ fun LockSetupDialog(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(18.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // ACTION BUTTONS
                 Row(
@@ -373,8 +425,8 @@ fun LockSetupDialog(
                     Button(
                         onClick = onDismiss,
                         modifier = Modifier.weight(1f).height(48.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E293B)),
-                        shape = RoundedCornerShape(14.dp)
+                        colors = ButtonDefaults.buttonColors(containerColor = SpiderCardDark),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
                         Text("CANCEL", color = Color(0xFF94A3B8), fontWeight = FontWeight.Bold)
                     }
@@ -383,6 +435,7 @@ fun LockSetupDialog(
                         onClick = {
                             if (isCustomMode) {
                                 val label = when {
+                                    customDays > 0 -> "${customDays}d ${customHours}h Lock"
                                     customHours > 0 && customMinutes > 0 -> "${customHours}h ${customMinutes}m Lock"
                                     customHours > 0 -> "${customHours}h Lock"
                                     else -> "${customMinutes}m Lock"
@@ -396,8 +449,8 @@ fun LockSetupDialog(
                             onDismiss()
                         },
                         modifier = Modifier.weight(1f).height(48.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
-                        shape = RoundedCornerShape(14.dp)
+                        colors = ButtonDefaults.buttonColors(containerColor = SpiderBlue),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
                         Text("ARM LOCK 🔒", color = Color.White, fontWeight = FontWeight.Black)
                     }

@@ -37,6 +37,7 @@ class NuclearModeRepositoryImpl(
         private val KEY_STATUS = stringPreferencesKey("nuclear_status")
         private val KEY_CREATED_AT = longPreferencesKey("nuclear_created_at")
         private val KEY_BLOCKED_AT_START = intPreferencesKey("nuclear_blocked_at_start")
+        private val KEY_ENABLED_CATEGORIES = androidx.datastore.preferences.core.stringSetPreferencesKey("nuclear_enabled_categories")
     }
 
     private val _session = MutableStateFlow(NuclearSession())
@@ -58,6 +59,9 @@ class NuclearModeRepositoryImpl(
         val statusStr = prefs[KEY_STATUS] ?: NuclearSessionStatus.INACTIVE.name
         val createdAt = prefs[KEY_CREATED_AT] ?: System.currentTimeMillis()
         val blockedAtStart = prefs[KEY_BLOCKED_AT_START] ?: 0
+        val savedCategories = prefs[KEY_ENABLED_CATEGORIES]?.mapNotNull { name ->
+            runCatching { com.zenith.focus.domain.model.ContentCategory.valueOf(name) }.getOrNull()
+        }?.toSet() ?: com.zenith.focus.domain.model.ContentCategory.values().toSet()
 
         val persistedStatus = runCatching {
             NuclearSessionStatus.valueOf(statusStr)
@@ -71,7 +75,8 @@ class NuclearModeRepositoryImpl(
             durationMillis = duration,
             status = persistedStatus,
             createdAt = createdAt,
-            blockedCountAtStart = blockedAtStart
+            blockedCountAtStart = blockedAtStart,
+            enabledCategories = savedCategories
         )
 
         // Evaluate expiry if ACTIVE
@@ -89,7 +94,11 @@ class NuclearModeRepositoryImpl(
         _session.value = loadedSession
     }
 
-    override suspend fun armSession(durationMillis: Long, currentBlockedCount: Int) {
+    override suspend fun armSession(
+        durationMillis: Long,
+        currentBlockedCount: Int,
+        enabledCategories: Set<com.zenith.focus.domain.model.ContentCategory>
+    ) {
         val current = _session.value
         // If already active, NEVER allow re-arming or mutating
         if (current.status == NuclearSessionStatus.ACTIVE) return
@@ -99,7 +108,8 @@ class NuclearModeRepositoryImpl(
             durationMillis = durationMillis,
             status = NuclearSessionStatus.ARMING,
             createdAt = System.currentTimeMillis(),
-            blockedCountAtStart = currentBlockedCount
+            blockedCountAtStart = currentBlockedCount,
+            enabledCategories = enabledCategories
         )
         _session.value = armed
     }
@@ -203,6 +213,7 @@ class NuclearModeRepositoryImpl(
             prefs[KEY_STATUS] = session.status.name
             prefs[KEY_CREATED_AT] = session.createdAt
             prefs[KEY_BLOCKED_AT_START] = session.blockedCountAtStart
+            prefs[KEY_ENABLED_CATEGORIES] = session.enabledCategories.map { it.name }.toSet()
         }
     }
 }

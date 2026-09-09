@@ -12,7 +12,11 @@ interface NuclearModeRepository {
      * Step 1: Prepares an arming session for user confirmation.
      * State moves to ARMING.
      */
-    suspend fun armSession(durationMillis: Long, currentBlockedCount: Int)
+    suspend fun armSession(
+        durationMillis: Long,
+        currentBlockedCount: Int,
+        enabledCategories: Set<com.zenith.focus.domain.model.ContentCategory> = com.zenith.focus.domain.model.ContentCategory.values().toSet()
+    )
 
     /**
      * Step 2: Irreversibly locks in the session after explicit Hold-To-Activate confirmation.

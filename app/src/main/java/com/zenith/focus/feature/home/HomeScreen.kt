@@ -140,7 +140,7 @@ fun HomeScreen(
                 Column {
                     Text(
                         text = "REEL NARCOTICS",
-                        color = ZenithEmeraldAccent,
+                        color = com.zenith.focus.core.designsystem.SpiderRedAccent,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 1.5.sp
@@ -163,9 +163,9 @@ fun HomeScreen(
                     .background(ZenithNavyLight)
                     .border(
                         1.dp,
-                        if (isNuclearActive) ZenithBurgundy
-                        else if (isRegularLocked) ZenithEmeraldAccent.copy(alpha = 0.5f)
-                        else Color(0xFF334155),
+                        if (isNuclearActive) com.zenith.focus.core.designsystem.SpiderRedDark
+                        else if (isRegularLocked) com.zenith.focus.core.designsystem.SpiderBlue.copy(alpha = 0.6f)
+                        else com.zenith.focus.core.designsystem.SpiderBorderDark,
                         RoundedCornerShape(14.dp)
                     )
                     .padding(horizontal = 10.dp, vertical = 6.dp)
@@ -173,9 +173,9 @@ fun HomeScreen(
                 Text(
                     text = if (isNuclearActive) "☢️ NUCLEAR (STRICT)"
                     else if (isRegularLocked) "🔒 STANDARD LOCK"
-                    else "🟢 STANDBY (NO LOCK)",
-                    color = if (isNuclearActive) Color(0xFFF43F5E)
-                    else if (isRegularLocked) ZenithEmeraldAccent
+                    else "🕸️ STANDBY (NO LOCK)",
+                    color = if (isNuclearActive) com.zenith.focus.core.designsystem.SpiderRedAccent
+                    else if (isRegularLocked) com.zenith.focus.core.designsystem.SpiderBlueAccent
                     else Color(0xFF94A3B8),
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black
@@ -227,7 +227,7 @@ fun HomeScreen(
                             modifier = Modifier
                                 .size(10.dp)
                                 .clip(CircleShape)
-                                .background(if (isNuclearActive) Color(0xFFF43F5E) else ZenithEmeraldAccent)
+                                .background(if (isNuclearActive) com.zenith.focus.core.designsystem.SpiderRedAccent else com.zenith.focus.core.designsystem.SpiderBlueAccent)
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
@@ -235,7 +235,7 @@ fun HomeScreen(
                                 text = if (isNuclearActive) "NUCLEAR RESTRICTIONS STRICTLY ENFORCED ☢️"
                                 else if (isRegularLocked) "STANDARD FOCUS RESTRICTIONS ACTIVE 🔒"
                                 else "SHIELDS ARMED & READY (STANDBY) 🛡️",
-                                color = if (isNuclearActive) Color(0xFFF43F5E) else ZenithEmeraldAccent,
+                                color = if (isNuclearActive) com.zenith.focus.core.designsystem.SpiderRedAccent else com.zenith.focus.core.designsystem.SpiderBlueAccent,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 0.5.sp
@@ -252,7 +252,7 @@ fun HomeScreen(
                     }
                     Text(
                         text = if (isNuclearActive || isRegularLocked) "LOCKED" else "READY",
-                        color = if (isNuclearActive) Color(0xFFF43F5E) else ZenithEmeraldAccent,
+                        color = if (isNuclearActive) com.zenith.focus.core.designsystem.SpiderRedAccent else com.zenith.focus.core.designsystem.SpiderBlueAccent,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Black
                     )
@@ -485,7 +485,7 @@ fun HomeScreen(
                 colors = CardDefaults.cardColors(containerColor = ZenithCardDark),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(2.dp, ZenithEmeraldAccent, RoundedCornerShape(16.dp))
+                    .border(2.dp, com.zenith.focus.core.designsystem.SpiderBlue, RoundedCornerShape(16.dp))
             ) {
                 Column(
                     modifier = Modifier
@@ -495,7 +495,7 @@ fun HomeScreen(
                 ) {
                     Text(
                         text = "FOCUS LOCK ACTIVE",
-                        color = ZenithEmeraldAccent,
+                        color = com.zenith.focus.core.designsystem.SpiderBlueAccent,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 1.sp
@@ -516,7 +516,7 @@ fun HomeScreen(
                             .fillMaxWidth()
                             .height(6.dp)
                             .clip(RoundedCornerShape(3.dp)),
-                        color = ZenithEmeraldAccent,
+                        color = com.zenith.focus.core.designsystem.SpiderBlue,
                         trackColor = ZenithNavyDark
                     )
 
@@ -595,7 +595,7 @@ fun HomeScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = ZenithBurgundy),
+                        colors = ButtonDefaults.buttonColors(containerColor = com.zenith.focus.core.designsystem.SpiderRed),
                         shape = RoundedCornerShape(14.dp)
                     ) {
                         Text(
@@ -618,7 +618,7 @@ fun HomeScreen(
                     ) {
                         Text(
                             text = "STANDARD FOCUS LOCK 🔒",
-                            color = ZenithEmeraldAccent,
+                            color = com.zenith.focus.core.designsystem.SpiderBlueAccent,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -645,17 +645,41 @@ fun HomeScreen(
             colors = CardDefaults.cardColors(containerColor = ZenithNavy),
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, Color(0xFF1E293B), RoundedCornerShape(16.dp))
+                .border(1.dp, com.zenith.focus.core.designsystem.SpiderBorderDark, RoundedCornerShape(16.dp))
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                val isEnforced = isNuclearActive || isRegularLocked
-                ProtectionItemRow(name = "YouTube Shorts", count = todayShortsBlocks, isEnforced = isEnforced)
+                val isShortsEnforced = if (isNuclearActive) {
+                    nuclearSession.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.YOUTUBE_SHORTS)
+                } else if (isRegularLocked) {
+                    lockState.enabledCategories.isEmpty() || lockState.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.YOUTUBE_SHORTS)
+                } else false
+
+                val isReelsEnforced = if (isNuclearActive) {
+                    nuclearSession.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.INSTAGRAM_REELS)
+                } else if (isRegularLocked) {
+                    lockState.enabledCategories.isEmpty() || lockState.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.INSTAGRAM_REELS)
+                } else false
+
+                val isFacebookEnforced = if (isNuclearActive) {
+                    nuclearSession.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.FACEBOOK_REELS)
+                } else if (isRegularLocked) {
+                    lockState.enabledCategories.isEmpty() || lockState.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.FACEBOOK_REELS)
+                } else false
+
+                val isAdultEnforced = if (isNuclearActive) {
+                    nuclearSession.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.ADULT_WEBSITE) ||
+                    nuclearSession.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.ADULT_KEYWORD)
+                } else if (isRegularLocked) {
+                    lockState.enabledCategories.isEmpty() || lockState.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.ADULT_WEBSITE)
+                } else false
+
+                ProtectionItemRow(name = "YouTube Shorts", count = todayShortsBlocks, isEnforced = isShortsEnforced)
                 Spacer(modifier = Modifier.height(12.dp))
-                ProtectionItemRow(name = "Instagram Reels", count = todayReelsBlocks, isEnforced = isEnforced)
+                ProtectionItemRow(name = "Instagram Reels", count = todayReelsBlocks, isEnforced = isReelsEnforced)
                 Spacer(modifier = Modifier.height(12.dp))
-                ProtectionItemRow(name = "Facebook Reels", count = 0, isEnforced = isEnforced)
+                ProtectionItemRow(name = "Facebook Reels", count = 0, isEnforced = isFacebookEnforced)
                 Spacer(modifier = Modifier.height(12.dp))
-                ProtectionItemRow(name = "Adult & Explicit Websites", count = todayAdultBlocks, isEnforced = isEnforced)
+                ProtectionItemRow(name = "Adult & Explicit Websites", count = todayAdultBlocks, isEnforced = isAdultEnforced)
             }
         }
 
@@ -682,7 +706,7 @@ fun HomeScreen(
                 colors = CardDefaults.cardColors(containerColor = ZenithNavy),
                 modifier = Modifier
                     .weight(1f)
-                    .border(1.dp, Color(0xFF1E293B), RoundedCornerShape(16.dp))
+                    .border(1.dp, com.zenith.focus.core.designsystem.SpiderBorderDark, RoundedCornerShape(16.dp))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
@@ -701,7 +725,7 @@ fun HomeScreen(
                     )
                     Text(
                         text = "Distractions Terminated",
-                        color = ZenithEmeraldAccent,
+                        color = com.zenith.focus.core.designsystem.SpiderRedAccent,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -714,7 +738,7 @@ fun HomeScreen(
                 colors = CardDefaults.cardColors(containerColor = ZenithNavy),
                 modifier = Modifier
                     .weight(1f)
-                    .border(1.dp, Color(0xFF1E293B), RoundedCornerShape(16.dp))
+                    .border(1.dp, com.zenith.focus.core.designsystem.SpiderBorderDark, RoundedCornerShape(16.dp))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
@@ -727,12 +751,12 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = if (isNuclearActive) "NUCLEAR" else if (isRegularLocked) "STANDARD" else "STANDBY",
-                        color = if (isNuclearActive) Color(0xFFF43F5E) else if (isRegularLocked) ZenithEmeraldAccent else Color(0xFF94A3B8),
+                        color = if (isNuclearActive) com.zenith.focus.core.designsystem.SpiderRedAccent else if (isRegularLocked) com.zenith.focus.core.designsystem.SpiderBlueAccent else Color(0xFF94A3B8),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Black
                     )
                     Text(
-                        text = if (isNuclearActive) "Strict Restriction" else if (isRegularLocked) "Focus Active" else "No Restrictions",
+                        text = if (isNuclearActive) "Selective Strict" else if (isRegularLocked) "Focus Active" else "No Restrictions",
                         color = Color(0xFF94A3B8),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold
@@ -773,13 +797,13 @@ fun ProtectionItemRow(
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(8.dp))
-                .background(if (isEnforced) ZenithBurgundyDeep else Color(0xFF1E293B))
-                .border(1.dp, if (isEnforced) ZenithBurgundy else Color(0xFF334155), RoundedCornerShape(8.dp))
+                .background(if (isEnforced) com.zenith.focus.core.designsystem.SpiderRedDeep else com.zenith.focus.core.designsystem.SpiderCardDark)
+                .border(1.dp, if (isEnforced) com.zenith.focus.core.designsystem.SpiderRedDark else com.zenith.focus.core.designsystem.SpiderBorderDark, RoundedCornerShape(8.dp))
                 .padding(horizontal = 10.dp, vertical = 4.dp)
         ) {
             Text(
-                text = if (isEnforced) "BLOCKED" else "READY",
-                color = if (isEnforced) Color(0xFFFECACA) else Color(0xFF94A3B8),
+                text = if (isEnforced) "BLOCKED 🔒" else "READY 🔓",
+                color = if (isEnforced) com.zenith.focus.core.designsystem.SpiderRedAccent else Color(0xFF94A3B8),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Black,
                 letterSpacing = 0.5.sp

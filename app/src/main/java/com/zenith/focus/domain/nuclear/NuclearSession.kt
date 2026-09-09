@@ -10,7 +10,8 @@ data class NuclearSession(
     val durationMillis: Long = 0L,
     val status: NuclearSessionStatus = NuclearSessionStatus.INACTIVE,
     val createdAt: Long = System.currentTimeMillis(),
-    val blockedCountAtStart: Int = 0
+    val blockedCountAtStart: Int = 0,
+    val enabledCategories: Set<com.zenith.focus.domain.model.ContentCategory> = com.zenith.focus.domain.model.ContentCategory.values().toSet()
 ) {
     /**
      * Determines whether Nuclear Mode is currently actively enforced.

@@ -125,11 +125,11 @@ fun UnlockFrictionDialog(
                         .fillMaxWidth()
                         .height(48.dp),
                     shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = ZenithEmeraldAccent)
+                    colors = ButtonDefaults.buttonColors(containerColor = com.zenith.focus.core.designsystem.SpiderBlue)
                 ) {
                     Text(
                         text = "KEEP FOCUSING ✓",
-                        color = Color.Black,
+                        color = Color.White,
                         fontWeight = FontWeight.Black,
                         fontSize = 13.sp
                     )
@@ -146,11 +146,11 @@ fun UnlockFrictionDialog(
                         .fillMaxWidth()
                         .height(44.dp),
                     shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFF43F5E))
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = com.zenith.focus.core.designsystem.SpiderRedAccent)
                 ) {
                     Text(
                         text = "End Session Now",
-                        color = Color(0xFFF43F5E),
+                        color = com.zenith.focus.core.designsystem.SpiderRedAccent,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.5.sp
                     )
