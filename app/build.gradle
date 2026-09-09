@@ -22,12 +22,32 @@ android {
 
     signingConfigs {
         release {
-            storeFile file("../zenith-release.keystore")
-            storePassword "zenithfocus123"
-            keyAlias "zenith"
-            keyPassword "zenithfocus123"
-            v1SigningEnabled true
-            v2SigningEnabled true
+            def ksPath = System.getenv("ANDROID_KEYSTORE_FILE") ?: project.findProperty("ANDROID_KEYSTORE_FILE") ?: "../zenith-release.keystore"
+            def ksFile = file(ksPath)
+            def ksPass = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: project.findProperty("ANDROID_KEYSTORE_PASSWORD") ?: ""
+            def kAlias = System.getenv("ANDROID_KEY_ALIAS") ?: project.findProperty("ANDROID_KEY_ALIAS") ?: "zenith"
+            def kPass = System.getenv("ANDROID_KEY_PASSWORD") ?: project.findProperty("ANDROID_KEY_PASSWORD") ?: ""
+
+            // Read from gitignored local.properties for local developer builds
+            if (!ksPass) {
+                def localProps = new Properties()
+                def localPropsFile = project.rootProject.file("local.properties")
+                if (localPropsFile.exists()) {
+                    localProps.load(new FileInputStream(localPropsFile))
+                    ksPass = localProps.getProperty("release.keystore.password", "")
+                    kPass = localProps.getProperty("release.key.password", ksPass)
+                    kAlias = localProps.getProperty("release.key.alias", kAlias)
+                }
+            }
+
+            if (ksFile.exists() && ksPass) {
+                storeFile ksFile
+                storePassword ksPass
+                keyAlias kAlias
+                keyPassword kPass
+                v1SigningEnabled true
+                v2SigningEnabled true
+            }
         }
     }
 
@@ -78,6 +98,7 @@ dependencies {
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3'
+    testImplementation 'org.json:json:20231013'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
     androidTestImplementation platform('androidx.compose:compose-bom:2023.08.00')

@@ -39,11 +39,15 @@ class BootCompletedReceiver : BroadcastReceiver() {
                         nucIntent,
                         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                     )
-                    alarmManager?.setExactAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP,
-                        nuclearSession.endTimeMillis,
-                        nucPending
-                    )
+                    runCatching {
+                        alarmManager?.setExactAndAllowWhileIdle(
+                            AlarmManager.RTC_WAKEUP,
+                            nuclearSession.endTimeMillis,
+                            nucPending
+                        )
+                    }.onFailure {
+                        alarmManager?.set(AlarmManager.RTC_WAKEUP, nuclearSession.endTimeMillis, nucPending)
+                    }
                 }
 
                 if (state.isActive && now < state.endTimeMillis) {
@@ -55,11 +59,15 @@ class BootCompletedReceiver : BroadcastReceiver() {
                         alarmIntent,
                         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                     )
-                    alarmManager?.setExactAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP,
-                        state.endTimeMillis,
-                        pendingIntent
-                    )
+                    runCatching {
+                        alarmManager?.setExactAndAllowWhileIdle(
+                            AlarmManager.RTC_WAKEUP,
+                            state.endTimeMillis,
+                            pendingIntent
+                        )
+                    }.onFailure {
+                        alarmManager?.set(AlarmManager.RTC_WAKEUP, state.endTimeMillis, pendingIntent)
+                    }
                 } else if (state.isActive && now >= state.endTimeMillis) {
                     lockRepo.endLock()
                 }

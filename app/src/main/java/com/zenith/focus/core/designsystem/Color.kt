@@ -82,6 +82,7 @@ data class EarthColors(
     val camelOchre: Color,
     val camelLight: Color,
     val sageOlive: Color,
+    val error: Color,
     val isDark: Boolean
 )
 
@@ -101,6 +102,7 @@ val LightEarthColors = EarthColors(
     camelOchre = EarthCamelOchre,
     camelLight = EarthCamelLight,
     sageOlive = EarthSageOlive,
+    error = Color(0xFFB83A3A),
     isDark = false
 )
 
@@ -120,6 +122,7 @@ val DarkEarthColors = EarthColors(
     camelOchre = EarthNightCamel,
     camelLight = EarthNightCamelLight,
     sageOlive = EarthNightSage,
+    error = Color(0xFFE57373),
     isDark = true
 )
 

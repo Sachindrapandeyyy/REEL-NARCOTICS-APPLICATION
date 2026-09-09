@@ -29,4 +29,8 @@ class ZenithAppContainer(context: Context) {
     val nuclearModeRepository: com.zenith.focus.domain.nuclear.NuclearModeRepository by lazy {
         com.zenith.focus.data.nuclear.NuclearModeRepositoryImpl(context.applicationContext)
     }
+
+    val updateManager: com.zenith.focus.core.update.UpdateManager by lazy {
+        com.zenith.focus.core.update.UpdateManager(context.applicationContext)
+    }
 }

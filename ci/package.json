@@ -1,0 +1,10 @@
+{
+  "name": "reel-narcotics-release-ci",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Release distribution and Vercel Blob publisher for Reel Narcotics",
+  "type": "module",
+  "dependencies": {
+    "@vercel/blob": "^0.27.1"
+  }
+}

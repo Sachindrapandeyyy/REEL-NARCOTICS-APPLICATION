@@ -88,6 +88,7 @@ class MainActivity : ComponentActivity() {
         val nuclearRepo = container.nuclearModeRepository
         val settingsRepo = container.settingsRepository
         val statsRepo = container.statisticsRepository
+        val updateManager = container.updateManager
 
         checkAccessibilityStatus()
 
@@ -292,6 +293,7 @@ class MainActivity : ComponentActivity() {
                                         isServiceConnected = isServiceConnected,
                                         isNuclearActive = nuclearSession.isCurrentlyActive(),
                                         currentTheme = appTheme,
+                                        updateManager = updateManager,
                                         onSelectFrictionType = { friction ->
                                             coroutineScope.launch { settingsRepo.setFrictionType(friction) }
                                         },

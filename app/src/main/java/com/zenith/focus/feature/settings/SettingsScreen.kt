@@ -57,12 +57,18 @@ import com.zenith.focus.domain.model.FrictionType
 import com.zenith.focus.domain.model.ProtectionConfig
 import com.zenith.focus.receiver.ZenithDeviceAdminReceiver
 
+import androidx.compose.runtime.collectAsState
+import com.zenith.focus.core.update.UpdateManager
+import com.zenith.focus.core.update.UpdateState
+import com.zenith.focus.core.update.ui.UpdateDialog
+
 @Composable
 fun SettingsScreen(
     config: ProtectionConfig,
     isServiceConnected: Boolean,
     isNuclearActive: Boolean = false,
     currentTheme: String = "",
+    updateManager: UpdateManager? = null,
     onSelectFrictionType: (FrictionType) -> Unit = {},
     onSetPin: suspend (String) -> Unit = {},
     onClearPin: suspend () -> Unit = {},
@@ -72,6 +78,43 @@ fun SettingsScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val scrollState = rememberScrollState()
+
+    val updateState = updateManager?.state?.collectAsState()?.value ?: UpdateState.Idle
+    var showUpdateDialog by remember { mutableStateOf(false) }
+
+    // Automatically trigger update dialog when state transitions to actionable states
+    if (updateState is UpdateState.Available ||
+        updateState is UpdateState.Downloading ||
+        updateState is UpdateState.Verifying ||
+        updateState is UpdateState.ReadyToInstall ||
+        updateState is UpdateState.Failed
+    ) {
+        showUpdateDialog = true
+    }
+
+    if (showUpdateDialog && updateManager != null && updateState !is UpdateState.Idle && updateState !is UpdateState.Checking && updateState !is UpdateState.UpToDate) {
+        UpdateDialog(
+            state = updateState,
+            currentVersionName = updateManager.currentVersionName,
+            onDismiss = {
+                showUpdateDialog = false
+                updateManager.resetState()
+            },
+            onStartDownload = { manifest ->
+                updateManager.startDownload(manifest)
+            },
+            onInstall = { apkFile ->
+                updateManager.installUpdate(apkFile)
+            },
+            onOpenSettings = {
+                context.startActivity(updateManager.getManageUnknownAppSourcesIntent())
+            },
+            canInstallPackages = updateManager.canRequestPackageInstalls(),
+            onRetry = {
+                updateManager.checkForUpdates()
+            }
+        )
+    }
 
     var showRestrictedDialog by remember { mutableStateOf(false) }
     var isDeviceAdminActive by remember {
@@ -360,6 +403,105 @@ fun SettingsScreen(
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium
                     )
+                }
+            }
+        }
+
+        // APP UPDATES & RELEASES
+        Text(
+            text = "APP UPDATES & RELEASES",
+            color = earth.forestGreen,
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp
+        )
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Card(
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.dp, earth.border, RoundedCornerShape(18.dp))
+        ) {
+            Column(modifier = Modifier.padding(18.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(text = "🔄", fontSize = 20.sp)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "Reel Narcotics Updates",
+                                color = earth.forestDark,
+                                fontSize = 14.5.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            val statusSubtitle = when (updateState) {
+                                is UpdateState.Checking -> "Checking release server..."
+                                is UpdateState.Available -> "New version v${updateState.manifest.versionName} ready"
+                                is UpdateState.Downloading -> "Downloading update (${updateState.progressPercent}%)..."
+                                is UpdateState.Verifying -> "Verifying security signatures..."
+                                is UpdateState.ReadyToInstall -> "Verified & ready to install"
+                                is UpdateState.UpToDate -> "✓ Up to date (v${updateState.currentVersionName})"
+                                is UpdateState.Failed -> "Update check failed"
+                                else -> "Current: v${updateManager?.currentVersionName ?: "2.2.0"}"
+                            }
+                            Text(
+                                text = statusSubtitle,
+                                color = if (updateState is UpdateState.Available) earth.camelOchre else earth.textMuted,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = earth.surface,
+                        modifier = Modifier.border(1.dp, earth.border, RoundedCornerShape(8.dp))
+                    ) {
+                        Text(
+                            text = "Build ${updateManager?.currentVersionCode ?: 4}",
+                            color = earth.forestGreen,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Button(
+                    onClick = {
+                        when (updateState) {
+                            is UpdateState.Available, is UpdateState.Downloading, is UpdateState.ReadyToInstall, is UpdateState.Failed -> {
+                                showUpdateDialog = true
+                            }
+                            else -> {
+                                updateManager?.checkForUpdates()
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    enabled = updateState !is UpdateState.Checking,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (updateState is UpdateState.Available || updateState is UpdateState.ReadyToInstall) earth.camelOchre else earth.forestDark,
+                        contentColor = Color.White
+                    )
+                ) {
+                    val btnText = when (updateState) {
+                        is UpdateState.Checking -> "Checking for updates..."
+                        is UpdateState.Available -> "View Update (v${updateState.manifest.versionName}) ➔"
+                        is UpdateState.ReadyToInstall -> "Install Update Now ➔"
+                        is UpdateState.Downloading -> "View Download Progress ➔"
+                        else -> "Check for Updates"
+                    }
+                    Text(btnText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

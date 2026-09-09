@@ -1,4 +1,4 @@
-﻿# Built application files
+# Built application files
 *.apk
 *.aar
 *.aab
@@ -51,3 +51,13 @@ captures/
 # OS specific
 .DS_Store
 Thumbs.db
+
+# Security & Signing Keys (NEVER commit production signing keys or secrets)
+*.keystore
+*.jks
+.env
+.env.*
+!.env.example
+ci/temp/
+node_modules/
+ci/node_modules/
