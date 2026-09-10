@@ -112,9 +112,21 @@ async function main() {
   fs.writeFileSync(stagedUpdateJsonPath, JSON.stringify(updateManifest, null, 2), 'utf8');
   console.log(`✅ Staged update.json generated at: ${stagedUpdateJsonPath}`);
 
-  // 3. Vercel Blob Upload
-  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
-  if (blobToken && !isDryRun) {
+  // 3. Vercel Blob Upload Authentication
+  const blobToken = process.env.BLOB_READ_WRITE_TOKEN?.trim();
+
+  if (isDryRun) {
+    console.log('\nℹ️ Dry run mode active (--dry-run). Skipping Vercel Blob upload.');
+    console.log(`Release artifacts staged locally in: ${distDir}`);
+  } else {
+    // In release/publish mode, BLOB_READ_WRITE_TOKEN is strictly required
+    if (!blobToken) {
+      console.error('\n❌ Fatal: BLOB_READ_WRITE_TOKEN environment variable is missing or empty.');
+      console.error('Cannot publish release artifacts to Vercel Blob store.');
+      console.error('Please configure BLOB_READ_WRITE_TOKEN in GitHub repository secrets (Settings > Secrets and variables > Actions).');
+      process.exit(1);
+    }
+
     console.log('\n📦 Uploading release artifacts to Vercel Blob store...');
     try {
       const { put } = await import('@vercel/blob');
@@ -156,18 +168,8 @@ async function main() {
       console.log('\n🎉 Vercel Blob release deployment complete!');
 
     } catch (err) {
-      console.error('❌ Failed to upload to Vercel Blob:', err.message);
-      if (process.env.CI) {
-        throw err;
-      }
-    }
-  } else {
-    if (!blobToken) {
-      console.log('\nℹ️ BLOB_READ_WRITE_TOKEN not set in environment.');
-      console.log('Release artifacts staged locally in: ' + distDir);
-      console.log('To publish to Vercel Blob, provide BLOB_READ_WRITE_TOKEN in CI/environment.');
-    } else {
-      console.log('\nℹ️ Dry run complete. No files uploaded.');
+      console.error('\n❌ Fatal: Failed to upload to Vercel Blob:', err.message);
+      process.exit(1);
     }
   }
 
