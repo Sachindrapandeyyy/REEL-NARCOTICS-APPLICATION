@@ -75,19 +75,16 @@ async function main() {
   fs.copyFileSync(defaultApkPath, stagedApkPath);
 
   // Construct target public Blob storage URL
-  // Default public Vercel Blob store endpoint for 'reel-narcotics-releases'
   const publicBlobBaseUrl = process.env.PUBLIC_BLOB_BASE_URL ||
-    `https://reel-narcotics-releases.public.blob.vercel-storage.com`;
+    `https://wrsps1etaszror9m.public.blob.vercel-storage.com`;
   const remoteApkUrl = `${publicBlobBaseUrl}/releases/${versionInfo.versionName}/${versionedApkName}`;
 
   // Read release notes from Git log or environment if available
   const releaseNotes = [
     `Reel Narcotics Release v${versionInfo.versionName} (Build ${versionInfo.versionCode})`,
-    "Scandinavian Kinfolk Organic Earth & Linen Minimalist UI",
-    "Complete Day & Night Mode with 1-tap quick switch and persistent settings",
-    "High-resolution native landscape artwork (Day & Night)",
-    "Selective Nuclear Lock with individual feed toggles",
-    "Extended Focus Timer steppers from 0 to 90 Days with 5-minute precision",
+    "Nuclear Mode lock extension: add time to active lock without conflicts",
+    "Surgical Shorts & Reels close: exits reel player without closing host app",
+    "High-contrast Organic Earth & Linen typography and onboarding screens",
     "Production auto-update checking with SHA-256 cryptographic verification",
     "100% Offline blocking engine with zero telemetry"
   ];

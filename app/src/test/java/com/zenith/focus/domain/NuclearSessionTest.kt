@@ -310,4 +310,30 @@ class NuclearSessionTest {
         val formatted = com.zenith.focus.core.time.DateTimeUtils.formatRemaining(ninetyDaysMillis)
         assertTrue(formatted.startsWith("90d"))
     }
+
+    @Test
+    fun testNuclearSessionExtensionAddsTimeToLock() {
+        val startWall = 1000000L
+        val startElapsed = 50000L
+        val originalDuration = 7L * 24 * 60 * 60 * 1000L // 7 Days
+        val originalEnd = startWall + originalDuration
+
+        val session = NuclearSession(
+            startTimeMillis = startWall,
+            endTimeMillis = originalEnd,
+            startElapsedRealtime = startElapsed,
+            durationMillis = originalDuration,
+            status = NuclearSessionStatus.ACTIVE
+        )
+
+        val additionalOneDay = 1L * 24 * 60 * 60 * 1000L // +1 Day
+        val extendedSession = session.copy(
+            endTimeMillis = session.endTimeMillis + additionalOneDay,
+            durationMillis = session.durationMillis + additionalOneDay
+        )
+
+        assertEquals(8L * 24 * 60 * 60 * 1000L, extendedSession.durationMillis)
+        assertEquals(originalEnd + additionalOneDay, extendedSession.endTimeMillis)
+        assertTrue(extendedSession.isCurrentlyActive(startWall + 1000L, startElapsed + 1000L))
+    }
 }

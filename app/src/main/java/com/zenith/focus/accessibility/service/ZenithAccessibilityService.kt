@@ -153,15 +153,24 @@ class ZenithAccessibilityService : AccessibilityService() {
             // 1. PHYSICAL HAPTIC SHOCK
             triggerHapticAlert()
 
-            // 2. S++ INSTANT KICK-OUT: Force exit directly to phone's Home Screen
+            // 2. SURGICAL SHORT CLOSE: Close only the active short/reel without killing host app
             withContext(Dispatchers.Main) {
-                ejectToHomeScreen()
-                val statusMsg = if (isNuclear) "☢️ NUCLEAR LOCK (STRICT RESTRICTION)" else "🔒 STANDARD FOCUS LOCK (RESTRICTION ACTIVE)"
-                Toast.makeText(
-                    applicationContext,
-                    "$statusMsg\nShort-form loop terminated. Keep focusing!",
-                    Toast.LENGTH_SHORT
-                ).show()
+                if (result.category == ContentCategory.ADULT_WEBSITE || result.category == ContentCategory.ADULT_KEYWORD) {
+                    ejectToHomeScreen()
+                    Toast.makeText(
+                        applicationContext,
+                        "🛡️ Explicit content blocked. Exiting to Home.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    closeActiveShortsOrReel()
+                    val statusMsg = if (isNuclear) "☢️ NUCLEAR LOCK" else "🔒 FOCUS LOCK"
+                    Toast.makeText(
+                        applicationContext,
+                        "$statusMsg: Reel/Short closed.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
 
             // 3. Record block event in local database
@@ -177,10 +186,14 @@ class ZenithAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun ejectToHomeScreen() {
-        // First, press BACK to terminate Shorts/Reel playback and prevent PiP
+    private fun closeActiveShortsOrReel() {
+        // Press BACK to exit the short/reel player while keeping the main app open
         performGlobalAction(GLOBAL_ACTION_BACK)
-        // Immediately kick user out to the Android Home Screen
+    }
+
+    private fun ejectToHomeScreen() {
+        // Press BACK to stop playback and immediately return to phone Home Screen
+        performGlobalAction(GLOBAL_ACTION_BACK)
         performGlobalAction(GLOBAL_ACTION_HOME)
         runCatching {
             val homeIntent = Intent(Intent.ACTION_MAIN).apply {

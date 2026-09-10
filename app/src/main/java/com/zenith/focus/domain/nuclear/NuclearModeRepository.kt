@@ -43,6 +43,12 @@ interface NuclearModeRepository {
     suspend fun acknowledgeCompletedSession(): Boolean
 
     /**
+     * Extends an already ACTIVE session by adding additional time onto the end-time.
+     * Fails if session is not currently ACTIVE.
+     */
+    suspend fun extendActiveSession(additionalMillis: Long): Boolean
+
+    /**
      * Recalibrates monotonic reference after device reboot.
      */
     suspend fun onDeviceRebooted()

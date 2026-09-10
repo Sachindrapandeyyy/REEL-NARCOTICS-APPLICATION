@@ -244,14 +244,14 @@ fun HomeScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             SquircleActionButton(
-                title = "FOCUS LOCK",
+                title = if (isNuclearActive) "LOCKED 🔒" else "FOCUS LOCK",
                 icon = Icons.Outlined.Lock,
-                containerColor = earth.forestGreen,
-                iconTint = Color.White,
+                containerColor = if (isNuclearActive) earth.surfaceSoft else earth.forestGreen,
+                iconTint = if (isNuclearActive) earth.textMuted else Color.White,
                 onClick = onStartLockClicked
             )
             SquircleActionButton(
-                title = "NUCLEAR",
+                title = if (isNuclearActive) "EXTEND ☢️" else "NUCLEAR",
                 icon = Icons.Outlined.Timer,
                 containerColor = earth.camelOchre,
                 iconTint = Color.White,

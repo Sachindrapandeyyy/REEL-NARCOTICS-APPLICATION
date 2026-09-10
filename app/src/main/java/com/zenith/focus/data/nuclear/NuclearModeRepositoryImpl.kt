@@ -180,6 +180,24 @@ class NuclearModeRepositoryImpl(
         return true
     }
 
+    override suspend fun extendActiveSession(additionalMillis: Long): Boolean {
+        val current = _session.value
+        if (current.status != NuclearSessionStatus.ACTIVE || additionalMillis <= 0) {
+            return false
+        }
+
+        val newEnd = current.endTimeMillis + additionalMillis
+        val newDuration = current.durationMillis + additionalMillis
+        val extendedSession = current.copy(
+            endTimeMillis = newEnd,
+            durationMillis = newDuration
+        )
+
+        persistSession(extendedSession)
+        _session.value = extendedSession
+        return true
+    }
+
     override suspend fun onDeviceRebooted() {
         val current = _session.value
         if (current.status == NuclearSessionStatus.ACTIVE) {

@@ -3,6 +3,7 @@ package com.zenith.focus.feature.onboarding
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,6 +23,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -37,14 +39,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zenith.focus.R
-import com.zenith.focus.core.designsystem.ZenithEmeraldAccent
-import com.zenith.focus.core.designsystem.ZenithNavy
-import com.zenith.focus.core.designsystem.ZenithNavyDark
+import com.zenith.focus.core.designsystem.EarthTheme
 import com.zenith.focus.core.ui.RestrictedSettingsBanner
 import com.zenith.focus.core.ui.RestrictedSettingsGuideDialog
 import com.zenith.focus.domain.model.ContentCategory
@@ -59,6 +60,7 @@ fun OnboardingScreen(
     onEnableDeviceAdmin: () -> Unit = {},
     onCompleteOnboarding: () -> Unit
 ) {
+    val earth = EarthTheme.colors
     var currentPage by remember { mutableIntStateOf(0) }
     var showRestrictedDialog by remember { mutableStateOf(false) }
     val totalPages = 9
@@ -71,7 +73,7 @@ fun OnboardingScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(ZenithNavyDark)
+            .background(earth.canvas)
             .padding(24.dp)
     ) {
         Column(
@@ -82,35 +84,35 @@ fun OnboardingScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp),
+                    .padding(top = 12.dp),
                 horizontalArrangement = Arrangement.Center
             ) {
                 for (i in 0 until totalPages) {
                     Box(
                         modifier = Modifier
                             .padding(horizontal = 3.dp)
-                            .size(if (i == currentPage) 20.dp else 6.dp, 6.dp)
+                            .size(if (i == currentPage) 22.dp else 6.dp, 6.dp)
                             .clip(RoundedCornerShape(3.dp))
-                            .background(if (i == currentPage) ZenithEmeraldAccent else Color(0xFF1E293B))
+                            .background(if (i == currentPage) earth.camelOchre else earth.border)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            // 3D Brand Logo
+            // 3D Brand Logo with refined border
             Image(
                 painter = painterResource(id = R.drawable.ic_reel_narcotics_logo),
                 contentDescription = "Reel Narcotics",
                 modifier = Modifier
-                    .size(130.dp)
-                    .clip(RoundedCornerShape(30.dp))
-                    .border(2.dp, Color(0xFF334155), RoundedCornerShape(30.dp))
+                    .size(110.dp)
+                    .clip(RoundedCornerShape(26.dp))
+                    .border(1.dp, earth.border, RoundedCornerShape(26.dp))
             )
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(22.dp))
 
-            // Page Content
+            // Page Content Container
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -141,12 +143,12 @@ fun OnboardingScreen(
                     4 -> OnboardingPageContent(
                         tag = "STEP 5 OF 9",
                         title = "100% Offline • Zero Telemetry",
-                        description = "Reel Narcotics has NO INTERNET PERMISSION. No cloud database, no account, no external tracking, no ads, and zero telemetry. Everything stays strictly inside your phone's physical hardware."
+                        description = "Reel Narcotics operates 100% locally on your device. No cloud database, no account, no external tracking, no ads, and zero telemetry. Everything stays strictly inside your phone's physical hardware."
                     )
                     5 -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "STEP 6 OF 9 • SHIELD PERMISSION",
-                            color = ZenithEmeraldAccent,
+                            color = earth.camelOchre,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
@@ -154,42 +156,45 @@ fun OnboardingScreen(
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = "Accessibility Shield",
-                            color = Color.White,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.ExtraBold,
+                            color = earth.forestGreen,
+                            fontSize = 24.sp,
+                            fontFamily = FontFamily.Serif,
+                            fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center
                         )
-                        Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "Used strictly to detect when YouTube Shorts & Reels open so Reel Narcotics can immediately close them. 100% offline — your chats, photos, and passwords are NEVER read or collected.",
-                            color = Color(0xFF94A3B8),
-                            fontSize = 12.5.sp,
+                            color = earth.textPrimary,
+                            fontSize = 13.sp,
                             textAlign = TextAlign.Center,
-                            lineHeight = 16.sp
+                            lineHeight = 18.sp
                         )
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
                         Card(
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
-                            modifier = Modifier.fillMaxWidth()
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(1.dp, earth.border, RoundedCornerShape(16.dp))
                         ) {
-                            Column(modifier = Modifier.padding(10.dp)) {
+                            Column(modifier = Modifier.padding(14.dp)) {
                                 Text(
                                     text = "📋 3 Quick Steps in Settings:",
-                                    color = Color.White,
-                                    fontSize = 11.sp,
+                                    color = earth.textPrimary,
+                                    fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
                                     text = "1. Tap button below -> opens Accessibility\n2. Look for 'Installed apps' or 'Downloaded apps'\n3. Tap 'Reel Narcotics Shield' -> Toggle ON",
-                                    color = Color(0xFFCBD5E1),
-                                    fontSize = 11.sp,
-                                    lineHeight = 15.sp,
-                                    modifier = Modifier.padding(top = 3.dp)
+                                    color = earth.textMuted,
+                                    fontSize = 11.5.sp,
+                                    lineHeight = 16.sp,
+                                    modifier = Modifier.padding(top = 4.dp)
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
                         Button(
                             onClick = {
                                 val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
@@ -198,15 +203,18 @@ fun OnboardingScreen(
                                 context.startActivity(intent)
                             },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isServiceConnected) Color(0xFF064E3B) else ZenithEmeraldAccent
+                                containerColor = if (isServiceConnected) earth.forestGreen else earth.camelOchre,
+                                contentColor = Color.White
                             ),
                             shape = RoundedCornerShape(14.dp),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(44.dp)
                         ) {
                             Text(
                                 text = if (isServiceConnected) "SHIELD PERMISSION ACTIVE ✓" else "OPEN ACCESSIBILITY SETTINGS",
                                 fontWeight = FontWeight.Bold,
-                                color = if (isServiceConnected) Color(0xFF6EE7B7) else Color.Black
+                                fontSize = 12.sp
                             )
                         }
 
@@ -220,7 +228,7 @@ fun OnboardingScreen(
                     6 -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "STEP 7 OF 9 • FOCUS INTEGRITY",
-                            color = ZenithEmeraldAccent,
+                            color = earth.camelOchre,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
@@ -228,54 +236,60 @@ fun OnboardingScreen(
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = "Anti-Uninstall Protection",
-                            color = Color.White,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.ExtraBold,
+                            color = earth.forestGreen,
+                            fontSize = 24.sp,
+                            fontFamily = FontFamily.Serif,
+                            fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center
                         )
-                        Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "During active Nuclear Mode sessions, your subconscious impulse will tempt you to delete the app to resume scrolling. Device Administrator locks the app against uninstallation until the timer ends.",
-                            color = Color(0xFF94A3B8),
-                            fontSize = 12.5.sp,
+                            color = earth.textPrimary,
+                            fontSize = 13.sp,
                             textAlign = TextAlign.Center,
-                            lineHeight = 16.sp
+                            lineHeight = 18.sp
                         )
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
                         Card(
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
-                            modifier = Modifier.fillMaxWidth()
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(1.dp, earth.border, RoundedCornerShape(16.dp))
                         ) {
-                            Column(modifier = Modifier.padding(10.dp)) {
+                            Column(modifier = Modifier.padding(14.dp)) {
                                 Text(
                                     text = "🔒 Unbreakable Focus Commitment:",
-                                    color = Color.White,
-                                    fontSize = 11.sp,
+                                    color = earth.textPrimary,
+                                    fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
                                     text = "• Cannot be uninstalled while Nuclear timer runs\n• Cannot be bypassed via app info or clear data\n• 1-tap direct system prompt (no menu hunting)",
-                                    color = Color(0xFFCBD5E1),
-                                    fontSize = 11.sp,
-                                    lineHeight = 15.sp,
-                                    modifier = Modifier.padding(top = 3.dp)
+                                    color = earth.textMuted,
+                                    fontSize = 11.5.sp,
+                                    lineHeight = 16.sp,
+                                    modifier = Modifier.padding(top = 4.dp)
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
                         Button(
                             onClick = onEnableDeviceAdmin,
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isDeviceAdminActive) Color(0xFF064E3B) else Color(0xFFD97706)
+                                containerColor = if (isDeviceAdminActive) earth.forestGreen else earth.camelOchre,
+                                contentColor = Color.White
                             ),
                             shape = RoundedCornerShape(14.dp),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(44.dp)
                         ) {
                             Text(
                                 text = if (isDeviceAdminActive) "UNINSTALL PROTECTION ACTIVE ✓" else "ACTIVATE UNINSTALL PROTECTION",
                                 fontWeight = FontWeight.Bold,
-                                color = if (isDeviceAdminActive) Color(0xFF6EE7B7) else Color.White
+                                fontSize = 12.sp
                             )
                         }
 
@@ -289,7 +303,7 @@ fun OnboardingScreen(
                     7 -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "STEP 8 OF 9",
-                            color = ZenithEmeraldAccent,
+                            color = earth.camelOchre,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
@@ -297,9 +311,10 @@ fun OnboardingScreen(
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = "Choose Your Targets",
-                            color = Color.White,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.ExtraBold,
+                            color = earth.forestGreen,
+                            fontSize = 24.sp,
+                            fontFamily = FontFamily.Serif,
+                            fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(16.dp))
@@ -334,12 +349,12 @@ fun OnboardingScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (currentPage > 0) {
-                    Button(
+                    OutlinedButton(
                         onClick = { currentPage-- },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E293B)),
+                        border = BorderStroke(1.dp, earth.border),
                         shape = RoundedCornerShape(14.dp)
                     ) {
-                        Text("BACK", color = Color(0xFF94A3B8))
+                        Text("BACK", color = earth.textMuted, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                     }
                 } else {
                     Spacer(modifier = Modifier.width(60.dp))
@@ -353,13 +368,16 @@ fun OnboardingScreen(
                             onCompleteOnboarding()
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = ZenithEmeraldAccent),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (currentPage == totalPages - 1) earth.camelOchre else earth.forestGreen,
+                        contentColor = Color.White
+                    ),
                     shape = RoundedCornerShape(14.dp)
                 ) {
                     Text(
                         text = if (currentPage == totalPages - 1) "GET STARTED" else "NEXT",
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black
+                        fontSize = 12.sp
                     )
                 }
             }
@@ -369,29 +387,31 @@ fun OnboardingScreen(
 
 @Composable
 fun OnboardingPageContent(tag: String, title: String, description: String) {
+    val earth = EarthTheme.colors
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.padding(horizontal = 8.dp)
     ) {
         Text(
             text = tag,
-            color = ZenithEmeraldAccent,
+            color = earth.camelOchre,
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp
+            letterSpacing = 1.2.sp
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = title,
-            color = Color.White,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.ExtraBold,
+            color = earth.forestGreen,
+            fontSize = 26.sp,
+            fontFamily = FontFamily.Serif,
+            fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(14.dp))
         Text(
             text = description,
-            color = Color(0xFF94A3B8),
+            color = earth.textPrimary,
             fontSize = 14.sp,
             textAlign = TextAlign.Center,
             lineHeight = 22.sp
@@ -401,13 +421,14 @@ fun OnboardingPageContent(tag: String, title: String, description: String) {
 
 @Composable
 fun OnboardingToggleRow(title: String, isChecked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    val earth = EarthTheme.colors
     Card(
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = ZenithNavy),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .border(1.dp, Color(0xFF1E293B), RoundedCornerShape(14.dp))
+            .border(1.dp, earth.border, RoundedCornerShape(16.dp))
     ) {
         Row(
             modifier = Modifier
@@ -416,15 +437,15 @@ fun OnboardingToggleRow(title: String, isChecked: Boolean, onCheckedChange: (Boo
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            Text(text = title, color = earth.textPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
             Switch(
                 checked = isChecked,
                 onCheckedChange = onCheckedChange,
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = Color.White,
-                    checkedTrackColor = ZenithEmeraldAccent,
-                    uncheckedThumbColor = Color(0xFF94A3B8),
-                    uncheckedTrackColor = Color(0xFF1E293B)
+                    checkedTrackColor = earth.forestGreen,
+                    uncheckedThumbColor = earth.textMuted,
+                    uncheckedTrackColor = earth.surface
                 )
             )
         }

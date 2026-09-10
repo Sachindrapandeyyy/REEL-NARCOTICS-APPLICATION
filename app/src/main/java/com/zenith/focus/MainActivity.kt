@@ -71,6 +71,7 @@ import com.zenith.focus.feature.home.HomeScreen
 import com.zenith.focus.feature.lock.LockSetupDialog
 import com.zenith.focus.feature.nuclear.NuclearArmingDialog
 import com.zenith.focus.feature.nuclear.NuclearCompleteDialog
+import com.zenith.focus.feature.nuclear.NuclearExtendDialog
 import com.zenith.focus.feature.onboarding.OnboardingScreen
 import com.zenith.focus.feature.protection.ProtectionScreen
 import com.zenith.focus.feature.settings.SettingsScreen
@@ -146,6 +147,7 @@ class MainActivity : ComponentActivity() {
                     var showLockDialog by remember { mutableStateOf(false) }
                     var showUnlockDialog by remember { mutableStateOf(false) }
                     var showNuclearArmingDialog by remember { mutableStateOf(false) }
+                    var showNuclearExtendDialog by remember { mutableStateOf(false) }
                     var selectedTab by remember { mutableIntStateOf(0) } // 0=Home, 1=Protection, 2=Stats, 3=Settings
 
                     // Today's reactive metrics
@@ -242,8 +244,24 @@ class MainActivity : ComponentActivity() {
                                                 settingsRepo.setAppTheme(if (isDarkTheme) "LIGHT" else "DARK")
                                             }
                                         },
-                                        onArmNuclearClicked = { showNuclearArmingDialog = true },
-                                        onStartLockClicked = { showLockDialog = true },
+                                        onArmNuclearClicked = {
+                                            if (nuclearSession.isCurrentlyActive()) {
+                                                showNuclearExtendDialog = true
+                                            } else {
+                                                showNuclearArmingDialog = true
+                                            }
+                                        },
+                                        onStartLockClicked = {
+                                            if (nuclearSession.isCurrentlyActive()) {
+                                                android.widget.Toast.makeText(
+                                                    context,
+                                                    "☢️ Nuclear Mode is active! Feeds are already locked unconditionally.",
+                                                    android.widget.Toast.LENGTH_SHORT
+                                                ).show()
+                                            } else {
+                                                showLockDialog = true
+                                            }
+                                        },
                                         onUnlockClicked = { showUnlockDialog = true },
                                         onNavigateProtection = { selectedTab = 1 },
                                         onNavigateStats = { selectedTab = 2 },
@@ -363,6 +381,27 @@ class MainActivity : ComponentActivity() {
                                             coroutineScope.launch {
                                                 nuclearRepo.activateArmedSession()
                                                 showNuclearArmingDialog = false
+                                            }
+                                        }
+                                    )
+                                }
+
+                                // Nuclear Extend Modal (Active Session -> Add Hours/Days to End Time)
+                                if (showNuclearExtendDialog) {
+                                    NuclearExtendDialog(
+                                        session = nuclearSession,
+                                        onDismiss = { showNuclearExtendDialog = false },
+                                        onConfirmExtension = { additionalMillis ->
+                                            coroutineScope.launch {
+                                                val success = nuclearRepo.extendActiveSession(additionalMillis)
+                                                if (success) {
+                                                    android.widget.Toast.makeText(
+                                                        context,
+                                                        "☢️ Nuclear lock extended successfully!",
+                                                        android.widget.Toast.LENGTH_SHORT
+                                                    ).show()
+                                                }
+                                                showNuclearExtendDialog = false
                                             }
                                         }
                                     )
