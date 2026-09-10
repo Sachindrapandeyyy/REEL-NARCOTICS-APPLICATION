@@ -61,3 +61,5 @@ Thumbs.db
 ci/temp/
 node_modules/
 ci/node_modules/
+.vercel
+.env*

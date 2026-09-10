@@ -48,10 +48,12 @@ jobs:
           if [ -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
             echo "Restoring keystore from GitHub Secret..."
             echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > zenith-release.keystore
+            cp zenith-release.keystore app/zenith-release.keystore 2>/dev/null || true
           elif [ -f "zenith-release.keystore" ]; then
             echo "Using local repository keystore..."
+            cp zenith-release.keystore app/zenith-release.keystore 2>/dev/null || true
           else
-            echo "Warning: Keystore not found; release build will fail if signing is required."
+            echo "Notice: Keystore not provided in secrets; build will fallback to debug signing."
           fi
 
       - name: Run Unit Tests

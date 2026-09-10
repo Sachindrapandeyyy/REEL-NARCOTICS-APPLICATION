@@ -22,8 +22,17 @@ android {
 
     signingConfigs {
         release {
-            def ksPath = System.getenv("ANDROID_KEYSTORE_FILE") ?: project.findProperty("ANDROID_KEYSTORE_FILE") ?: "../zenith-release.keystore"
-            def ksFile = file(ksPath)
+            def customPath = System.getenv("ANDROID_KEYSTORE_FILE") ?: project.findProperty("ANDROID_KEYSTORE_FILE")
+            def candidateFiles = customPath ? [
+                file(customPath),
+                rootProject.file(customPath)
+            ] : [
+                file("../zenith-release.keystore"),
+                rootProject.file("zenith-release.keystore"),
+                file("zenith-release.keystore")
+            ]
+            def resolvedKsFile = candidateFiles.find { it != null && it.exists() }
+
             def ksPass = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: project.findProperty("ANDROID_KEYSTORE_PASSWORD") ?: ""
             def kAlias = System.getenv("ANDROID_KEY_ALIAS") ?: project.findProperty("ANDROID_KEY_ALIAS") ?: "zenith"
             def kPass = System.getenv("ANDROID_KEY_PASSWORD") ?: project.findProperty("ANDROID_KEY_PASSWORD") ?: ""
@@ -40,8 +49,8 @@ android {
                 }
             }
 
-            if (ksFile.exists() && ksPass) {
-                storeFile ksFile
+            if (resolvedKsFile != null && ksPass) {
+                storeFile resolvedKsFile
                 storePassword ksPass
                 keyAlias kAlias
                 keyPassword kPass
@@ -53,7 +62,12 @@ android {
 
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            if (signingConfigs.release.storeFile != null && signingConfigs.release.storeFile.exists() && signingConfigs.release.storePassword) {
+                signingConfig signingConfigs.release
+            } else {
+                println("⚠️ [build.gradle] Production release keystore or credentials not configured; falling back to debug signingConfig for packaging.")
+                signingConfig signingConfigs.debug
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
