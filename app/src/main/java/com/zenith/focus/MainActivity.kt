@@ -77,6 +77,8 @@ import com.zenith.focus.feature.protection.ProtectionScreen
 import com.zenith.focus.feature.settings.SettingsScreen
 import com.zenith.focus.feature.stats.StatisticsScreen
 import com.zenith.focus.feature.unlock.UnlockFrictionDialog
+import com.zenith.focus.core.update.UpdateState
+import com.zenith.focus.core.update.ui.UpdateDialog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -148,6 +150,8 @@ class MainActivity : ComponentActivity() {
                     var showUnlockDialog by remember { mutableStateOf(false) }
                     var showNuclearArmingDialog by remember { mutableStateOf(false) }
                     var showNuclearExtendDialog by remember { mutableStateOf(false) }
+                    val updateState by updateManager.state.collectAsState()
+                    var showGlobalUpdateDialog by remember { mutableStateOf(false) }
                     var selectedTab by remember { mutableIntStateOf(0) } // 0=Home, 1=Protection, 2=Stats, 3=Settings
 
                     // Today's reactive metrics
@@ -182,6 +186,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
+                    // Background tick for lock expiration and stats
                     androidx.compose.runtime.LaunchedEffect(Unit) {
                         while (true) {
                             refreshStats()
@@ -189,6 +194,24 @@ class MainActivity : ComponentActivity() {
                             lockRepo.refreshLockState()
                             isDeviceAdminActive = ZenithDeviceAdminReceiver.isAdminActive(context)
                             delay(1000L)
+                        }
+                    }
+
+                    // Automatic OTA update check on launch (with 1.5s delay to let UI settle)
+                    androidx.compose.runtime.LaunchedEffect(Unit) {
+                        delay(1500L)
+                        updateManager.checkForUpdates()
+                    }
+
+                    // Automatically trigger global update modal when actionable update state arrives
+                    androidx.compose.runtime.LaunchedEffect(updateState) {
+                        if (updateState is UpdateState.Available ||
+                            updateState is UpdateState.Downloading ||
+                            updateState is UpdateState.Verifying ||
+                            updateState is UpdateState.ReadyToInstall ||
+                            updateState is UpdateState.Failed
+                        ) {
+                            showGlobalUpdateDialog = true
                         }
                     }
 
@@ -312,6 +335,7 @@ class MainActivity : ComponentActivity() {
                                         isNuclearActive = nuclearSession.isCurrentlyActive(),
                                         currentTheme = appTheme,
                                         updateManager = updateManager,
+                                        onShowUpdateDialog = { showGlobalUpdateDialog = true },
                                         onSelectFrictionType = { friction ->
                                             coroutineScope.launch { settingsRepo.setFrictionType(friction) }
                                         },
@@ -345,23 +369,24 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
 
-                                // Unlock Friction Modal (Blocked if Nuclear Mode is Active)
-                                if (showUnlockDialog) {
-                                    UnlockFrictionDialog(
-                                        lockState = lockState,
-                                        config = config,
-                                        isNuclearActive = nuclearSession.isCurrentlyActive(),
-                                        onDismiss = { showUnlockDialog = false },
-                                        onUnlockConfirmed = {
-                                            coroutineScope.launch {
-                                                lockRepo.endLock()
-                                            }
-                                        },
-                                        onVerifyPin = { pin ->
-                                            settingsRepo.verifyPin(pin)
-                                        }
-                                    )
-                                }
+                                 // Unlock Friction Modal (Blocked if Nuclear Mode is Active)
+                                 if (showUnlockDialog) {
+                                     UnlockFrictionDialog(
+                                         lockState = lockState,
+                                         config = config,
+                                         isNuclearActive = nuclearSession.isCurrentlyActive(),
+                                         onDismiss = { showUnlockDialog = false },
+                                         onUnlockConfirmed = {
+                                             coroutineScope.launch {
+                                                 showUnlockDialog = false
+                                                 lockRepo.endLock()
+                                             }
+                                         },
+                                         onVerifyPin = { pin ->
+                                             settingsRepo.verifyPin(pin)
+                                         }
+                                     )
+                                 }
 
                                 // Nuclear Arming Flow Modal (Commitment Warning -> Duration -> 3s Hold to Activate)
                                 if (showNuclearArmingDialog) {
@@ -417,6 +442,31 @@ class MainActivity : ComponentActivity() {
                                             coroutineScope.launch {
                                                 nuclearRepo.acknowledgeCompletedSession()
                                             }
+                                        }
+                                    )
+                                }
+
+                                // Global In-App OTA Update Dialog
+                                if (showGlobalUpdateDialog && updateState !is UpdateState.Idle && updateState !is UpdateState.Checking && updateState !is UpdateState.UpToDate) {
+                                    UpdateDialog(
+                                        state = updateState,
+                                        currentVersionName = updateManager.currentVersionName,
+                                        onDismiss = {
+                                            showGlobalUpdateDialog = false
+                                            updateManager.resetState()
+                                        },
+                                        onStartDownload = { manifest ->
+                                            updateManager.startDownload(manifest)
+                                        },
+                                        onInstall = { apkFile ->
+                                            updateManager.installUpdate(apkFile)
+                                        },
+                                        onOpenSettings = {
+                                            context.startActivity(updateManager.getManageUnknownAppSourcesIntent())
+                                        },
+                                        canInstallPackages = updateManager.canRequestPackageInstalls(),
+                                        onRetry = {
+                                            updateManager.checkForUpdates()
                                         }
                                     )
                                 }

@@ -329,6 +329,89 @@ fun UpdateDialog(
                         }
                     }
 
+                    is UpdateState.Installing -> {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(28.dp),
+                                strokeWidth = 3.dp,
+                                color = earth.forestGreen
+                            )
+                            Spacer(modifier = Modifier.width(14.dp))
+                            Column {
+                                Text(
+                                    text = "Launching Installer...",
+                                    fontSize = 17.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Serif,
+                                    color = earth.forestDark
+                                )
+                                Text(
+                                    text = "Confirm the system prompt to finish updating.",
+                                    fontSize = 12.sp,
+                                    color = earth.textMuted
+                                )
+                            }
+                        }
+                    }
+
+                    is UpdateState.UpToDate -> {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("🛡️", fontSize = 24.sp)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "Up to Date",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Serif,
+                                    color = earth.forestDark
+                                )
+                                Text(
+                                    text = "Reel Narcotics is on the latest version (v${state.currentVersionName}).",
+                                    fontSize = 12.sp,
+                                    color = earth.textMuted
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(18.dp))
+                        Button(
+                            onClick = onDismiss,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = earth.forestDark,
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Text("Got it", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    is UpdateState.Checking -> {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(28.dp),
+                                strokeWidth = 3.dp,
+                                color = earth.forestGreen
+                            )
+                            Spacer(modifier = Modifier.width(14.dp))
+                            Column {
+                                Text(
+                                    text = "Checking for Updates...",
+                                    fontSize = 17.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Serif,
+                                    color = earth.forestDark
+                                )
+                                Text(
+                                    text = "Connecting to release server...",
+                                    fontSize = 12.sp,
+                                    color = earth.textMuted
+                                )
+                            }
+                        }
+                    }
+
                     else -> {}
                 }
             }

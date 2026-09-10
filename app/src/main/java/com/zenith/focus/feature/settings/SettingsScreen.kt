@@ -69,6 +69,7 @@ fun SettingsScreen(
     isNuclearActive: Boolean = false,
     currentTheme: String = "",
     updateManager: UpdateManager? = null,
+    onShowUpdateDialog: () -> Unit = {},
     @Suppress("UNUSED_PARAMETER") onSelectFrictionType: (FrictionType) -> Unit = {},
     @Suppress("UNUSED_PARAMETER") onSetPin: suspend (String) -> Unit = {},
     @Suppress("UNUSED_PARAMETER") onClearPin: suspend () -> Unit = {},
@@ -80,41 +81,6 @@ fun SettingsScreen(
     val scrollState = rememberScrollState()
 
     val updateState = updateManager?.state?.collectAsState()?.value ?: UpdateState.Idle
-    var showUpdateDialog by remember { mutableStateOf(false) }
-
-    // Automatically trigger update dialog when state transitions to actionable states
-    if (updateState is UpdateState.Available ||
-        updateState is UpdateState.Downloading ||
-        updateState is UpdateState.Verifying ||
-        updateState is UpdateState.ReadyToInstall ||
-        updateState is UpdateState.Failed
-    ) {
-        showUpdateDialog = true
-    }
-
-    if (showUpdateDialog && updateManager != null && updateState !is UpdateState.Idle && updateState !is UpdateState.Checking && updateState !is UpdateState.UpToDate) {
-        UpdateDialog(
-            state = updateState,
-            currentVersionName = updateManager.currentVersionName,
-            onDismiss = {
-                showUpdateDialog = false
-                updateManager.resetState()
-            },
-            onStartDownload = { manifest ->
-                updateManager.startDownload(manifest)
-            },
-            onInstall = { apkFile ->
-                updateManager.installUpdate(apkFile)
-            },
-            onOpenSettings = {
-                context.startActivity(updateManager.getManageUnknownAppSourcesIntent())
-            },
-            canInstallPackages = updateManager.canRequestPackageInstalls(),
-            onRetry = {
-                updateManager.checkForUpdates()
-            }
-        )
-    }
 
     var showRestrictedDialog by remember { mutableStateOf(false) }
     var isDeviceAdminActive by remember {
@@ -448,7 +414,7 @@ fun SettingsScreen(
                                 is UpdateState.ReadyToInstall -> "Verified & ready to install"
                                 is UpdateState.UpToDate -> "✓ Up to date (v${updateState.currentVersionName})"
                                 is UpdateState.Failed -> "Update check failed"
-                                else -> "Current: v${updateManager?.currentVersionName ?: "2.2.0"}"
+                                else -> "Current: v${updateManager?.currentVersionName ?: "2.3.1"}"
                             }
                             Text(
                                 text = statusSubtitle,
@@ -464,7 +430,7 @@ fun SettingsScreen(
                         modifier = Modifier.border(1.dp, earth.border, RoundedCornerShape(8.dp))
                     ) {
                         Text(
-                            text = "Build ${updateManager?.currentVersionCode ?: 4}",
+                            text = "Build ${updateManager?.currentVersionCode ?: 6}",
                             color = earth.forestGreen,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
@@ -478,8 +444,8 @@ fun SettingsScreen(
                 Button(
                     onClick = {
                         when (updateState) {
-                            is UpdateState.Available, is UpdateState.Downloading, is UpdateState.ReadyToInstall, is UpdateState.Failed -> {
-                                showUpdateDialog = true
+                            is UpdateState.Available, is UpdateState.Downloading, is UpdateState.Verifying, is UpdateState.ReadyToInstall, is UpdateState.Failed -> {
+                                onShowUpdateDialog()
                             }
                             else -> {
                                 updateManager?.checkForUpdates()
@@ -659,7 +625,7 @@ fun SettingsScreen(
                 )
                 Spacer(modifier = Modifier.width(14.dp))
                 Column {
-                    Text("Reel Narcotics v2.2.0", color = earth.forestDark, fontSize = 15.sp, fontWeight = FontWeight.Black)
+                    Text("Reel Narcotics v${updateManager?.currentVersionName ?: "2.3.1"}", color = earth.forestDark, fontSize = 15.sp, fontWeight = FontWeight.Black)
                     Text("Break the scroll. Take back your attention.", color = earth.forestGreen, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
