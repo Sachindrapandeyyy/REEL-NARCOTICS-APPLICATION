@@ -302,21 +302,21 @@ fun SettingsScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Button(
-                        onClick = { OemNavigationManager.openAppInfo(context) },
-                        colors = ButtonDefaults.buttonColors(containerColor = earth.forestDark),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("1. TOUCH TO OPEN APP INFO ➔", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Button(
                         onClick = { OemNavigationManager.openAccessibilitySettings(context) },
                         colors = ButtonDefaults.buttonColors(containerColor = earth.forestGreen),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("2. OPEN ACCESSIBILITY SETTINGS ➔", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Text("1. OPEN ACCESSIBILITY SETTINGS ➔", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = { OemNavigationManager.openAppInfo(context) },
+                        colors = ButtonDefaults.buttonColors(containerColor = earth.forestDark),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("2. TOUCH TO OPEN APP INFO (3-DOTS) ➔", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
                     if (guidance.step3ButtonLabel != null) {
                         Spacer(modifier = Modifier.height(8.dp))
@@ -370,6 +370,7 @@ fun SettingsScreen(
                 }
 
                 if (!isDeviceAdminActive) {
+                    val guidance = remember { OemNavigationManager.getGuidance() }
                     Spacer(modifier = Modifier.height(14.dp))
                     Button(
                         onClick = {
@@ -381,6 +382,13 @@ fun SettingsScreen(
                     ) {
                         Text("ACTIVATE UNINSTALL PROTECTION", color = Color.White, fontWeight = FontWeight.Bold)
                     }
+                    Text(
+                        text = guidance.deviceAdminHint ?: "💡 Tap 'Activate' on the system prompt",
+                        color = earth.camelOchre,
+                        fontSize = 11.sp,
+                        lineHeight = 15.sp,
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
                     Spacer(modifier = Modifier.height(10.dp))
                     RestrictedSettingsBanner(
                         onOpenDialog = { showRestrictedDialog = true }

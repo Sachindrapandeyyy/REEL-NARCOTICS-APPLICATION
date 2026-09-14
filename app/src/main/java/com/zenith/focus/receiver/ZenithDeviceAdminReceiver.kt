@@ -44,32 +44,74 @@ class ZenithDeviceAdminReceiver : DeviceAdminReceiver() {
             }
         }
 
-        fun openDeviceAdminActivation(context: Context) {
+        fun openDeviceAdminActivation(context: Context): Boolean {
             val activity = getActivity(context)
+
+            // 1. First priority: Direct ACTION_ADD_DEVICE_ADMIN intent
             try {
                 val intent = createAddAdminIntent(context)
                 if (activity != null) {
                     activity.startActivity(intent)
-                    return
+                    return true
+                } else {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
+                    return true
                 }
-            } catch (e: Exception) {
-                // fall through to settings list fallback
+            } catch (e: SecurityException) {
+                // Restricted settings blocked this action on Android 13+ / MIUI / Vivo
+                Toast.makeText(
+                    context,
+                    "⚠️ Unlock 'Allow restricted settings' in App Info first!",
+                    Toast.LENGTH_LONG
+                ).show()
+                com.zenith.focus.core.permission.OemNavigationManager.openAppInfo(context)
+                return false
+            } catch (_: Exception) {
+                // Try fallback device admin screens
             }
 
-            try {
-                val intent = Intent().apply {
-                    component = ComponentName(
-                        "com.android.settings",
-                        "com.android.settings.Settings\$DeviceAdminSettingsActivity"
-                    )
+            // 2. Candidate Device Admin settings intents across OEMs (POCO, Xiaomi, Vivo, Samsung, AOSP)
+            val candidateIntents = listOf(
+                Intent("android.settings.DEVICE_ADMIN_SETTINGS"),
+                Intent().setComponent(ComponentName("com.android.settings", "com.android.settings.DeviceAdminSettings")),
+                Intent().setComponent(ComponentName("com.android.settings", "com.android.settings.Settings\$DeviceAdminSettingsActivity")),
+                // Xiaomi / POCO (MIUI / HyperOS)
+                Intent().setComponent(ComponentName("com.android.settings", "com.android.settings.DeviceAdminAdd")),
+                Intent().setComponent(ComponentName("com.miui.securitycenter", "com.miui.permcenter.permissions.SpecialPermissionActivity")),
+                Intent("miui.intent.action.DEVICE_ADMIN_SETTINGS"),
+                // Vivo (Funtouch OS / OriginOS)
+                Intent().setComponent(ComponentName("com.vivo.settings", "com.vivo.settings.DeviceAdminSettings")),
+                Intent().setComponent(ComponentName("com.vivo.permissionmanager", "com.vivo.permissionmanager.activity.PurviewTabActivity"))
+            )
+
+            for (cand in candidateIntents) {
+                try {
+                    cand.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    val resolved = context.packageManager.resolveActivity(cand, 0)
+                    if (resolved != null) {
+                        context.startActivity(cand)
+                        return true
+                    }
+                } catch (_: Exception) {
+                    // Try next
+                }
+            }
+
+            // 3. Fallback: Prompt user and open App Info or Security Settings
+            Toast.makeText(
+                context,
+                "Please enable Device Admin for Reel Narcotics in Special Permissions",
+                Toast.LENGTH_LONG
+            ).show()
+            return try {
+                val secIntent = Intent(Settings.ACTION_SECURITY_SETTINGS).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 }
-                context.startActivity(intent)
-            } catch (e2: Exception) {
-                val intent = Intent(Settings.ACTION_SECURITY_SETTINGS).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                }
-                context.startActivity(intent)
+                context.startActivity(secIntent)
+                true
+            } catch (_: Exception) {
+                com.zenith.focus.core.permission.OemNavigationManager.openAppInfo(context)
             }
         }
     }

@@ -163,16 +163,16 @@ fun RestrictedSettingsGuideDialog(
                 Button(
                     onClick = {
                         onDismiss()
-                        OemNavigationManager.openAppInfo(context)
+                        OemNavigationManager.openAccessibilitySettings(context)
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = earth.forestDark),
+                    colors = ButtonDefaults.buttonColors(containerColor = earth.forestGreen),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(44.dp)
                 ) {
                     Text(
-                        text = "1. TOUCH TO OPEN APP INFO ➔",
+                        text = "1. OPEN ACCESSIBILITY SETTINGS ➔",
                         color = Color.White,
                         fontWeight = FontWeight.Black,
                         fontSize = 12.sp
@@ -184,16 +184,16 @@ fun RestrictedSettingsGuideDialog(
                 Button(
                     onClick = {
                         onDismiss()
-                        OemNavigationManager.openAccessibilitySettings(context)
+                        OemNavigationManager.openAppInfo(context)
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = earth.forestGreen),
+                    colors = ButtonDefaults.buttonColors(containerColor = earth.forestDark),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(44.dp)
                 ) {
                     Text(
-                        text = "2. OPEN ACCESSIBILITY SETTINGS ➔",
+                        text = "2. TOUCH TO OPEN APP INFO (3-DOTS) ➔",
                         color = Color.White,
                         fontWeight = FontWeight.Black,
                         fontSize = 12.sp

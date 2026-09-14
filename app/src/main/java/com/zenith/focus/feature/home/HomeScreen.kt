@@ -432,15 +432,15 @@ fun HomeScreen(
                                 )
 
                                 Button(
-                                    onClick = { OemNavigationManager.openAppInfo(context) },
-                                    colors = ButtonDefaults.buttonColors(containerColor = earth.forestDark),
+                                    onClick = onEnableAccessibility,
+                                    colors = ButtonDefaults.buttonColors(containerColor = earth.forestGreen),
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(38.dp)
                                 ) {
                                     Text(
-                                        text = "1. TOUCH TO OPEN APP INFO ➔",
+                                        text = "1. OPEN ACCESSIBILITY SETTINGS ➔",
                                         color = Color.White,
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold
@@ -450,15 +450,15 @@ fun HomeScreen(
                                 Spacer(modifier = Modifier.height(6.dp))
 
                                 Button(
-                                    onClick = onEnableAccessibility,
-                                    colors = ButtonDefaults.buttonColors(containerColor = earth.forestGreen),
+                                    onClick = { OemNavigationManager.openAppInfo(context) },
+                                    colors = ButtonDefaults.buttonColors(containerColor = earth.forestDark),
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(38.dp)
                                 ) {
                                     Text(
-                                        text = "2. OPEN ACCESSIBILITY SETTINGS ➔",
+                                        text = "2. TOUCH TO OPEN APP INFO (3-DOTS) ➔",
                                         color = Color.White,
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold
@@ -487,6 +487,7 @@ fun HomeScreen(
                     }
 
                     if (!isDeviceAdminActive) {
+                        val guidance = remember { OemNavigationManager.getGuidance() }
                         Spacer(modifier = Modifier.height(4.dp))
                         Card(
                             shape = RoundedCornerShape(14.dp),
@@ -525,9 +526,10 @@ fun HomeScreen(
                                     )
                                 }
                                 Text(
-                                    text = "💡 Pops up Android system prompt directly — simply tap 'Activate'",
+                                    text = guidance.deviceAdminHint ?: "💡 Pops up Android system prompt directly — simply tap 'Activate'",
                                     color = earth.camelOchre,
                                     fontSize = 10.5.sp,
+                                    lineHeight = 14.sp,
                                     modifier = Modifier.padding(top = 4.dp)
                                 )
                             }

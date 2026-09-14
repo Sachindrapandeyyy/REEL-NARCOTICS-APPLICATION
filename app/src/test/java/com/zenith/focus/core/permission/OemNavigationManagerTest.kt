@@ -53,7 +53,22 @@ class OemNavigationManagerTest {
             assertTrue(guidance.step1Title.isNotEmpty())
             assertNotNull(guidance.step2Title)
             assertTrue(guidance.step2Title.isNotEmpty())
+            assertNotNull(guidance.deviceAdminHint)
+            assertTrue(guidance.deviceAdminHint!!.isNotEmpty())
             assertEquals(brand, guidance.brand)
         }
+    }
+
+    @Test
+    fun testStepOrderReflectsAndroid13Flow() {
+        val xiaomi = OemNavigationManager.getGuidance(DeviceBrand.XIAOMI)
+        assertTrue(xiaomi.step1Title.contains("Accessibility", ignoreCase = true))
+        assertTrue(xiaomi.step2Title.contains("App Info", ignoreCase = true))
+        assertTrue(xiaomi.deviceAdminHint!!.contains("POCO", ignoreCase = true))
+
+        val vivo = OemNavigationManager.getGuidance(DeviceBrand.VIVO)
+        assertTrue(vivo.step1Title.contains("Accessibility", ignoreCase = true))
+        assertTrue(vivo.step2Title.contains("App Info", ignoreCase = true))
+        assertTrue(vivo.deviceAdminHint!!.contains("Vivo", ignoreCase = true))
     }
 }

@@ -115,14 +115,14 @@ fun OemPermissionCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             if (!isServiceConnected) {
-                // Step 1: Open App Info (Primary Touch Navigation)
+                // Step 1: Open Accessibility Settings (Trigger Restriction)
                 Card(
                     shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = earth.surface),
                     modifier = Modifier
                         .fillMaxWidth()
                         .border(1.dp, earth.camelOchre.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
-                        .clickable { OemNavigationManager.openAppInfo(context) }
+                        .clickable { OemNavigationManager.openAccessibilitySettings(context) }
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -143,15 +143,15 @@ fun OemPermissionCard(
                             modifier = Modifier.padding(vertical = 4.dp)
                         )
                         Button(
-                            onClick = { OemNavigationManager.openAppInfo(context) },
-                            colors = ButtonDefaults.buttonColors(containerColor = earth.forestDark),
+                            onClick = { OemNavigationManager.openAccessibilitySettings(context) },
+                            colors = ButtonDefaults.buttonColors(containerColor = earth.forestGreen),
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(38.dp)
                         ) {
                             Text(
-                                text = "TOUCH HERE TO OPEN APP INFO ➔",
+                                text = "1. OPEN ACCESSIBILITY SETTINGS ➔",
                                 color = Color.White,
                                 fontSize = 11.5.sp,
                                 fontWeight = FontWeight.Bold
@@ -162,13 +162,14 @@ fun OemPermissionCard(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Step 2: Open Accessibility Settings
+                // Step 2: Open App Info (Unlock Restricted Settings via 3-dots)
                 Card(
                     shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = earth.surface),
                     modifier = Modifier
                         .fillMaxWidth()
                         .border(1.dp, earth.border, RoundedCornerShape(14.dp))
+                        .clickable { OemNavigationManager.openAppInfo(context) }
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -189,15 +190,15 @@ fun OemPermissionCard(
                             modifier = Modifier.padding(vertical = 4.dp)
                         )
                         Button(
-                            onClick = { OemNavigationManager.openAccessibilitySettings(context) },
-                            colors = ButtonDefaults.buttonColors(containerColor = earth.forestGreen),
+                            onClick = { OemNavigationManager.openAppInfo(context) },
+                            colors = ButtonDefaults.buttonColors(containerColor = earth.forestDark),
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(38.dp)
                         ) {
                             Text(
-                                text = "OPEN ACCESSIBILITY SETTINGS ➔",
+                                text = "2. TOUCH TO OPEN APP INFO (3-DOTS) ➔",
                                 color = Color.White,
                                 fontSize = 11.5.sp,
                                 fontWeight = FontWeight.Bold

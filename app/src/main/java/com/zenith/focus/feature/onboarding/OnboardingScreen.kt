@@ -244,7 +244,16 @@ fun OnboardingScreen(
                         }
 
                         if (!isDeviceAdminActive) {
-                            Spacer(modifier = Modifier.height(10.dp))
+                            val guidance = remember { com.zenith.focus.core.permission.OemNavigationManager.getGuidance() }
+                            Text(
+                                text = guidance.deviceAdminHint ?: "💡 Tap 'Activate' on the system prompt",
+                                color = earth.camelOchre,
+                                fontSize = 10.5.sp,
+                                lineHeight = 14.sp,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(top = 6.dp)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
                             RestrictedSettingsBanner(
                                 onOpenDialog = { showRestrictedDialog = true }
                             )

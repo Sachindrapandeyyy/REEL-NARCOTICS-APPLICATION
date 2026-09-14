@@ -289,10 +289,7 @@ class MainActivity : ComponentActivity() {
                                         onNavigateProtection = { selectedTab = 1 },
                                         onNavigateStats = { selectedTab = 2 },
                                         onEnableAccessibility = {
-                                            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
-                                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                                            }
-                                            startActivity(intent)
+                                            com.zenith.focus.core.permission.OemNavigationManager.openAccessibilitySettings(this@MainActivity)
                                         },
                                         onEnableDeviceAdmin = {
                                             ZenithDeviceAdminReceiver.openDeviceAdminActivation(context)
