@@ -10,7 +10,7 @@ data class TamperDetectionResult(
 
 object TamperDetectionEngine {
 
-    private val UNINSTALL_PACKAGES = setOf(
+    private val BASE_TAMPER_PACKAGES = setOf(
         "com.google.android.packageinstaller",
         "com.android.packageinstaller",
         "com.android.settings",
@@ -24,9 +24,17 @@ object TamperDetectionEngine {
         "com.zenith.focus"
     )
 
+    private fun isPotentialTamperPackage(pkg: String): Boolean {
+        return pkg in BASE_TAMPER_PACKAGES ||
+                pkg.contains("packageinstaller") ||
+                pkg.contains("securitycenter") ||
+                pkg.contains("settings") ||
+                pkg == "com.android.vending"
+    }
+
     fun evaluate(context: ScreenContext): TamperDetectionResult {
         val pkg = context.packageName.lowercase()
-        if (pkg !in UNINSTALL_PACKAGES) {
+        if (!isPotentialTamperPackage(pkg)) {
             return TamperDetectionResult(isTamperAttempt = false)
         }
 
@@ -52,8 +60,8 @@ object TamperDetectionEngine {
             }
         }
 
-        // Case 2: Settings - App Info, Device Admin deactivation, or Accessibility disabling
-        if (pkg == "com.android.settings") {
+        // Case 2: Settings or Security Center - App Info, Device Admin deactivation, or Accessibility disabling
+        if (pkg.contains("settings") || pkg.contains("securitycenter")) {
             val isDeviceAdminScreen = context.className.contains("DeviceAdmin", ignoreCase = true) ||
                     allTexts.any { it.contains("device admin") || it.contains("device administrator") }
 
@@ -82,6 +90,8 @@ object TamperDetectionEngine {
 
             val isAppInfoOrAdminScreen = context.className.contains("InstalledAppDetails", ignoreCase = true) ||
                     context.className.contains("AccessibilitySettings", ignoreCase = true) ||
+                    context.className.contains("AppControl", ignoreCase = true) ||
+                    context.className.contains("ManageApp", ignoreCase = true) ||
                     hasDestructiveAction
 
             if (isAppInfoOrAdminScreen && mentionsTargetApp) {

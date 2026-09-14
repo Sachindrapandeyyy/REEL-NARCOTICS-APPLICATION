@@ -11,8 +11,8 @@ android {
         applicationId "com.zenith.focus"
         minSdk 24
         targetSdk 33
-        versionCode 8
-        versionName "2.3.3"
+        versionCode 9
+        versionName "2.3.4"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

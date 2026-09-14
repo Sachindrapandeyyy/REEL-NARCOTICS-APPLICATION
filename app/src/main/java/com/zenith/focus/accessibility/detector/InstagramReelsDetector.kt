@@ -1,4 +1,4 @@
-﻿package com.zenith.focus.accessibility.detector
+package com.zenith.focus.accessibility.detector
 
 import com.zenith.focus.accessibility.analyzer.ScreenContext
 import com.zenith.focus.domain.model.ContentCategory
@@ -31,7 +31,13 @@ class InstagramReelsDetector : ContentDetector {
         }
 
         // Signal 2: Reels bottom navigation tab selected or active
-        if (context.hasContentDescription("Reels, tab 4 of 5") || context.hasContentDescription("Reels tab") || context.hasContentDescription("Reels, selected") || context.hasContentDescription("Reels")) {
+        val isReelsTabSelected = context.hasSelectedDesc("Reels") ||
+                context.hasSelectedText("Reels") ||
+                context.hasContentDescription("Reels, tab 4 of 5") ||
+                context.hasContentDescription("Reels tab") ||
+                context.hasContentDescription("Reels, selected") ||
+                context.hasContentDescription("Reels tab, selected")
+        if (isReelsTabSelected) {
             confidence = maxOf(confidence, 0.95f)
             reasons.add("Reels tab selected in navigation")
         }

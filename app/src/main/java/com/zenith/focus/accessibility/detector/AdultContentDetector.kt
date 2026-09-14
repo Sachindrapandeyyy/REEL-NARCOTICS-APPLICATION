@@ -61,7 +61,7 @@ class AdultContentDetector : ContentDetector {
                 confidence = 0.95f,
                 category = ContentCategory.ADULT_KEYWORD,
                 ruleId = "ADULT_TIER1_MATCH",
-                reason = "Explicit tokens detected: "
+                reason = "Explicit tokens detected: ${tier1Matches.joinToString(", ")}"
             )
         }
 
@@ -74,7 +74,7 @@ class AdultContentDetector : ContentDetector {
                 confidence = 0.75f,
                 category = ContentCategory.ADULT_KEYWORD,
                 ruleId = "ADULT_TIER2_MATCH",
-                reason = "Multiple adult indicator tokens detected: "
+                reason = "Multiple adult indicator tokens detected: ${tier2Matches.joinToString(", ")}"
             )
         }
 

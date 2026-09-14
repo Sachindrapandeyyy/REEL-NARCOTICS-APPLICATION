@@ -23,7 +23,7 @@ class TikTokDetector : ContentDetector {
             isBlocked = true,
             confidence = 1.0f,
             category = ContentCategory.TIKTOK,
-            ruleId = "TIKTOK_",
+            ruleId = "TIKTOK_APP_ACTIVE",
             reason = "TikTok application active during focus lock"
         )
     }

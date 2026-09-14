@@ -46,14 +46,15 @@ class FacebookReelsDetector : ContentDetector {
         }
 
         // Signal 2: Content descriptions (Accessibility nodes)
-        if (context.hasContentDescription("Reels, tab") ||
+        val isReelsNavOrViewer = context.hasSelectedDesc("Reels") ||
+            context.hasSelectedText("Reels") ||
+            context.hasContentDescription("Reels, tab") ||
             context.hasContentDescription("Reels tab") ||
             context.hasContentDescription("Watch Reels") ||
             context.hasContentDescription("Shorts and reels") ||
             context.hasContentDescription("Reels video player") ||
-            context.hasContentDescription("Facebook Reels") ||
-            context.hasContentDescription("Reels")
-        ) {
+            context.hasContentDescription("Facebook Reels")
+        if (isReelsNavOrViewer) {
             confidence = maxOf(confidence, 0.95f)
             reasons.add("Facebook Reels navigation/viewer node detected")
         }
@@ -66,12 +67,16 @@ class FacebookReelsDetector : ContentDetector {
             context.hasText("Use audio") ||
             context.hasText("Original audio") ||
             context.hasText("Watch more reels") ||
-            context.hasText("Create reel") ||
-            context.hasText("Reels and short videos") ||
-            context.hasText("Reels & short videos")
+            context.hasText("Create reel")
         ) {
             confidence = maxOf(confidence, 0.90f)
             reasons.add("Facebook Reel audio/creator tokens detected")
+        }
+
+        // Signal 4: Feed section header (weak contextual signal, not alone sufficient to block)
+        if (context.hasText("Reels and short videos") || context.hasText("Reels & short videos")) {
+            confidence = maxOf(confidence, 0.25f)
+            reasons.add("Facebook Reels feed section header visible")
         }
 
         val threshold = if (config.strictMode) 0.40f else 0.60f

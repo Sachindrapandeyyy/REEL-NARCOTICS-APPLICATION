@@ -49,10 +49,10 @@ class UpdateVerifier(
         }
 
         // 3. Inspect APK structure & metadata via Android PackageManager
+        @Suppress("DEPRECATION")
         val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            PackageManager.GET_SIGNING_CERTIFICATES
+            PackageManager.GET_SIGNING_CERTIFICATES or PackageManager.GET_SIGNATURES
         } else {
-            @Suppress("DEPRECATION")
             PackageManager.GET_SIGNATURES
         }
 
@@ -133,16 +133,18 @@ class UpdateVerifier(
         }
     }
 
+    @Suppress("DEPRECATION")
     private fun getInstalledSignatures(): List<ByteArray> {
         return try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                val info = context.packageManager.getPackageInfo(
-                    context.packageName,
-                    PackageManager.GET_SIGNING_CERTIFICATES
-                )
-                info.signingInfo?.apkContentsSigners?.map { it.toByteArray() } ?: emptyList()
+                val flags = PackageManager.GET_SIGNING_CERTIFICATES or PackageManager.GET_SIGNATURES
+                val info = context.packageManager.getPackageInfo(context.packageName, flags)
+                val signers = info.signingInfo?.apkContentsSigners?.map { it.toByteArray() }
+                if (!signers.isNullOrEmpty()) {
+                    return signers
+                }
+                info.signatures?.map { it.toByteArray() } ?: emptyList()
             } else {
-                @Suppress("DEPRECATION")
                 val info = context.packageManager.getPackageInfo(
                     context.packageName,
                     PackageManager.GET_SIGNATURES
@@ -154,14 +156,17 @@ class UpdateVerifier(
         }
     }
 
+    @Suppress("DEPRECATION")
     private fun getArchiveSignatures(packageInfo: PackageInfo): List<ByteArray> {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        val signers = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             packageInfo.signingInfo?.apkContentsSigners?.map { it.toByteArray() }
-                ?: emptyList()
-        } else {
-            @Suppress("DEPRECATION")
-            packageInfo.signatures?.map { it.toByteArray() } ?: emptyList()
+        } else null
+
+        if (!signers.isNullOrEmpty()) {
+            return signers
         }
+
+        return packageInfo.signatures?.map { it.toByteArray() } ?: emptyList()
     }
 
     fun calculateSha256(file: File): String {

@@ -15,6 +15,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.zenith.focus.domain.model.LockMode
 import com.zenith.focus.domain.model.LockState
 import com.zenith.focus.domain.repository.LockRepository
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,6 +41,7 @@ class LockRepositoryImpl(
         private val KEY_LABEL = stringPreferencesKey("lock_label")
     }
 
+    private val isInitialized = CompletableDeferred<Unit>()
     private val _lockState = MutableStateFlow(LockState())
     override val lockState: StateFlow<LockState> = _lockState.asStateFlow()
 
@@ -49,35 +51,43 @@ class LockRepositoryImpl(
         }
     }
 
+    suspend fun ensureInitialized() {
+        isInitialized.await()
+    }
+
     private suspend fun loadInitialState() {
-        val prefs = context.dataStore.data.first()
-        val isActive = prefs[KEY_IS_ACTIVE] ?: false
-        val startTime = prefs[KEY_START_TIME] ?: 0L
-        val endTime = prefs[KEY_END_TIME] ?: 0L
-        val timeZoneId = prefs[KEY_TIMEZONE] ?: TimeZone.getDefault().id
-        val modeStr = prefs[KEY_MODE] ?: LockMode.QUICK.name
-        val label = prefs[KEY_LABEL] ?: "Focus Lock"
+        try {
+            val prefs = context.dataStore.data.first()
+            val isActive = prefs[KEY_IS_ACTIVE] ?: false
+            val startTime = prefs[KEY_START_TIME] ?: 0L
+            val endTime = prefs[KEY_END_TIME] ?: 0L
+            val timeZoneId = prefs[KEY_TIMEZONE] ?: TimeZone.getDefault().id
+            val modeStr = prefs[KEY_MODE] ?: LockMode.QUICK.name
+            val label = prefs[KEY_LABEL] ?: "Focus Lock"
 
-        val mode = runCatching { LockMode.valueOf(modeStr) }.getOrDefault(LockMode.QUICK)
-        val now = System.currentTimeMillis()
+            val mode = runCatching { LockMode.valueOf(modeStr) }.getOrDefault(LockMode.QUICK)
+            val now = System.currentTimeMillis()
 
-        // Auto-expire if time has passed
-        val actualActive = isActive && now < endTime
-        val state = LockState(
-            isActive = actualActive,
-            startTimeMillis = startTime,
-            endTimeMillis = endTime,
-            timeZoneId = timeZoneId,
-            mode = mode,
-            label = label
-        )
-        _lockState.value = state
+            // Auto-expire if time has passed
+            val actualActive = isActive && now < endTime
+            val state = LockState(
+                isActive = actualActive,
+                startTimeMillis = startTime,
+                endTimeMillis = endTime,
+                timeZoneId = timeZoneId,
+                mode = mode,
+                label = label
+            )
+            _lockState.value = state
 
-        if (isActive && !actualActive) {
-            // Persist expired state
-            context.dataStore.edit { p ->
-                p[KEY_IS_ACTIVE] = false
+            if (isActive && !actualActive) {
+                // Persist expired state
+                context.dataStore.edit { p ->
+                    p[KEY_IS_ACTIVE] = false
+                }
             }
+        } finally {
+            isInitialized.complete(Unit)
         }
     }
 
@@ -88,6 +98,7 @@ class LockRepositoryImpl(
     }
 
     override suspend fun startLockUntil(targetTimestampMillis: Long, mode: LockMode, label: String) {
+        ensureInitialized()
         val now = System.currentTimeMillis()
         val tzId = TimeZone.getDefault().id
 
@@ -122,6 +133,7 @@ class LockRepositoryImpl(
     }
 
     override suspend fun endLock() {
+        ensureInitialized()
         context.dataStore.edit { prefs ->
             prefs[KEY_IS_ACTIVE] = false
         }
@@ -140,6 +152,7 @@ class LockRepositoryImpl(
     }
 
     override suspend fun refreshLockState() {
+        ensureInitialized()
         val current = _lockState.value
         val now = System.currentTimeMillis()
         if (current.isActive && now >= current.endTimeMillis) {

@@ -16,6 +16,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.zenith.focus.domain.nuclear.NuclearModeRepository
 import com.zenith.focus.domain.nuclear.NuclearSession
 import com.zenith.focus.domain.nuclear.NuclearSessionStatus
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,6 +45,7 @@ class NuclearModeRepositoryImpl(
         private val KEY_ENABLED_CATEGORIES = androidx.datastore.preferences.core.stringSetPreferencesKey("nuclear_enabled_categories")
     }
 
+    private val isInitialized = CompletableDeferred<Unit>()
     private val _session = MutableStateFlow(NuclearSession())
     override val session: StateFlow<NuclearSession> = _session.asStateFlow()
 
@@ -53,8 +55,13 @@ class NuclearModeRepositoryImpl(
         }
     }
 
+    suspend fun ensureInitialized() {
+        isInitialized.await()
+    }
+
     private suspend fun loadInitialState() {
-        val prefs = context.nuclearDataStore.data.first()
+        try {
+            val prefs = context.nuclearDataStore.data.first()
         val id = prefs[KEY_SESSION_ID] ?: UUID.randomUUID().toString()
         val startTime = prefs[KEY_START_TIME] ?: 0L
         val endTime = prefs[KEY_END_TIME] ?: 0L
@@ -96,6 +103,9 @@ class NuclearModeRepositoryImpl(
         }
 
         _session.value = loadedSession
+        } finally {
+            isInitialized.complete(Unit)
+        }
     }
 
     override suspend fun armSession(
@@ -103,6 +113,7 @@ class NuclearModeRepositoryImpl(
         currentBlockedCount: Int,
         enabledCategories: Set<com.zenith.focus.domain.model.ContentCategory>
     ) {
+        ensureInitialized()
         val current = _session.value
         // If already active, NEVER allow re-arming or mutating
         if (current.status == NuclearSessionStatus.ACTIVE) return
@@ -119,6 +130,7 @@ class NuclearModeRepositoryImpl(
     }
 
     override suspend fun activateArmedSession(): Boolean {
+        ensureInitialized()
         val current = _session.value
         if (current.status != NuclearSessionStatus.ARMING) {
             return false
@@ -142,6 +154,7 @@ class NuclearModeRepositoryImpl(
     }
 
     override suspend fun cancelArming(): Boolean {
+        ensureInitialized()
         val current = _session.value
         // CRITICAL SECURITY RULE: You cannot cancel an ACTIVE session
         if (current.status == NuclearSessionStatus.ACTIVE) {
@@ -155,6 +168,7 @@ class NuclearModeRepositoryImpl(
     }
 
     override suspend fun checkAndUpdateExpiration(): Boolean {
+        ensureInitialized()
         val current = _session.value
         if (current.status != NuclearSessionStatus.ACTIVE) {
             return false
@@ -174,6 +188,7 @@ class NuclearModeRepositoryImpl(
     }
 
     override suspend fun acknowledgeCompletedSession(): Boolean {
+        ensureInitialized()
         val current = _session.value
         if (current.status != NuclearSessionStatus.EXPIRED) {
             return false
@@ -187,6 +202,7 @@ class NuclearModeRepositoryImpl(
     }
 
     override suspend fun extendActiveSession(additionalMillis: Long): Boolean {
+        ensureInitialized()
         val current = _session.value
         if (current.status != NuclearSessionStatus.ACTIVE || additionalMillis <= 0) {
             return false
@@ -234,6 +250,7 @@ class NuclearModeRepositoryImpl(
     }
 
     override suspend fun onDeviceRebooted() {
+        ensureInitialized()
         val current = _session.value
         if (current.status == NuclearSessionStatus.ACTIVE) {
             val now = System.currentTimeMillis()

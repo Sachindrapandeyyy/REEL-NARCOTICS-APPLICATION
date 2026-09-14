@@ -87,7 +87,7 @@ class BrowserUrlDetector(
 
         val domain = extractDomain(extractedUrl)
         if (domain.isBlank()) {
-            return DetectionResult.allowed(ContentCategory.ADULT_WEBSITE, "Unable to extract domain from: ")
+            return DetectionResult.allowed(ContentCategory.ADULT_WEBSITE, "Unable to extract domain from: $extractedUrl")
         }
 
         // 1. Check blocked domain suffixes (.xxx, .porn, etc.)
@@ -98,7 +98,7 @@ class BrowserUrlDetector(
                     confidence = 1.0f,
                     category = ContentCategory.ADULT_WEBSITE,
                     ruleId = "ADULT_TLD_MATCH",
-                    reason = "Adult top level domain () detected: "
+                    reason = "Adult top level domain ($suffix) detected: $domain"
                 )
             }
         }
@@ -110,11 +110,11 @@ class BrowserUrlDetector(
                 confidence = 1.0f,
                 category = ContentCategory.ADULT_WEBSITE,
                 ruleId = "ADULT_DOMAIN_MATCH",
-                reason = "Known adult domain blocked: "
+                reason = "Known adult domain blocked: $domain"
             )
         }
 
-        return DetectionResult.allowed(ContentCategory.ADULT_WEBSITE, "Safe domain: ")
+        return DetectionResult.allowed(ContentCategory.ADULT_WEBSITE, "Safe domain: $domain")
     }
 
     private fun findUrlText(context: ScreenContext): String {

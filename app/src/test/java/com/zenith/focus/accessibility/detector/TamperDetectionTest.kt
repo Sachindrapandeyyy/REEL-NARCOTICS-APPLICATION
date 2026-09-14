@@ -91,4 +91,38 @@ class TamperDetectionTest {
         val result = TamperDetectionEngine.evaluate(context)
         assertTrue(result.isTamperAttempt)
     }
+
+    @Test
+    fun testSamsungPackageInstallerUninstallationDetected() {
+        val context = ScreenContext(
+            packageName = "com.samsung.android.packageinstaller",
+            className = "com.android.packageinstaller.UninstallerActivity",
+            viewIds = setOf("ok_button", "cancel_button"),
+            visibleTexts = listOf("Do you want to uninstall Reel Narcotics?", "OK", "Cancel"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("do", "you", "want", "to", "uninstall", "reel", "narcotics", "ok", "cancel"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertTrue(result.isTamperAttempt)
+    }
+
+    @Test
+    fun testXiaomiSecurityCenterManageAppForceStopDetected() {
+        val context = ScreenContext(
+            packageName = "com.miui.securitycenter",
+            className = "com.miui.appmanager.ApplicationsDetailsActivity",
+            viewIds = setOf("am_app_stop", "am_app_uninstall"),
+            visibleTexts = listOf("Reel Narcotics", "Force stop", "Uninstall", "Clear data"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("reel", "narcotics", "force", "stop", "uninstall", "clear", "data"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertTrue(result.isTamperAttempt)
+    }
 }

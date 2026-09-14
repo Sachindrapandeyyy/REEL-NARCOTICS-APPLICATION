@@ -438,7 +438,7 @@ fun SettingsScreen(
                                 is UpdateState.ReadyToInstall -> "Verified & ready to install"
                                 is UpdateState.UpToDate -> "✓ Up to date (v${updateState.currentVersionName})"
                                 is UpdateState.Failed -> "Update check failed"
-                                else -> "Current: v${updateManager?.currentVersionName ?: "2.3.3"}"
+                                else -> "Current: v${updateManager?.currentVersionName ?: "2.3.4"}"
                             }
                             Text(
                                 text = statusSubtitle,
@@ -649,7 +649,7 @@ fun SettingsScreen(
                 )
                 Spacer(modifier = Modifier.width(14.dp))
                 Column {
-                    Text("Reel Narcotics v${updateManager?.currentVersionName ?: "2.3.3"}", color = earth.forestDark, fontSize = 15.sp, fontWeight = FontWeight.Black)
+                    Text("Reel Narcotics v${updateManager?.currentVersionName ?: "2.3.4"}", color = earth.forestDark, fontSize = 15.sp, fontWeight = FontWeight.Black)
                     Text("Break the scroll. Take back your attention.", color = earth.forestGreen, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(

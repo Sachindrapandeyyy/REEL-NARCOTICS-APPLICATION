@@ -67,7 +67,14 @@ class ZenithAccessibilityService : AccessibilityService() {
         lastPackageName = pkg
 
         val rootNode = runCatching { rootInActiveWindow }.getOrNull() ?: event.source
-        val screenContext = HierarchyTraverser.inspect(rootNode)
+        val screenContext = try {
+            HierarchyTraverser.inspect(rootNode)
+        } finally {
+            if (Build.VERSION.SDK_INT < 34 && rootNode != null) {
+                @Suppress("DEPRECATION")
+                runCatching { rootNode.recycle() }
+            }
+        }
 
         serviceScope.launch {
             processScreenContext(pkg, screenContext)

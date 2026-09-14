@@ -53,7 +53,7 @@ class SnapchatSpotlightDetector : ContentDetector {
                 isBlocked = true,
                 confidence = finalConfidence,
                 category = ContentCategory.SNAPCHAT_SPOTLIGHT,
-                ruleId = "SNAP_SPOTLIGHT_",
+                ruleId = "SNAP_SPOTLIGHT_MATCH",
                 reason = reasons.joinToString("; ")
             )
         } else {
