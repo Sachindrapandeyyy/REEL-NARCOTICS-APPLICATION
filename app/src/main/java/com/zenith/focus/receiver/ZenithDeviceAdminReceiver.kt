@@ -21,6 +21,17 @@ class ZenithDeviceAdminReceiver : DeviceAdminReceiver() {
             return dpm?.isAdminActive(getComponentName(context)) == true
         }
 
+        private fun getActivity(context: Context): android.app.Activity? {
+            var currentContext = context
+            while (currentContext is android.content.ContextWrapper) {
+                if (currentContext is android.app.Activity) {
+                    return currentContext
+                }
+                currentContext = currentContext.baseContext
+            }
+            return null
+        }
+
         fun createAddAdminIntent(context: Context): Intent {
             return Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
                 putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, getComponentName(context))
@@ -28,30 +39,37 @@ class ZenithDeviceAdminReceiver : DeviceAdminReceiver() {
                     DevicePolicyManager.EXTRA_ADD_EXPLANATION,
                     "Activate Device Administrator to prevent Reel Narcotics from being uninstalled during active focus sessions. Break the scroll. Take back your attention."
                 )
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                // Do NOT set FLAG_ACTIVITY_NEW_TASK on ADD_DEVICE_ADMIN!
+                // Android's DeviceAdminAdd finishes immediately if launched with FLAG_ACTIVITY_NEW_TASK.
             }
         }
 
         fun openDeviceAdminActivation(context: Context) {
+            val activity = getActivity(context)
             try {
                 val intent = createAddAdminIntent(context)
-                context.startActivity(intent)
-            } catch (e: Exception) {
-                try {
-                    val intent = Intent().apply {
-                        component = ComponentName(
-                            "com.android.settings",
-                            "com.android.settings.Settings\$DeviceAdminSettingsActivity"
-                        )
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    }
-                    context.startActivity(intent)
-                } catch (e2: Exception) {
-                    val intent = Intent(Settings.ACTION_SECURITY_SETTINGS).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    }
-                    context.startActivity(intent)
+                if (activity != null) {
+                    activity.startActivity(intent)
+                    return
                 }
+            } catch (e: Exception) {
+                // fall through to settings list fallback
+            }
+
+            try {
+                val intent = Intent().apply {
+                    component = ComponentName(
+                        "com.android.settings",
+                        "com.android.settings.Settings\$DeviceAdminSettingsActivity"
+                    )
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                context.startActivity(intent)
+            } catch (e2: Exception) {
+                val intent = Intent(Settings.ACTION_SECURITY_SETTINGS).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                context.startActivity(intent)
             }
         }
     }
