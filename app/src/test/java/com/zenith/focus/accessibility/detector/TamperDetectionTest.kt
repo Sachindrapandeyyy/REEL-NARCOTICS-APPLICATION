@@ -59,6 +59,23 @@ class TamperDetectionTest {
     }
 
     @Test
+    fun testSettingsDeviceAdminActivationAllowed() {
+        val context = ScreenContext(
+            packageName = "com.android.settings",
+            className = "com.android.settings.DeviceAdminAdd",
+            viewIds = setOf("action_button"),
+            visibleTexts = listOf("Reel Narcotics", "Activate this device admin app", "Cancel"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("reel", "narcotics", "activate", "this", "device", "admin", "app", "cancel"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertFalse(result.isTamperAttempt)
+    }
+
+    @Test
     fun testSettingsOtherAppNotDetected() {
         val context = ScreenContext(
             packageName = "com.android.settings",

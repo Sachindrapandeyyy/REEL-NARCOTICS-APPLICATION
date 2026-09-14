@@ -79,8 +79,14 @@ object TamperDetectionEngine {
                 token in setOf("uninstall", "deactivate", "forcestop", "disable")
             }
 
-            // In Device Admin settings, if Reel Narcotics is listed/opened/toggled:
-            if (isDeviceAdminScreen && mentionsTargetApp) {
+            val isDeactivationAttempt = allTexts.any {
+                it.contains("deactivate") ||
+                it.contains("remove device admin") ||
+                it.contains("turn off")
+            } || allTokens.any { it in setOf("deactivate", "remove", "disable") }
+
+            // In Device Admin settings, only intercept if deactivation or destructive action is attempted
+            if (isDeviceAdminScreen && mentionsTargetApp && (isDeactivationAttempt || hasDestructiveAction)) {
                 return TamperDetectionResult(
                     isTamperAttempt = true,
                     reason = "Device Administrator tamper/deactivation attempt intercepted",
