@@ -33,10 +33,10 @@ class InstagramReelsDetector : ContentDetector {
         // Signal 2: Reels bottom navigation tab selected or active
         val isReelsTabSelected = context.hasSelectedDesc("Reels") ||
                 context.hasSelectedText("Reels") ||
-                context.hasContentDescription("Reels, tab 4 of 5") ||
-                context.hasContentDescription("Reels tab") ||
                 context.hasContentDescription("Reels, selected") ||
-                context.hasContentDescription("Reels tab, selected")
+                context.hasContentDescription("Reels tab, selected") ||
+                context.hasContentDescription("selected, Reels") ||
+                context.hasContentDescription("Reels, tab 4 of 5, selected")
         if (isReelsTabSelected) {
             confidence = maxOf(confidence, 0.95f)
             reasons.add("Reels tab selected in navigation")

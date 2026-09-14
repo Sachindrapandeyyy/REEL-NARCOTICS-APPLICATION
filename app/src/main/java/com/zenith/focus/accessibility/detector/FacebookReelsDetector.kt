@@ -48,8 +48,9 @@ class FacebookReelsDetector : ContentDetector {
         // Signal 2: Content descriptions (Accessibility nodes)
         val isReelsNavOrViewer = context.hasSelectedDesc("Reels") ||
             context.hasSelectedText("Reels") ||
-            context.hasContentDescription("Reels, tab") ||
-            context.hasContentDescription("Reels tab") ||
+            context.hasContentDescription("Reels, selected") ||
+            context.hasContentDescription("Reels tab, selected") ||
+            context.hasContentDescription("selected, Reels") ||
             context.hasContentDescription("Watch Reels") ||
             context.hasContentDescription("Shorts and reels") ||
             context.hasContentDescription("Reels video player") ||

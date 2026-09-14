@@ -41,12 +41,14 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.zenith.focus.core.designsystem.EarthTheme
 import com.zenith.focus.core.time.DateTimeUtils
 import com.zenith.focus.domain.nuclear.NuclearSession
+import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -60,7 +62,13 @@ fun NuclearExtendDialog(
     val earth = EarthTheme.colors
     val view = LocalView.current
 
-    val now = System.currentTimeMillis()
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1000L)
+            now = System.currentTimeMillis()
+        }
+    }
     val remainingMillis = session.remainingMillis(now)
     val currentEndTime = session.endTimeMillis
 
