@@ -45,6 +45,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
+import com.zenith.focus.core.permission.OemNavigationManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -90,6 +92,7 @@ fun HomeScreen(
     onEnableDeviceAdmin: () -> Unit = {}
 ) {
     val earth = EarthTheme.colors
+    val context = LocalContext.current
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
 
     LaunchedEffect(Unit) {
@@ -392,27 +395,60 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(10.dp))
 
                     if (!isServiceConnected) {
+                        val guidance = remember { OemNavigationManager.getGuidance() }
                         Card(
                             shape = RoundedCornerShape(14.dp),
                             colors = CardDefaults.cardColors(containerColor = earth.surface),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 4.dp)
+                                .clickable { OemNavigationManager.openAppInfo(context) }
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "⚡ 1. Accessibility Shield",
+                                        color = earth.textPrimary,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "📱 ${guidance.brand.osSkin}",
+                                        color = earth.camelOchre,
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
                                 Text(
-                                    text = "⚡ 1. Accessibility Shield",
-                                    color = earth.textPrimary,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = "Required to detect and immediately close YouTube Shorts & Instagram Reels feeds. 100% offline — zero personal data collected.",
+                                    text = "Detected ${guidance.brand.displayName}. To activate, open App Info first to allow restricted settings, then enable Accessibility.",
                                     color = earth.textMuted,
-                                    fontSize = 11.5.sp,
+                                    fontSize = 11.sp,
                                     lineHeight = 15.sp,
                                     modifier = Modifier.padding(vertical = 4.dp)
                                 )
+
+                                Button(
+                                    onClick = { OemNavigationManager.openAppInfo(context) },
+                                    colors = ButtonDefaults.buttonColors(containerColor = earth.forestDark),
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(38.dp)
+                                ) {
+                                    Text(
+                                        text = "1. TOUCH TO OPEN APP INFO ➔",
+                                        color = Color.White,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(6.dp))
+
                                 Button(
                                     onClick = onEnableAccessibility,
                                     colors = ButtonDefaults.buttonColors(containerColor = earth.forestGreen),
@@ -422,18 +458,30 @@ fun HomeScreen(
                                         .height(38.dp)
                                 ) {
                                     Text(
-                                        text = "ACTIVATE ACCESSIBILITY SHIELD",
+                                        text = "2. OPEN ACCESSIBILITY SETTINGS ➔",
                                         color = Color.White,
-                                        fontSize = 11.5.sp,
+                                        fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
-                                Text(
-                                    text = "💡 Tap button -> 'Installed apps' -> 'Reel Narcotics Shield' -> Turn ON",
-                                    color = earth.camelOchre,
-                                    fontSize = 10.5.sp,
-                                    modifier = Modifier.padding(top = 4.dp)
-                                )
+
+                                if (guidance.step3ButtonLabel != null) {
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    OutlinedButton(
+                                        onClick = { OemNavigationManager.openOemAutostart(context) },
+                                        shape = RoundedCornerShape(10.dp),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(34.dp)
+                                    ) {
+                                        Text(
+                                            text = guidance.step3ButtonLabel,
+                                            color = earth.camelOchre,
+                                            fontSize = 10.5.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
                             }
                         }
                     }

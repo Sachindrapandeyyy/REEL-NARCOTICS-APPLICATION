@@ -37,7 +37,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -46,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zenith.focus.R
 import com.zenith.focus.core.designsystem.EarthTheme
+import com.zenith.focus.core.ui.OemPermissionCard
 import com.zenith.focus.core.ui.RestrictedSettingsBanner
 import com.zenith.focus.core.ui.RestrictedSettingsGuideDialog
 import com.zenith.focus.domain.model.ContentCategory
@@ -64,7 +64,6 @@ fun OnboardingScreen(
     var currentPage by remember { mutableIntStateOf(0) }
     var showRestrictedDialog by remember { mutableStateOf(false) }
     val totalPages = 9
-    val context = LocalContext.current
 
     if (showRestrictedDialog) {
         RestrictedSettingsGuideDialog(onDismiss = { showRestrictedDialog = false })
@@ -171,59 +170,10 @@ fun OnboardingScreen(
                             lineHeight = 18.sp
                         )
                         Spacer(modifier = Modifier.height(14.dp))
-                        Card(
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .border(1.dp, earth.border, RoundedCornerShape(16.dp))
-                        ) {
-                            Column(modifier = Modifier.padding(14.dp)) {
-                                Text(
-                                    text = "📋 3 Quick Steps in Settings:",
-                                    color = earth.textPrimary,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = "1. Tap button below -> opens Accessibility\n2. Look for 'Installed apps' or 'Downloaded apps'\n3. Tap 'Reel Narcotics Shield' -> Toggle ON",
-                                    color = earth.textMuted,
-                                    fontSize = 11.5.sp,
-                                    lineHeight = 16.sp,
-                                    modifier = Modifier.padding(top = 4.dp)
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(14.dp))
-                        Button(
-                            onClick = {
-                                val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
-                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                                }
-                                context.startActivity(intent)
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isServiceConnected) earth.forestGreen else earth.camelOchre,
-                                contentColor = Color.White
-                            ),
-                            shape = RoundedCornerShape(14.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(44.dp)
-                        ) {
-                            Text(
-                                text = if (isServiceConnected) "SHIELD PERMISSION ACTIVE ✓" else "OPEN ACCESSIBILITY SETTINGS",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp
-                            )
-                        }
-
-                        if (!isServiceConnected) {
-                            Spacer(modifier = Modifier.height(10.dp))
-                            RestrictedSettingsBanner(
-                                onOpenDialog = { showRestrictedDialog = true }
-                            )
-                        }
+                        OemPermissionCard(
+                            isServiceConnected = isServiceConnected,
+                            onOpenGuideDialog = { showRestrictedDialog = true }
+                        )
                     }
                     6 -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(

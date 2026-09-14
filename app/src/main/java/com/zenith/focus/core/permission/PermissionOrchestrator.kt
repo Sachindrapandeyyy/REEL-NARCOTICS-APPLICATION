@@ -172,4 +172,24 @@ class PermissionOrchestrator(
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
     }
+
+    // --- OEM Navigation Helpers ---
+
+    val detectedBrand: DeviceBrand
+        get() = OemNavigationManager.detectDeviceBrand()
+
+    fun openAppInfo(context: Context = appContext): Boolean =
+        OemNavigationManager.openAppInfo(context)
+
+    fun openAccessibilitySettings(context: Context = appContext): Boolean =
+        OemNavigationManager.openAccessibilitySettings(context)
+
+    fun openOemAutostart(context: Context = appContext): Boolean =
+        OemNavigationManager.openOemAutostart(context)
+
+    fun openBatteryOptimization(context: Context = appContext): Boolean =
+        OemNavigationManager.openBatteryOptimization(context)
+
+    fun getOemGuidance(): OemGuidance =
+        OemNavigationManager.getGuidance()
 }

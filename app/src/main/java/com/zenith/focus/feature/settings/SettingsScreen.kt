@@ -28,7 +28,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
+import com.zenith.focus.core.permission.OemNavigationManager
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -290,19 +292,41 @@ fun SettingsScreen(
                 }
 
                 if (!isServiceConnected) {
-                    Spacer(modifier = Modifier.height(14.dp))
+                    val guidance = remember { OemNavigationManager.getGuidance() }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "📱 Detected: ${guidance.brand.displayName} (${guidance.brand.osSkin})",
+                        color = earth.camelOchre,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
                     Button(
-                        onClick = {
-                            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                            }
-                            context.startActivity(intent)
-                        },
+                        onClick = { OemNavigationManager.openAppInfo(context) },
+                        colors = ButtonDefaults.buttonColors(containerColor = earth.forestDark),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("1. TOUCH TO OPEN APP INFO ➔", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = { OemNavigationManager.openAccessibilitySettings(context) },
                         colors = ButtonDefaults.buttonColors(containerColor = earth.forestGreen),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("ACTIVATE ACCESSIBILITY PERMISSION", color = Color.White, fontWeight = FontWeight.Bold)
+                        Text("2. OPEN ACCESSIBILITY SETTINGS ➔", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
+                    if (guidance.step3ButtonLabel != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = { OemNavigationManager.openOemAutostart(context) },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(guidance.step3ButtonLabel, color = earth.camelOchre, fontWeight = FontWeight.Bold, fontSize = 11.5.sp)
+                        }
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     RestrictedSettingsBanner(
@@ -414,7 +438,7 @@ fun SettingsScreen(
                                 is UpdateState.ReadyToInstall -> "Verified & ready to install"
                                 is UpdateState.UpToDate -> "✓ Up to date (v${updateState.currentVersionName})"
                                 is UpdateState.Failed -> "Update check failed"
-                                else -> "Current: v${updateManager?.currentVersionName ?: "2.3.2"}"
+                                else -> "Current: v${updateManager?.currentVersionName ?: "2.3.3"}"
                             }
                             Text(
                                 text = statusSubtitle,
@@ -625,7 +649,7 @@ fun SettingsScreen(
                 )
                 Spacer(modifier = Modifier.width(14.dp))
                 Column {
-                    Text("Reel Narcotics v${updateManager?.currentVersionName ?: "2.3.2"}", color = earth.forestDark, fontSize = 15.sp, fontWeight = FontWeight.Black)
+                    Text("Reel Narcotics v${updateManager?.currentVersionName ?: "2.3.3"}", color = earth.forestDark, fontSize = 15.sp, fontWeight = FontWeight.Black)
                     Text("Break the scroll. Take back your attention.", color = earth.forestGreen, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
