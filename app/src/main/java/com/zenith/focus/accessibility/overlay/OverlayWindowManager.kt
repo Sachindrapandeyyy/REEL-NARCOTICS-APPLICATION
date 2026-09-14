@@ -34,6 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -85,10 +86,17 @@ class OverlayWindowManager(
 
     private fun createAndAttachWindowOverlay(category: ContentCategory, remainingMillis: Long, reason: String) {
         runCatching {
+            val windowType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            } else {
+                @Suppress("DEPRECATION")
+                WindowManager.LayoutParams.TYPE_PHONE
+            }
+
             val layoutParams = WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                windowType,
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
                 WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS,
@@ -116,12 +124,14 @@ class OverlayWindowManager(
             windowManager.addView(composeView, layoutParams)
             overlayView = composeView
             isOverlayShowing = true
+        }.onFailure {
+            launchFallbackActivity(category, remainingMillis, reason)
         }
     }
 
     private fun launchFallbackActivity(category: ContentCategory, remainingMillis: Long, reason: String) {
         val intent = Intent(service, BlockScreenActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION
             putExtra(BlockScreenActivity.EXTRA_CATEGORY, category.name)
             putExtra(BlockScreenActivity.EXTRA_REMAINING_MILLIS, remainingMillis)
             putExtra(BlockScreenActivity.EXTRA_REASON, reason)
@@ -131,10 +141,11 @@ class OverlayWindowManager(
     }
 
     fun dismissOverlay() {
-        if (!isOverlayShowing) return
         mainHandler.post {
-            overlayView?.let {
-                runCatching { windowManager.removeView(it) }
+            overlayView?.let { view ->
+                runCatching {
+                    windowManager.removeView(view)
+                }
                 overlayView = null
             }
             isOverlayShowing = false
@@ -150,7 +161,7 @@ fun BlockOverlayContent(
     reason: String = "",
     onGoBack: () -> Unit
 ) {
-    var remaining by remember { mutableStateOf(initialRemainingMillis) }
+    var remaining by remember { mutableLongStateOf(initialRemainingMillis) }
 
     LaunchedEffect(Unit) {
         while (remaining > 0L) {

@@ -41,7 +41,9 @@ object TamperDetectionEngine {
 
         // Case 1: Package installer attempting to delete/uninstall Reel Narcotics / Zenith
         if (pkg.contains("packageinstaller")) {
-            if (mentionsTargetApp) {
+            val isUninstallPrompt = allTexts.any { it.contains("uninstall") || it.contains("delete") || it.contains("remove") } ||
+                    allTokens.any { it in setOf("uninstall", "delete", "remove") }
+            if (mentionsTargetApp && isUninstallPrompt) {
                 return TamperDetectionResult(
                     isTamperAttempt = true,
                     reason = "Package uninstallation attempt intercepted",

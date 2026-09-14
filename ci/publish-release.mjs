@@ -110,7 +110,16 @@ async function main() {
   console.log(`✅ Staged update.json generated at: ${stagedUpdateJsonPath}`);
 
   // 3. Vercel Blob Upload Authentication
-  const blobToken = process.env.BLOB_READ_WRITE_TOKEN?.trim();
+  let blobToken = process.env.BLOB_READ_WRITE_TOKEN?.trim();
+  if (!blobToken) {
+    const envFile = path.join(projectRoot, '.env.vercel.local');
+    if (fs.existsSync(envFile)) {
+      const match = fs.readFileSync(envFile, 'utf8').match(/BLOB_READ_WRITE_TOKEN="?([^"\n\r]+)"?/);
+      if (match) {
+        blobToken = match[1].trim();
+      }
+    }
+  }
 
   if (isDryRun) {
     console.log('\nℹ️ Dry run mode active (--dry-run). Skipping Vercel Blob upload.');

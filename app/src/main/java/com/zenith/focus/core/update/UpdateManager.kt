@@ -35,16 +35,16 @@ class UpdateManager(
                 pInfo.versionCode
             }
         } catch (e: Exception) {
-            6 // Fallback matching current build
+            7 // Fallback matching current build
         }
     }
 
     val currentVersionName: String by lazy {
         try {
             val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            pInfo.versionName ?: "2.3.1"
+            pInfo.versionName ?: "2.3.2"
         } catch (e: Exception) {
-            "2.3.1"
+            "2.3.2"
         }
     }
 

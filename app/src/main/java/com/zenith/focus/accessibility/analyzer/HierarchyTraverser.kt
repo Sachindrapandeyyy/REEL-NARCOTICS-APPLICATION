@@ -1,5 +1,6 @@
 package com.zenith.focus.accessibility.analyzer
 
+import android.os.Build
 import android.view.accessibility.AccessibilityNodeInfo
 import java.util.ArrayDeque
 
@@ -81,6 +82,23 @@ object HierarchyTraverser {
                     if (child != null) {
                         queue.add(child to (depth + 1))
                     }
+                }
+            }
+
+            // Recycle intermediate child nodes to prevent IPC handle leaks on API < 34
+            if (Build.VERSION.SDK_INT < 34 && node !== root) {
+                @Suppress("DEPRECATION")
+                runCatching { node.recycle() }
+            }
+        }
+
+        // Drain and recycle any remaining uninspected nodes if loop terminated early
+        if (Build.VERSION.SDK_INT < 34) {
+            while (queue.isNotEmpty()) {
+                val (leftover, _) = queue.poll() ?: break
+                if (leftover !== root) {
+                    @Suppress("DEPRECATION")
+                    runCatching { leftover.recycle() }
                 }
             }
         }

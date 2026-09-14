@@ -44,9 +44,14 @@ class UpdateDownloader(
         val tempFile = File(updatesDir, "update_${manifest.versionCode}.apk.tmp")
         val finalFile = File(updatesDir, "update_${manifest.versionCode}.apk")
 
-        // Clean any leftover files
-        if (tempFile.exists()) tempFile.delete()
-        if (finalFile.exists()) finalFile.delete()
+        // Clean any leftover files for this or previous update downloads to free up cache space
+        runCatching {
+            updatesDir.listFiles()?.forEach { file ->
+                if (file.name.endsWith(".apk") || file.name.endsWith(".tmp")) {
+                    file.delete()
+                }
+            }
+        }
 
         val url = URL(manifest.apk.url)
         val connection = (url.openConnection() as? HttpsURLConnection)

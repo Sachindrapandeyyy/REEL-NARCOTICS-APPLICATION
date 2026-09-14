@@ -1,6 +1,10 @@
 package com.zenith.focus.data.repository
 
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
+import com.zenith.focus.receiver.LockAlarmReceiver
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -104,6 +108,17 @@ class LockRepositoryImpl(
             mode = mode,
             label = label
         )
+
+        // Schedule system wakeup alarm for lock expiration
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+        val alarmIntent = Intent(context, LockAlarmReceiver::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            1001,
+            alarmIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        alarmManager?.set(AlarmManager.RTC_WAKEUP, targetTimestampMillis, pendingIntent)
     }
 
     override suspend fun endLock() {
@@ -111,6 +126,17 @@ class LockRepositoryImpl(
             prefs[KEY_IS_ACTIVE] = false
         }
         _lockState.value = _lockState.value.copy(isActive = false)
+
+        // Cancel scheduled alarm
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+        val alarmIntent = Intent(context, LockAlarmReceiver::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            1001,
+            alarmIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        alarmManager?.cancel(pendingIntent)
     }
 
     override suspend fun refreshLockState() {

@@ -34,6 +34,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -76,7 +77,7 @@ fun NuclearArmingDialog(
     val EarthCamelOchre = earth.camelOchre
 
     var step by remember { mutableIntStateOf(0) } // 0: Config & Shields, 1: Ready & Hold to Activate
-    var selectedDurationMillis by remember { mutableStateOf(2 * 60 * 60 * 1000L) } // default 2 hours
+    var selectedDurationMillis by remember { mutableLongStateOf(2 * 60 * 60 * 1000L) } // default 2 hours
 
     // Selective Nuclear Lock Shields: User decides what to lock
     var selectedCategories by remember {

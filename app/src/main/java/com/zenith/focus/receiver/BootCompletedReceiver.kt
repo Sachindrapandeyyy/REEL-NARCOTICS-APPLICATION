@@ -16,44 +16,49 @@ class BootCompletedReceiver : BroadcastReceiver() {
         val action = intent?.action ?: return
 
         if (action == Intent.ACTION_BOOT_COMPLETED || action == Intent.ACTION_MY_PACKAGE_REPLACED) {
+            val pendingResult = goAsync()
             CoroutineScope(Dispatchers.IO).launch {
-                val app = runCatching { ZenithApplication.instance }.getOrNull() ?: return@launch
-                val lockRepo = app.container.lockRepository
-                val state = lockRepo.lockState.value
-                val now = System.currentTimeMillis()
+                try {
+                    val app = runCatching { ZenithApplication.instance }.getOrNull() ?: return@launch
+                    val lockRepo = app.container.lockRepository
+                    val state = lockRepo.lockState.value
+                    val now = System.currentTimeMillis()
 
-                val nuclearRepo = app.container.nuclearModeRepository
-                nuclearRepo.onDeviceRebooted()
-                val nuclearSession = nuclearRepo.session.value
+                    val nuclearRepo = app.container.nuclearModeRepository
+                    nuclearRepo.onDeviceRebooted()
+                    val nuclearSession = nuclearRepo.session.value
 
-                val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+                    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
 
-                // Schedule Nuclear Mode expiration wake-up if active using standard inexact alarm
-                if (nuclearSession.isCurrentlyActive(now)) {
-                    val nucIntent = Intent(context, LockAlarmReceiver::class.java).apply {
-                        putExtra("IS_NUCLEAR", true)
+                    // Schedule Nuclear Mode expiration wake-up if active using standard inexact alarm
+                    if (nuclearSession.isCurrentlyActive(now)) {
+                        val nucIntent = Intent(context, LockAlarmReceiver::class.java).apply {
+                            putExtra("IS_NUCLEAR", true)
+                        }
+                        val nucPending = PendingIntent.getBroadcast(
+                            context,
+                            2002,
+                            nucIntent,
+                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                        )
+                        alarmManager?.set(AlarmManager.RTC_WAKEUP, nuclearSession.endTimeMillis, nucPending)
                     }
-                    val nucPending = PendingIntent.getBroadcast(
-                        context,
-                        2002,
-                        nucIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                    )
-                    alarmManager?.set(AlarmManager.RTC_WAKEUP, nuclearSession.endTimeMillis, nucPending)
-                }
 
-                if (state.isActive && now < state.endTimeMillis) {
-                    // Reschedule Alarm for normal lock expiration using standard inexact alarm
-                    val alarmIntent = Intent(context, LockAlarmReceiver::class.java)
-                    val pendingIntent = PendingIntent.getBroadcast(
-                        context,
-                        1001,
-                        alarmIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                    )
-                    alarmManager?.set(AlarmManager.RTC_WAKEUP, state.endTimeMillis, pendingIntent)
-                } else if (state.isActive && now >= state.endTimeMillis) {
-                    lockRepo.endLock()
+                    if (state.isActive && now < state.endTimeMillis) {
+                        // Reschedule Alarm for normal lock expiration using standard inexact alarm
+                        val alarmIntent = Intent(context, LockAlarmReceiver::class.java)
+                        val pendingIntent = PendingIntent.getBroadcast(
+                            context,
+                            1001,
+                            alarmIntent,
+                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                        )
+                        alarmManager?.set(AlarmManager.RTC_WAKEUP, state.endTimeMillis, pendingIntent)
+                    } else if (state.isActive && now >= state.endTimeMillis) {
+                        lockRepo.endLock()
+                    }
+                } finally {
+                    pendingResult.finish()
                 }
             }
         }

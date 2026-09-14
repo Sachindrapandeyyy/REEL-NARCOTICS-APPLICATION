@@ -1,7 +1,11 @@
 package com.zenith.focus.data.nuclear
 
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.os.SystemClock
+import com.zenith.focus.receiver.LockAlarmReceiver
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -133,6 +137,7 @@ class NuclearModeRepositoryImpl(
 
         persistSession(activeSession)
         _session.value = activeSession
+        scheduleNuclearAlarm(end)
         return true
     }
 
@@ -177,6 +182,7 @@ class NuclearModeRepositoryImpl(
         val inactive = NuclearSession(status = NuclearSessionStatus.INACTIVE)
         persistSession(inactive)
         _session.value = inactive
+        cancelNuclearAlarm()
         return true
     }
 
@@ -195,7 +201,36 @@ class NuclearModeRepositoryImpl(
 
         persistSession(extendedSession)
         _session.value = extendedSession
+        scheduleNuclearAlarm(newEnd)
         return true
+    }
+
+    private fun scheduleNuclearAlarm(endTimeMillis: Long) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+        val nucIntent = Intent(context, LockAlarmReceiver::class.java).apply {
+            putExtra("IS_NUCLEAR", true)
+        }
+        val nucPending = PendingIntent.getBroadcast(
+            context,
+            2002,
+            nucIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        alarmManager?.set(AlarmManager.RTC_WAKEUP, endTimeMillis, nucPending)
+    }
+
+    private fun cancelNuclearAlarm() {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+        val nucIntent = Intent(context, LockAlarmReceiver::class.java).apply {
+            putExtra("IS_NUCLEAR", true)
+        }
+        val nucPending = PendingIntent.getBroadcast(
+            context,
+            2002,
+            nucIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        alarmManager?.cancel(nucPending)
     }
 
     override suspend fun onDeviceRebooted() {

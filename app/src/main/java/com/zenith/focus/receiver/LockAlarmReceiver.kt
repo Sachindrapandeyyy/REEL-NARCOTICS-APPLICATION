@@ -10,10 +10,15 @@ import kotlinx.coroutines.launch
 
 class LockAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
+        val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
-            val app = runCatching { ZenithApplication.instance }.getOrNull() ?: return@launch
-            app.container.lockRepository.refreshLockState()
-            app.container.nuclearModeRepository.checkAndUpdateExpiration()
+            try {
+                val app = runCatching { ZenithApplication.instance }.getOrNull() ?: return@launch
+                app.container.lockRepository.refreshLockState()
+                app.container.nuclearModeRepository.checkAndUpdateExpiration()
+            } finally {
+                pendingResult.finish()
+            }
         }
     }
 }

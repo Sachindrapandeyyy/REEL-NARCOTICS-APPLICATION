@@ -1,5 +1,6 @@
 package com.zenith.focus.feature.nuclear
 
+import android.os.Build
 import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -343,7 +344,11 @@ fun NuclearExtendDialog(
                 Button(
                     onClick = {
                         if (calculatedAdditionalMillis > 0) {
-                            view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                                view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                            } else {
+                                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                            }
                             onConfirmExtension(calculatedAdditionalMillis)
                         }
                     },

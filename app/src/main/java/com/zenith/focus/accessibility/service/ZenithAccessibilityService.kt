@@ -67,21 +67,19 @@ class ZenithAccessibilityService : AccessibilityService() {
         lastPackageName = pkg
 
         val rootNode = runCatching { rootInActiveWindow }.getOrNull() ?: event.source
+        val screenContext = HierarchyTraverser.inspect(rootNode)
 
         serviceScope.launch {
-            processEventSafely(pkg, rootNode)
+            processScreenContext(pkg, screenContext)
         }
     }
 
-    private suspend fun processEventSafely(pkg: String, node: android.view.accessibility.AccessibilityNodeInfo?) {
+    private suspend fun processScreenContext(pkg: String, screenContext: com.zenith.focus.accessibility.analyzer.ScreenContext) {
         val app = runCatching { ZenithApplication.instance }.getOrNull() ?: return
         val nuclearRepo = app.container.nuclearModeRepository
         val lockRepo = app.container.lockRepository
         val settingsRepo = app.container.settingsRepository
         val statsRepo = app.container.statisticsRepository
-
-        val targetNode = node ?: runCatching { rootInActiveWindow }.getOrNull() ?: return
-        val screenContext = HierarchyTraverser.inspect(targetNode)
 
         val targetPkg = screenContext.packageName.lowercase()
         if (targetPkg.isBlank() || targetPkg == packageName.lowercase() || targetPkg.contains("launcher") || targetPkg.contains("systemui")) {
