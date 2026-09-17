@@ -46,4 +46,16 @@ class PermissionOrchestratorTest {
         assertTrue(capabilities.contains(Capability.INSTALL_UNKNOWN_APPS))
         assertEquals(4, capabilities.size)
     }
+
+    @Test
+    fun testOemBrandDetection() {
+        assertEquals(DeviceBrand.XIAOMI, OemNavigationManager.detectDeviceBrand("Xiaomi", "POCO"))
+        assertEquals(DeviceBrand.XIAOMI, OemNavigationManager.detectDeviceBrand("Redmi", "Redmi"))
+        assertEquals(DeviceBrand.SAMSUNG, OemNavigationManager.detectDeviceBrand("samsung", "samsung"))
+        assertEquals(DeviceBrand.VIVO, OemNavigationManager.detectDeviceBrand("vivo", "vivo"))
+        assertEquals(DeviceBrand.VIVO, OemNavigationManager.detectDeviceBrand("iQOO", "iQOO"))
+        assertEquals(DeviceBrand.OPPO_REALME_ONEPLUS, OemNavigationManager.detectDeviceBrand("OnePlus", "OnePlus"))
+        assertEquals(DeviceBrand.OPPO_REALME_ONEPLUS, OemNavigationManager.detectDeviceBrand("oppo", "realme"))
+        assertEquals(DeviceBrand.GENERIC, OemNavigationManager.detectDeviceBrand("Google", "Pixel"))
+    }
 }

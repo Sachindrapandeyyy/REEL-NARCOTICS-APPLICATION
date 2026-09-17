@@ -190,6 +190,12 @@ class PermissionOrchestrator(
     fun openBatteryOptimization(context: Context = appContext): Boolean =
         OemNavigationManager.openBatteryOptimization(context)
 
+    fun isBatteryOptimizationIgnored(context: Context = appContext): Boolean =
+        OemNavigationManager.isBatteryOptimizationIgnored(context)
+
+    fun requestIgnoreBatteryOptimization(context: Context = appContext): Boolean =
+        OemNavigationManager.requestIgnoreBatteryOptimization(context)
+
     fun getOemGuidance(): OemGuidance =
         OemNavigationManager.getGuidance()
 }

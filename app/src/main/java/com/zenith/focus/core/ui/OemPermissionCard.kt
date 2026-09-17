@@ -1,5 +1,6 @@
 package com.zenith.focus.core.ui
 
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -50,6 +51,9 @@ fun OemPermissionCard(
     val context = LocalContext.current
     val guidance = OemNavigationManager.getGuidance()
 
+    val isAndroid13Plus = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+    val isBatteryIgnored = OemNavigationManager.isBatteryOptimizationIgnored(context)
+
     Card(
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
@@ -77,7 +81,7 @@ fun OemPermissionCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = if (isServiceConnected) "SHIELD ACTIVE & ARMED ✓" else "ONE-TOUCH PERMISSION SETUP",
+                        text = if (isServiceConnected) "REEL SHIELD ARMED ✓" else "SMART SHIELD SETUP",
                         color = if (isServiceConnected) earth.forestGreen else earth.camelOchre,
                         fontSize = 11.5.sp,
                         fontWeight = FontWeight.Bold,
@@ -115,100 +119,143 @@ fun OemPermissionCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             if (!isServiceConnected) {
-                // Step 1: Open Accessibility Settings (Trigger Restriction)
-                Card(
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = earth.surface),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(1.dp, earth.camelOchre.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
-                        .clickable { OemNavigationManager.openAccessibilitySettings(context) }
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("1️⃣", fontSize = 15.sp)
-                            Spacer(modifier = Modifier.width(6.dp))
+                if (isAndroid13Plus) {
+                    // Android 13+ 2-Step Registration & Unlock Flow
+                    // Step 1: Trigger Registration in Accessibility
+                    Card(
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = earth.surface),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, earth.camelOchre.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
+                            .clickable { OemNavigationManager.openAccessibilitySettings(context) }
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("1️⃣", fontSize = 15.sp)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = guidance.step1Title,
+                                    color = earth.forestDark,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                             Text(
-                                text = guidance.step1Title,
+                                text = guidance.step1Desc,
+                                color = earth.textMuted,
+                                fontSize = 11.sp,
+                                lineHeight = 15.sp,
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+                            Button(
+                                onClick = { OemNavigationManager.openAccessibilitySettings(context) },
+                                colors = ButtonDefaults.buttonColors(containerColor = earth.forestGreen),
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(38.dp)
+                            ) {
+                                Text(
+                                    text = "1. OPEN ACCESSIBILITY SETTINGS ➔",
+                                    color = Color.White,
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Step 2: Open App Info (Unlock Restricted Settings via 3-dots)
+                    Card(
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = earth.surface),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, earth.border, RoundedCornerShape(14.dp))
+                            .clickable { OemNavigationManager.openAppInfo(context) }
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("2️⃣", fontSize = 15.sp)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = guidance.step2Title,
+                                    color = earth.forestDark,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Text(
+                                text = guidance.step2Desc,
+                                color = earth.textMuted,
+                                fontSize = 11.sp,
+                                lineHeight = 15.sp,
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+                            Button(
+                                onClick = { OemNavigationManager.openAppInfo(context) },
+                                colors = ButtonDefaults.buttonColors(containerColor = earth.forestDark),
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(38.dp)
+                            ) {
+                                Text(
+                                    text = "2. TOUCH TO OPEN APP INFO (3-DOTS) ➔",
+                                    color = Color.White,
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    // Android 8-12: Single-tap Direct Accessibility Activation
+                    Card(
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = earth.surface),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, earth.camelOchre.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                text = "Enable Reel Narcotics Shield",
                                 color = earth.forestDark,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold
                             )
-                        }
-                        Text(
-                            text = guidance.step1Desc,
-                            color = earth.textMuted,
-                            fontSize = 11.sp,
-                            lineHeight = 15.sp,
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        )
-                        Button(
-                            onClick = { OemNavigationManager.openAccessibilitySettings(context) },
-                            colors = ButtonDefaults.buttonColors(containerColor = earth.forestGreen),
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(38.dp)
-                        ) {
                             Text(
-                                text = "1. OPEN ACCESSIBILITY SETTINGS ➔",
-                                color = Color.White,
-                                fontSize = 11.5.sp,
-                                fontWeight = FontWeight.Bold
+                                text = "Tap below to turn ON the accessibility shield in system settings so endless reels are closed instantly.",
+                                color = earth.textMuted,
+                                fontSize = 11.sp,
+                                lineHeight = 15.sp,
+                                modifier = Modifier.padding(vertical = 4.dp)
                             )
+                            Button(
+                                onClick = { OemNavigationManager.openAccessibilitySettings(context) },
+                                colors = ButtonDefaults.buttonColors(containerColor = earth.forestGreen),
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(40.dp)
+                            ) {
+                                Text(
+                                    text = "ACTIVATE REEL SHIELD ➔",
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Step 2: Open App Info (Unlock Restricted Settings via 3-dots)
-                Card(
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = earth.surface),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(1.dp, earth.border, RoundedCornerShape(14.dp))
-                        .clickable { OemNavigationManager.openAppInfo(context) }
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("2️⃣", fontSize = 15.sp)
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = guidance.step2Title,
-                                color = earth.forestDark,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Text(
-                            text = guidance.step2Desc,
-                            color = earth.textMuted,
-                            fontSize = 11.sp,
-                            lineHeight = 15.sp,
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        )
-                        Button(
-                            onClick = { OemNavigationManager.openAppInfo(context) },
-                            colors = ButtonDefaults.buttonColors(containerColor = earth.forestDark),
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(38.dp)
-                        ) {
-                            Text(
-                                text = "2. TOUCH TO OPEN APP INFO (3-DOTS) ➔",
-                                color = Color.White,
-                                fontSize = 11.5.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-
-                // Step 3 (Optional OEM background optimization if applicable)
-                if (guidance.step3Title != null && guidance.step3ButtonLabel != null) {
+                // Battery Guard / Autostart Assistant
+                if (!isBatteryIgnored || guidance.step3Title != null) {
                     Spacer(modifier = Modifier.height(10.dp))
                     Card(
                         shape = RoundedCornerShape(14.dp),
@@ -222,30 +269,34 @@ fun OemPermissionCard(
                                 Text(if (guidance.brand == DeviceBrand.XIAOMI) "⚡" else "🔋", fontSize = 15.sp)
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = guidance.step3Title,
+                                    text = guidance.step3Title ?: "Prevent System Sleep",
                                     color = earth.forestDark,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
-                            if (guidance.step3Desc != null) {
-                                Text(
-                                    text = guidance.step3Desc,
-                                    color = earth.textMuted,
-                                    fontSize = 11.sp,
-                                    lineHeight = 15.sp,
-                                    modifier = Modifier.padding(vertical = 4.dp)
-                                )
-                            }
+                            Text(
+                                text = guidance.step3Desc ?: "Allow Reel Narcotics to run in the background without being killed by OEM battery optimizations.",
+                                color = earth.textMuted,
+                                fontSize = 11.sp,
+                                lineHeight = 15.sp,
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
                             OutlinedButton(
-                                onClick = { OemNavigationManager.openOemAutostart(context) },
+                                onClick = {
+                                    if (guidance.step3ButtonLabel != null) {
+                                        OemNavigationManager.openOemAutostart(context)
+                                    } else {
+                                        OemNavigationManager.requestIgnoreBatteryOptimization(context)
+                                    }
+                                },
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(36.dp)
                             ) {
                                 Text(
-                                    text = guidance.step3ButtonLabel,
+                                    text = guidance.step3ButtonLabel ?: "ALLOW UNRESTRICTED BATTERY ➔",
                                     color = earth.camelOchre,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold

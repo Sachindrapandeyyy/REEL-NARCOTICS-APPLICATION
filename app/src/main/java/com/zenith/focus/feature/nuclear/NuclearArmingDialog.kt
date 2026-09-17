@@ -30,8 +30,12 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -101,7 +105,22 @@ fun NuclearArmingDialog(
 
     val view = LocalView.current
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     val scrollState = rememberScrollState()
+
+    var isAdminActive by remember { mutableStateOf(ZenithDeviceAdminReceiver.isAdminActive(context)) }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                isAdminActive = ZenithDeviceAdminReceiver.isAdminActive(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     val durations = remember {
         listOf(
@@ -197,44 +216,6 @@ fun NuclearArmingDialog(
                                 lineHeight = 16.sp,
                                 fontWeight = FontWeight.Normal
                             )
-                        }
-                    }
-
-                    // DEVICE ADMIN NOTICE
-                    val isAdminActive = remember { ZenithDeviceAdminReceiver.isAdminActive(context) }
-                    if (!isAdminActive) {
-                        Card(
-                            shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinen),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 12.dp)
-                                .border(1.dp, EarthCamelOchre, RoundedCornerShape(14.dp))
-                                .clickable {
-                                    val intent = ZenithDeviceAdminReceiver.createAddAdminIntent(context)
-                                    context.startActivity(intent)
-                                }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text("⚠️", fontSize = 16.sp)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Column {
-                                    Text(
-                                        "UNINSTALL PROTECTION RECOMMENDED",
-                                        color = EarthCamelOchre,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        "Tap to grant Device Admin so the app cannot be uninstalled during this session.",
-                                        color = EarthTextMuted,
-                                        fontSize = 10.5.sp
-                                    )
-                                }
-                            }
                         }
                     }
 
@@ -617,6 +598,43 @@ fun NuclearArmingDialog(
                         )
                     }
 
+                    if (!isAdminActive) {
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Card(
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinen),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(1.dp, EarthCamelOchre.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    text = "🔒 Uninstall Protection Required",
+                                    color = EarthForestDark,
+                                    fontSize = 12.5.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Nuclear Mode cannot be uninstalled or modified while your timer runs. Please activate Device Administrator to seal the lock.",
+                                    color = EarthTextMuted,
+                                    fontSize = 11.sp,
+                                    lineHeight = 15.sp,
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                )
+                                Button(
+                                    onClick = { ZenithDeviceAdminReceiver.openDeviceAdminActivation(context) },
+                                    colors = ButtonDefaults.buttonColors(containerColor = EarthCamelOchre),
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(36.dp)
+                                ) {
+                                    Text("ACTIVATE UNINSTALL PROTECTION ➔", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+
                     Spacer(modifier = Modifier.height(18.dp))
 
                     Row(
@@ -637,8 +655,12 @@ fun NuclearArmingDialog(
                         Button(
                             onClick = {
                                 if (canProceed) {
-                                    onArmSession(selectedDurationMillis, selectedCategories)
-                                    step = 1
+                                    if (!isAdminActive) {
+                                        ZenithDeviceAdminReceiver.openDeviceAdminActivation(context)
+                                    } else {
+                                        onArmSession(selectedDurationMillis, selectedCategories)
+                                        step = 1
+                                    }
                                 }
                             },
                             enabled = canProceed,
@@ -649,7 +671,7 @@ fun NuclearArmingDialog(
                             shape = RoundedCornerShape(14.dp)
                         ) {
                             Text(
-                                text = if (canProceed) "PROCEED ➔" else "SELECT A SHIELD",
+                                text = if (!canProceed) "SELECT A SHIELD" else if (!isAdminActive) "1. ACTIVATE PROTECTION" else "PROCEED ➔",
                                 color = Color.White,
                                 fontWeight = FontWeight.Black
                             )

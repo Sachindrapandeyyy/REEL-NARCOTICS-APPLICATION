@@ -297,7 +297,7 @@ fun HomeScreen(
         Spacer(modifier = Modifier.height(22.dp))
 
         // SYSTEM SHIELD STATUS & ACTIVATION ASSISTANT
-        val allShieldsOperational = isServiceConnected && isDeviceAdminActive
+        val allShieldsOperational = isServiceConnected
 
         if (allShieldsOperational) {
             Card(
@@ -333,7 +333,7 @@ fun HomeScreen(
                             Text(
                                 text = if (isNuclearActive) "NUCLEAR ENFORCEMENT ACTIVE ☢️"
                                 else if (isRegularLocked) "FOCUS RESTRICTIONS ACTIVE 🔒"
-                                else "SHIELDS ARMED & READY (STANDBY)",
+                                else "REEL SHIELD ARMED & READY (STANDBY)",
                                 color = if (isNuclearActive) earth.camelOchre
                                 else if (isRegularLocked) earth.forestGreen
                                 else earth.forestGreen,
@@ -344,7 +344,7 @@ fun HomeScreen(
                             Text(
                                 text = if (isNuclearActive) "Strict zero-bypass mode active until timer ends"
                                 else if (isRegularLocked) "Short-form feeds blocked during session"
-                                else "No lock active = No restrictions. Tap any card above to start.",
+                                else "Feeds monitored offline. Tap any focus card to begin.",
                                 color = earth.textMuted,
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(top = 2.dp)
@@ -359,8 +359,47 @@ fun HomeScreen(
                     )
                 }
             }
+
+            if (!isDeviceAdminActive) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Card(
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, earth.border, RoundedCornerShape(14.dp))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "🛡️ Anti-Uninstall Armor",
+                                color = earth.forestDark,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Recommended for Nuclear Mode to prevent uninstallation.",
+                                color = earth.textMuted,
+                                fontSize = 10.5.sp
+                            )
+                        }
+                        OutlinedButton(
+                            onClick = onEnableDeviceAdmin,
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.height(32.dp)
+                        ) {
+                            Text("ENABLE", color = earth.camelOchre, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
         } else {
-            val missingCount = (if (!isServiceConnected) 1 else 0) + (if (!isDeviceAdminActive) 1 else 0)
             Card(
                 shape = RoundedCornerShape(18.dp),
                 colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
@@ -383,7 +422,7 @@ fun HomeScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "SYSTEM SETUP REQUIRED ($missingCount/2 PENDING)",
+                                text = "REEL SHIELD SETUP REQUIRED",
                                 color = earth.camelOchre,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,

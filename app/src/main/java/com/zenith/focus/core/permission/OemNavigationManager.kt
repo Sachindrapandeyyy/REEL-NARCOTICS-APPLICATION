@@ -232,6 +232,37 @@ object OemNavigationManager {
     }
 
     /**
+     * Checks if the app is already exempt from OS battery optimizations.
+     */
+    fun isBatteryOptimizationIgnored(context: Context): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val powerManager = context.getSystemService(Context.POWER_SERVICE) as? android.os.PowerManager
+            powerManager?.isIgnoringBatteryOptimizations(context.packageName) == true
+        } else {
+            true
+        }
+    }
+
+    /**
+     * Requests the user to whitelist Reel Narcotics from OS battery killing.
+     */
+    fun requestIgnoreBatteryOptimization(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            try {
+                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    data = Uri.parse("package:${context.packageName}")
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                context.startActivity(intent)
+                return true
+            } catch (_: Exception) {
+                return openBatteryOptimization(context)
+            }
+        }
+        return false
+    }
+
+    /**
      * Opens Battery Optimization / Unrestricted background execution settings.
      */
     fun openBatteryOptimization(context: Context): Boolean {

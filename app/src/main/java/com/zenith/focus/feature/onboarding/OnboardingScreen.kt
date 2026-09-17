@@ -51,6 +51,9 @@ import com.zenith.focus.core.ui.RestrictedSettingsGuideDialog
 import com.zenith.focus.domain.model.ContentCategory
 import com.zenith.focus.domain.model.ProtectionConfig
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+
 @Composable
 fun OnboardingScreen(
     config: ProtectionConfig,
@@ -63,7 +66,8 @@ fun OnboardingScreen(
     val earth = EarthTheme.colors
     var currentPage by remember { mutableIntStateOf(0) }
     var showRestrictedDialog by remember { mutableStateOf(false) }
-    val totalPages = 9
+    val totalPages = 3
+    val scrollState = rememberScrollState()
 
     if (showRestrictedDialog) {
         RestrictedSettingsGuideDialog(onDismiss = { showRestrictedDialog = false })
@@ -73,134 +77,83 @@ fun OnboardingScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(earth.canvas)
-            .padding(24.dp)
+            .padding(20.dp)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Page Indicators
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 12.dp),
+                    .padding(top = 8.dp),
                 horizontalArrangement = Arrangement.Center
             ) {
                 for (i in 0 until totalPages) {
                     Box(
                         modifier = Modifier
-                            .padding(horizontal = 3.dp)
-                            .size(if (i == currentPage) 22.dp else 6.dp, 6.dp)
+                            .padding(horizontal = 4.dp)
+                            .size(if (i == currentPage) 26.dp else 8.dp, 6.dp)
                             .clip(RoundedCornerShape(3.dp))
                             .background(if (i == currentPage) earth.camelOchre else earth.border)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
             // 3D Brand Logo with refined border
             Image(
                 painter = painterResource(id = R.drawable.ic_reel_narcotics_logo),
                 contentDescription = "Reel Narcotics",
                 modifier = Modifier
-                    .size(110.dp)
-                    .clip(RoundedCornerShape(26.dp))
-                    .border(1.dp, earth.border, RoundedCornerShape(26.dp))
+                    .size(90.dp)
+                    .clip(RoundedCornerShape(22.dp))
+                    .border(1.dp, earth.border, RoundedCornerShape(22.dp))
             )
 
-            Spacer(modifier = Modifier.height(22.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Page Content Container
             Box(
                 modifier = Modifier
-                    .weight(1f)
                     .fillMaxWidth(),
                 contentAlignment = Alignment.TopCenter
             ) {
                 when (currentPage) {
-                    0 -> OnboardingPageContent(
-                        tag = "REEL NARCOTICS",
-                        title = "Break the Scroll",
-                        description = "Short-form video feeds are engineered to exploit your brain's dopamine reward loop, turning a 30-second break into 2 lost hours. Reel Narcotics puts you back in control."
-                    )
-                    1 -> OnboardingPageContent(
-                        tag = "STEP 2 OF 9",
-                        title = "Surgical Content Shield",
-                        description = "Reel Narcotics doesn't lock you out of essential communication. You can still watch long-form tutorials on YouTube and message friends on Instagram. Only addictive infinite scrolling feeds are intercepted."
-                    )
-                    2 -> OnboardingPageContent(
-                        tag = "STEP 3 OF 9",
-                        title = "Offline Adult Protection",
-                        description = "Maintain digital purity with a multi-layered offline defense. Explicit domains and keywords are intercepted locally in the browser with zero cloud lookup."
-                    )
-                    3 -> OnboardingPageContent(
-                        tag = "STEP 4 OF 9",
-                        title = "Unbreakable Focus Lock",
-                        description = "Commit to your goals with immutable focus locks and Nuclear Mode. Locks survive app restarts and phone reboots so you can't cheat your future self."
-                    )
-                    4 -> OnboardingPageContent(
-                        tag = "STEP 5 OF 9",
-                        title = "100% Offline • Zero Telemetry",
-                        description = "Reel Narcotics operates 100% locally on your device. No cloud database, no account, no external tracking, no ads, and zero telemetry. Everything stays strictly inside your phone's physical hardware."
-                    )
-                    5 -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    // STEP 1: VALUE PROPOSITION HERO
+                    0 -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = "STEP 6 OF 9 • SHIELD PERMISSION",
+                            text = "REEL NARCOTICS • 100% OFFLINE",
                             color = earth.camelOchre,
-                            fontSize = 12.sp,
+                            fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
+                            letterSpacing = 1.2.sp
                         )
-                        Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Accessibility Shield",
+                            text = "Break the Scroll.\nTake Back Attention.",
                             color = earth.forestGreen,
                             fontSize = 24.sp,
                             fontFamily = FontFamily.Serif,
                             fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            lineHeight = 30.sp
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
                         Text(
-                            text = "Used strictly to detect when YouTube Shorts & Reels open so Reel Narcotics can immediately close them. 100% offline — your chats, photos, and passwords are NEVER read or collected.",
+                            text = "Surgical distraction blocker engineered to destroy endless dopamine loops. Keeps long tutorials and chats open, but terminates infinite feeds the instant they appear.",
                             color = earth.textPrimary,
                             fontSize = 13.sp,
                             textAlign = TextAlign.Center,
                             lineHeight = 18.sp
                         )
-                        Spacer(modifier = Modifier.height(14.dp))
-                        OemPermissionCard(
-                            isServiceConnected = isServiceConnected,
-                            onOpenGuideDialog = { showRestrictedDialog = true }
-                        )
-                    }
-                    6 -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "STEP 7 OF 9 • FOCUS INTEGRITY",
-                            color = earth.camelOchre,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "Anti-Uninstall Protection",
-                            color = earth.forestGreen,
-                            fontSize = 24.sp,
-                            fontFamily = FontFamily.Serif,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "During active Nuclear Mode sessions, your subconscious impulse will tempt you to delete the app to resume scrolling. Device Administrator locks the app against uninstallation until the timer ends.",
-                            color = earth.textPrimary,
-                            fontSize = 13.sp,
-                            textAlign = TextAlign.Center,
-                            lineHeight = 18.sp
-                        )
-                        Spacer(modifier = Modifier.height(14.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // 3 Value Pillars
                         Card(
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
@@ -209,61 +162,55 @@ fun OnboardingScreen(
                                 .border(1.dp, earth.border, RoundedCornerShape(16.dp))
                         ) {
                             Column(modifier = Modifier.padding(14.dp)) {
-                                Text(
-                                    text = "🔒 Unbreakable Focus Commitment:",
-                                    color = earth.textPrimary,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = "• Cannot be uninstalled while Nuclear timer runs\n• Cannot be bypassed via app info or clear data\n• 1-tap direct system prompt (no menu hunting)",
-                                    color = earth.textMuted,
-                                    fontSize = 11.5.sp,
-                                    lineHeight = 16.sp,
-                                    modifier = Modifier.padding(top = 4.dp)
-                                )
+                                ValuePillarRow("🛡️", "Surgical Precision", "Only kills Shorts & Reels. YouTube tutorials & DMs stay accessible.")
+                                Spacer(modifier = Modifier.height(10.dp))
+                                ValuePillarRow("🔒", "100% Offline & Private", "Zero tracking, zero cloud accounts, zero ads, and zero telemetry.")
+                                Spacer(modifier = Modifier.height(10.dp))
+                                ValuePillarRow("⚡", "Sub-Millisecond Response", "Terminates addictive feeds instantly before your dopamine spike triggers.")
                             }
                         }
-                        Spacer(modifier = Modifier.height(14.dp))
-                        Button(
-                            onClick = onEnableDeviceAdmin,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isDeviceAdminActive) earth.forestGreen else earth.camelOchre,
-                                contentColor = Color.White
-                            ),
-                            shape = RoundedCornerShape(14.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(44.dp)
-                        ) {
-                            Text(
-                                text = if (isDeviceAdminActive) "UNINSTALL PROTECTION ACTIVE ✓" else "ACTIVATE UNINSTALL PROTECTION",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp
-                            )
-                        }
-
-                        if (!isDeviceAdminActive) {
-                            val guidance = remember { com.zenith.focus.core.permission.OemNavigationManager.getGuidance() }
-                            Text(
-                                text = guidance.deviceAdminHint ?: "💡 Tap 'Activate' on the system prompt",
-                                color = earth.camelOchre,
-                                fontSize = 10.5.sp,
-                                lineHeight = 14.sp,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(top = 6.dp)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            RestrictedSettingsBanner(
-                                onOpenDialog = { showRestrictedDialog = true }
-                            )
-                        }
                     }
-                    7 -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
+
+                    // STEP 2: SMART SHIELD SETUP
+                    1 -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = "STEP 8 OF 9",
+                            text = "STEP 2 OF 3 • SMART PERMISSION",
                             color = earth.camelOchre,
-                            fontSize = 12.sp,
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Activate Reel Shield",
+                            color = earth.forestGreen,
+                            fontSize = 22.sp,
+                            fontFamily = FontFamily.Serif,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Used strictly to detect when short-form video players appear so Reel Narcotics can close them. Your chats, photos, and passwords are NEVER collected.",
+                            color = earth.textPrimary,
+                            fontSize = 12.5.sp,
+                            textAlign = TextAlign.Center,
+                            lineHeight = 17.sp
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        OemPermissionCard(
+                            isServiceConnected = isServiceConnected,
+                            onOpenGuideDialog = { showRestrictedDialog = true }
+                        )
+                    }
+
+                    // STEP 3: CUSTOMIZE TARGETS & READY
+                    2 -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "STEP 3 OF 3 • CUSTOMIZE",
+                            color = earth.camelOchre,
+                            fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
                         )
@@ -271,12 +218,19 @@ fun OnboardingScreen(
                         Text(
                             text = "Choose Your Targets",
                             color = earth.forestGreen,
-                            fontSize = 24.sp,
+                            fontSize = 22.sp,
                             fontFamily = FontFamily.Serif,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Select which addictive feeds Reel Narcotics should intercept:",
+                            color = earth.textMuted,
+                            fontSize = 12.sp,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(14.dp))
 
                         OnboardingToggleRow("YouTube Shorts", config.blockYouTubeShorts) {
                             onToggleCategory(ContentCategory.YOUTUBE_SHORTS, it)
@@ -287,17 +241,14 @@ fun OnboardingScreen(
                         OnboardingToggleRow("Snapchat Spotlight", config.blockSnapchatSpotlight) {
                             onToggleCategory(ContentCategory.SNAPCHAT_SPOTLIGHT, it)
                         }
-                        OnboardingToggleRow("Adult Websites", config.blockAdultWebsites) {
+                        OnboardingToggleRow("Adult Websites (Browser)", config.blockAdultWebsites) {
                             onToggleCategory(ContentCategory.ADULT_WEBSITE, it)
                         }
                     }
-                    8 -> OnboardingPageContent(
-                        tag = "READY",
-                        title = "Take Back Your Attention",
-                        description = "Welcome to your digital sanctuary. Reel Narcotics is armed and ready to break the scroll and protect your focus. Tap GET STARTED to enter."
-                    )
                 }
             }
+
+            Spacer(modifier = Modifier.height(20.dp))
 
             // Bottom Navigation Buttons
             Row(
@@ -311,7 +262,7 @@ fun OnboardingScreen(
                     OutlinedButton(
                         onClick = { currentPage-- },
                         border = BorderStroke(1.dp, earth.border),
-                        shape = RoundedCornerShape(14.dp)
+                        shape = RoundedCornerShape(12.dp)
                     ) {
                         Text("BACK", color = earth.textMuted, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                     }
@@ -331,15 +282,43 @@ fun OnboardingScreen(
                         containerColor = if (currentPage == totalPages - 1) earth.camelOchre else earth.forestGreen,
                         contentColor = Color.White
                     ),
-                    shape = RoundedCornerShape(14.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.height(44.dp)
                 ) {
                     Text(
-                        text = if (currentPage == totalPages - 1) "GET STARTED" else "NEXT",
+                        text = if (currentPage == totalPages - 1) "ENTER FOCUS MODE 🚀" else "NEXT ➔",
                         fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp
+                        fontSize = 12.5.sp
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ValuePillarRow(icon: String, title: String, description: String) {
+    val earth = EarthTheme.colors
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top
+    ) {
+        Text(icon, fontSize = 16.sp)
+        Spacer(modifier = Modifier.width(10.dp))
+        Column {
+            Text(
+                text = title,
+                color = earth.forestDark,
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = description,
+                color = earth.textMuted,
+                fontSize = 11.sp,
+                lineHeight = 15.sp,
+                modifier = Modifier.padding(top = 2.dp)
+            )
         }
     }
 }
