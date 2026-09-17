@@ -1,6 +1,7 @@
 package com.zenith.focus.accessibility.service
 
 import android.accessibilityservice.AccessibilityService
+import android.app.admin.DevicePolicyManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -15,6 +16,7 @@ import com.zenith.focus.accessibility.detector.TamperDetectionEngine
 import com.zenith.focus.accessibility.overlay.OverlayWindowManager
 import com.zenith.focus.domain.model.BlockEvent
 import com.zenith.focus.domain.model.ContentCategory
+import com.zenith.focus.receiver.ZenithDeviceAdminReceiver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -88,10 +90,12 @@ class ZenithAccessibilityService : AccessibilityService() {
         val settingsRepo = app.container.settingsRepository
         val statsRepo = app.container.statisticsRepository
 
-        val targetPkg = screenContext.packageName.lowercase()
+        val targetPkg = if (screenContext.packageName.isNotBlank()) screenContext.packageName.lowercase() else pkg.lowercase()
         if (targetPkg.isBlank() || targetPkg == packageName.lowercase() || targetPkg.contains("launcher") || targetPkg.contains("systemui")) {
             return
         }
+
+        val effectiveContext = if (screenContext.packageName.isBlank()) screenContext.copy(packageName = targetPkg) else screenContext
 
         val nuclearSession = nuclearRepo.session.value
         val lockState = lockRepo.lockState.value
@@ -101,18 +105,41 @@ class ZenithAccessibilityService : AccessibilityService() {
 
         // --- ANTI-UNINSTALL & ANTI-TAMPER SHIELD ---
         if (isNuclear || lockState.isCurrentlyActive(now)) {
-            val tamperResult = TamperDetectionEngine.evaluate(screenContext)
+            val tamperResult = TamperDetectionEngine.evaluate(effectiveContext)
             if (tamperResult.isTamperAttempt) {
-                if (now - lastEjectTime < EJECT_COOLDOWN_MS) {
-                    return
-                }
+                // DO NOT DEBOUNCE TAMPER ATTEMPTS!
+                // Any attempt to uninstall or disable accessibility during nuclear/lock mode must be instantly ejected.
                 lastEjectTime = now
 
+                // 1. Instant global dismiss & back to home actions
+                performGlobalAction(GLOBAL_ACTION_BACK)
+                performGlobalAction(GLOBAL_ACTION_HOME)
+
+                // 2. Instant physical haptic shock
                 triggerHapticAlert()
+
+                // 3. If Nuclear Mode is active, IMMEDIATELY lock the screen via Device Admin.
+                // This shuts the screen off instantaneously, eliminating any touch window for the user.
+                if (isNuclear) {
+                    runCatching {
+                        val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager
+                        if (ZenithDeviceAdminReceiver.isAdminActive(this@ZenithAccessibilityService)) {
+                            dpm?.lockNow()
+                        }
+                    }
+                }
+
+                // 4. Force home intent and show alert toast on main thread
                 withContext(Dispatchers.Main) {
-                    ejectToHomeScreen()
+                    runCatching {
+                        val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+                            addCategory(Intent.CATEGORY_HOME)
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        }
+                        startActivity(homeIntent)
+                    }
                     val toastMessage = if (isNuclear) {
-                        "🔒 NUCLEAR FOCUS IS ON: Reel Narcotics cannot be deleted or modified until your session expires!"
+                        "🔒 NUCLEAR FOCUS IS ON: Reel Narcotics cannot be modified or turned off until your session expires!"
                     } else {
                         "🔒 FOCUS LOCK ACTIVE: Reel Narcotics settings and removal are locked during focus session."
                     }
@@ -122,7 +149,7 @@ class ZenithAccessibilityService : AccessibilityService() {
                 statsRepo.recordBlockEvent(
                     BlockEvent(
                         timestamp = now,
-                        packageName = pkg,
+                        packageName = targetPkg,
                         category = ContentCategory.SYSTEM_TAMPER,
                         confidence = 1.0f,
                         ruleId = "tamper_protection"
@@ -133,7 +160,7 @@ class ZenithAccessibilityService : AccessibilityService() {
         }
 
         val config = settingsRepo.protectionConfig.value
-        val result = detectionEngine.evaluate(screenContext, config)
+        val result = detectionEngine.evaluate(effectiveContext, config)
 
         if (result.isBlocked) {
 

@@ -142,4 +142,85 @@ class TamperDetectionTest {
         val result = TamperDetectionEngine.evaluate(context)
         assertTrue(result.isTamperAttempt)
     }
+
+    @Test
+    fun testAccessibilityServiceScreenTamperDetected() {
+        val context = ScreenContext(
+            packageName = "com.android.settings",
+            className = "com.android.settings.SubSettings",
+            viewIds = setOf("main_switch_bar", "switch_text"),
+            visibleTexts = listOf(
+                "Reel Narcotics Shield",
+                "Use Reel Narcotics Shield",
+                "Reel Narcotics monitors reel playback to protect your focus."
+            ),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("reel", "narcotics", "shield", "use", "monitors", "playback", "focus"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertTrue(result.isTamperAttempt)
+    }
+
+    @Test
+    fun testAccessibilityStopConfirmationDialogDetected() {
+        val context = ScreenContext(
+            packageName = "android",
+            className = "android.app.AlertDialog",
+            viewIds = setOf("alertTitle", "button1", "button2"),
+            visibleTexts = listOf(
+                "Stop Reel Narcotics Shield?",
+                "Stopping Reel Narcotics Shield? The service will no longer be able to block reels.",
+                "Cancel",
+                "Stop"
+            ),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("stop", "reel", "narcotics", "shield", "cancel"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertTrue(result.isTamperAttempt)
+    }
+
+    @Test
+    fun testTurnOffConfirmationDialogDetected() {
+        val context = ScreenContext(
+            packageName = "com.android.settings",
+            className = "android.app.AlertDialog",
+            viewIds = setOf("alertTitle", "button1", "button2"),
+            visibleTexts = listOf(
+                "Turn off Reel Narcotics Shield?",
+                "Cancel",
+                "Turn off"
+            ),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("turn", "off", "reel", "narcotics", "shield", "cancel"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertTrue(result.isTamperAttempt)
+    }
+
+    @Test
+    fun testAccessibilityListBrowsingAllowed() {
+        val context = ScreenContext(
+            packageName = "com.android.settings",
+            className = "com.android.settings.accessibility.AccessibilitySettings",
+            viewIds = setOf("recycler_view", "title", "summary"),
+            visibleTexts = listOf("Accessibility", "Downloaded apps", "TalkBack", "Reel Narcotics Shield", "On"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("accessibility", "downloaded", "apps", "talkback", "reel", "narcotics", "shield", "on"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertFalse(result.isTamperAttempt)
+    }
 }

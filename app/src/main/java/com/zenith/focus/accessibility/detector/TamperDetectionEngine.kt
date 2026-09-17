@@ -14,7 +14,9 @@ object TamperDetectionEngine {
         "com.google.android.packageinstaller",
         "com.android.packageinstaller",
         "com.android.settings",
-        "com.android.vending"
+        "com.google.android.settings",
+        "com.android.vending",
+        "android"
     )
 
     private val TARGET_APP_IDENTIFIERS = setOf(
@@ -28,8 +30,15 @@ object TamperDetectionEngine {
         return pkg in BASE_TAMPER_PACKAGES ||
                 pkg.contains("packageinstaller") ||
                 pkg.contains("securitycenter") ||
+                pkg.contains("safecenter") ||
+                pkg.contains("permission") ||
+                pkg.contains("phonemaster") ||
+                pkg.contains("iqoo.secure") ||
+                pkg.contains("cleanmaster") ||
                 pkg.contains("settings") ||
-                pkg == "com.android.vending"
+                pkg.contains("accessibility") ||
+                pkg == "com.android.vending" ||
+                pkg == "android"
     }
 
     fun evaluate(context: ScreenContext): TamperDetectionResult {
@@ -60,33 +69,108 @@ object TamperDetectionEngine {
             }
         }
 
-        // Case 2: Settings or Security Center - App Info, Device Admin deactivation, or Accessibility disabling
-        if (pkg.contains("settings") || pkg.contains("securitycenter")) {
-            val isDeviceAdminScreen = context.className.contains("DeviceAdmin", ignoreCase = true) ||
-                    allTexts.any { it.contains("device admin") || it.contains("device administrator") }
+        // Case 2: Settings, Security Center, or System Framework ("android")
+        val isSystemOrSettings = pkg == "android" ||
+                pkg.contains("settings") ||
+                pkg.contains("securitycenter") ||
+                pkg.contains("safecenter") ||
+                pkg.contains("permission") ||
+                pkg.contains("phonemaster") ||
+                pkg.contains("iqoo.secure") ||
+                pkg.contains("accessibility")
 
-            val hasDestructiveAction = allTexts.any { text ->
-                text.contains("uninstall") ||
-                text.contains("force stop") ||
-                text.contains("deactivate") ||
-                text.contains("clear data") ||
-                text.contains("clear storage") ||
-                text.contains("disable") ||
-                text.contains("stop app") ||
-                text.contains("turn off") ||
-                text.contains("remove device admin")
-            } || allTokens.any { token ->
-                token in setOf("uninstall", "deactivate", "forcestop", "disable")
+        if (isSystemOrSettings && mentionsTargetApp) {
+            // Explicit stop / turn off prompt (dialog or text)
+            val hasExplicitStopPrompt = allTexts.any { text ->
+                text.contains("stop reel narcotics") ||
+                text.contains("turn off reel narcotics") ||
+                text.contains("stop zenith") ||
+                text.contains("turn off zenith") ||
+                text.contains("stop service") ||
+                text.contains("turn off service")
+            }
+            if (hasExplicitStopPrompt) {
+                return TamperDetectionResult(
+                    isTamperAttempt = true,
+                    reason = "Accessibility service stop or turn off prompt intercepted",
+                    targetPackage = pkg
+                )
             }
 
+            // Check for deactivation / destructive text actions
+            val hasStopOrTurnOffAction = allTexts.any { text ->
+                text.contains("stop app") ||
+                text.contains("force stop") ||
+                text.contains("deactivate") ||
+                text.contains("disable") ||
+                text.contains("turn off") ||
+                text.contains("clear data") ||
+                text.contains("clear storage") ||
+                text.contains("remove device admin") ||
+                text.trim() == "stop"
+            } || allTokens.any { token ->
+                token in setOf("deactivate", "forcestop", "disable")
+            }
+
+            // System confirmation dialog: Cancel alongside Stop / Turn off / OK / Disable / Determine
+            val hasCancelButton = allTexts.any { it.trim() == "cancel" || it.contains("cancel") }
+            val hasStopButton = allTexts.any {
+                it.trim() == "stop" ||
+                it.trim() == "turn off" ||
+                it.trim() == "ok" ||
+                it.trim() == "disable" ||
+                it.trim() == "determine"
+            }
+
+            if (hasCancelButton && (hasStopButton || hasStopOrTurnOffAction)) {
+                return TamperDetectionResult(
+                    isTamperAttempt = true,
+                    reason = "Accessibility service or app stop confirmation dialog intercepted",
+                    targetPackage = pkg
+                )
+            }
+
+            // Accessibility service detail screen: "Use Reel Narcotics Shield", "Use service", switch widgets, capabilities
+            val isAccessibilityServiceScreen = allTexts.any { text ->
+                text.contains("use reel narcotics") ||
+                text.contains("use zenith") ||
+                text.contains("use service") ||
+                text.contains("accessibility shortcut") ||
+                text.contains("shield shortcut") ||
+                text.contains("observe your actions") ||
+                text.contains("retrieve window content") ||
+                text.contains("view and control screen") ||
+                text.contains("interact with your apps") ||
+                text.contains("full control of your device")
+            } || context.className.contains("ToggleAccessibility", ignoreCase = true) ||
+                 context.className.contains("AccessibilityDetails", ignoreCase = true) ||
+                 context.className.contains("ToggleFeature", ignoreCase = true) ||
+                 context.className.contains("AccessibilityServiceWarning", ignoreCase = true) ||
+                 context.viewIds.any { id ->
+                     id.contains("main_switch_bar", ignoreCase = true) ||
+                     id.contains("switch_widget", ignoreCase = true) ||
+                     id.contains("switch_bar", ignoreCase = true) ||
+                     id.contains("switch_root", ignoreCase = true)
+                 }
+
+            if (isAccessibilityServiceScreen) {
+                return TamperDetectionResult(
+                    isTamperAttempt = true,
+                    reason = "Accessibility service toggle/detail screen tamper intercepted",
+                    targetPackage = pkg
+                )
+            }
+
+            // Device Admin screen deactivation
+            val isDeviceAdminScreen = context.className.contains("DeviceAdmin", ignoreCase = true) ||
+                    allTexts.any { it.contains("device admin") || it.contains("device administrator") }
             val isDeactivationAttempt = allTexts.any {
                 it.contains("deactivate") ||
                 it.contains("remove device admin") ||
                 it.contains("turn off")
             } || allTokens.any { it in setOf("deactivate", "remove", "disable") }
 
-            // In Device Admin settings, only intercept if deactivation or destructive action is attempted
-            if (isDeviceAdminScreen && mentionsTargetApp && (isDeactivationAttempt || hasDestructiveAction)) {
+            if (isDeviceAdminScreen && (isDeactivationAttempt || hasStopOrTurnOffAction)) {
                 return TamperDetectionResult(
                     isTamperAttempt = true,
                     reason = "Device Administrator tamper/deactivation attempt intercepted",
@@ -94,16 +178,18 @@ object TamperDetectionEngine {
                 )
             }
 
-            val isAppInfoOrAdminScreen = context.className.contains("InstalledAppDetails", ignoreCase = true) ||
-                    context.className.contains("AccessibilitySettings", ignoreCase = true) ||
+            // App Info screen: Force Stop, Clear Data, Uninstall
+            val isAppInfoScreen = context.className.contains("InstalledAppDetails", ignoreCase = true) ||
+                    context.className.contains("AppInfo", ignoreCase = true) ||
+                    context.className.contains("ApplicationsDetailsActivity", ignoreCase = true) ||
                     context.className.contains("AppControl", ignoreCase = true) ||
                     context.className.contains("ManageApp", ignoreCase = true) ||
-                    hasDestructiveAction
+                    allTexts.any { it.contains("force stop") || it.contains("storage & cache") || it.contains("app info") }
 
-            if (isAppInfoOrAdminScreen && mentionsTargetApp) {
+            if (isAppInfoScreen && (hasStopOrTurnOffAction || allTexts.any { it.contains("force stop") || it.contains("clear data") || it.contains("uninstall") })) {
                 return TamperDetectionResult(
                     isTamperAttempt = true,
-                    reason = "Settings tamper/deactivation attempt intercepted",
+                    reason = "App Info settings tamper/deactivation attempt intercepted",
                     targetPackage = pkg
                 )
             }
