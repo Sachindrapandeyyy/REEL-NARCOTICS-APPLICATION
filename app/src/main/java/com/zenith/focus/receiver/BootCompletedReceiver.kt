@@ -57,6 +57,10 @@ class BootCompletedReceiver : BroadcastReceiver() {
                     } else if (state.isActive && now >= state.endTimeMillis) {
                         lockRepo.endLock()
                     }
+
+                    // Reschedule daily habit notifications on boot
+                    val habitConfig = app.container.settingsRepository.habitConfig.value
+                    com.zenith.focus.core.notification.HabitNotificationScheduler.reschedule(context, habitConfig)
                 } finally {
                     pendingResult.finish()
                 }

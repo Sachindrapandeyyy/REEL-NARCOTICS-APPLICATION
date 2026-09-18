@@ -125,6 +125,7 @@ class MainActivity : ComponentActivity() {
                     val lockState by lockRepo.lockState.collectAsState()
                     val nuclearSession by nuclearRepo.session.collectAsState()
                     val config by settingsRepo.protectionConfig.collectAsState()
+                    val habitConfig by settingsRepo.habitConfig.collectAsState()
                     val isServiceConnected by ServiceStateBroadcaster.isServiceConnected.collectAsState()
 
                     val context = LocalContext.current
@@ -332,6 +333,12 @@ class MainActivity : ComponentActivity() {
                                         isNuclearActive = nuclearSession.isCurrentlyActive(),
                                         currentTheme = appTheme,
                                         updateManager = updateManager,
+                                        habitConfig = habitConfig,
+                                        onUpdateHabitConfig = { updated ->
+                                            coroutineScope.launch { settingsRepo.updateHabitConfig(updated) }
+                                        },
+                                        todayTotalBlocks = todayTotal,
+                                        focusStreakDays = streakDays,
                                         onShowUpdateDialog = { showGlobalUpdateDialog = true },
                                         onSelectFrictionType = { friction ->
                                             coroutineScope.launch { settingsRepo.setFrictionType(friction) }

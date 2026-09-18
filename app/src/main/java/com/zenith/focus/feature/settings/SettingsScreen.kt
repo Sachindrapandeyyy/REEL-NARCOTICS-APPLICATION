@@ -62,7 +62,10 @@ import com.zenith.focus.receiver.ZenithDeviceAdminReceiver
 import androidx.compose.runtime.collectAsState
 import com.zenith.focus.core.update.UpdateManager
 import com.zenith.focus.core.update.UpdateState
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import com.zenith.focus.core.update.ui.UpdateDialog
+import com.zenith.focus.domain.model.HabitConfig
 
 @Composable
 fun SettingsScreen(
@@ -71,6 +74,10 @@ fun SettingsScreen(
     isNuclearActive: Boolean = false,
     currentTheme: String = "",
     updateManager: UpdateManager? = null,
+    habitConfig: HabitConfig = HabitConfig(),
+    onUpdateHabitConfig: (HabitConfig) -> Unit = {},
+    todayTotalBlocks: Int = 0,
+    focusStreakDays: Int = 1,
     onShowUpdateDialog: () -> Unit = {},
     @Suppress("UNUSED_PARAMETER") onSelectFrictionType: (FrictionType) -> Unit = {},
     @Suppress("UNUSED_PARAMETER") onSetPin: suspend (String) -> Unit = {},
@@ -241,6 +248,272 @@ fun SettingsScreen(
                                     fontSize = 10.5.sp
                                 )
                             }
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // DAILY FOCUS NOTIFICATIONS
+        Text(
+            text = "DAILY FOCUS NOTIFICATIONS",
+            color = earth.forestGreen,
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp
+        )
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Card(
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.dp, earth.border, RoundedCornerShape(18.dp))
+        ) {
+            Column(modifier = Modifier.padding(18.dp)) {
+                // Morning Focus Pledge
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("🌅", fontSize = 16.sp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Morning Focus Pledge (8:00 AM)",
+                                color = earth.forestDark,
+                                fontSize = 14.5.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Text(
+                            text = "A daily reminder to choose long-term goals over short-form dopamine before morning scrolling begins.",
+                            color = earth.textMuted,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+
+                    Switch(
+                        checked = habitConfig.morningPledgeEnabled,
+                        onCheckedChange = { enabled ->
+                            onUpdateHabitConfig(habitConfig.copy(morningPledgeEnabled = enabled))
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = earth.forestGreen,
+                            uncheckedThumbColor = earth.textMuted,
+                            uncheckedTrackColor = earth.surface
+                        )
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(earth.border)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Evening Victory Digest
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("🔥", fontSize = 16.sp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Evening Victory Digest (9:00 PM)",
+                                color = earth.forestDark,
+                                fontSize = 14.5.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Text(
+                            text = "Daily celebration of distractions blocked, reclaimed focus time, and your active streak.",
+                            color = earth.textMuted,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+
+                    Switch(
+                        checked = habitConfig.eveningSummaryEnabled,
+                        onCheckedChange = { enabled ->
+                            onUpdateHabitConfig(habitConfig.copy(eveningSummaryEnabled = enabled))
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = earth.forestGreen,
+                            uncheckedThumbColor = earth.textMuted,
+                            uncheckedTrackColor = earth.surface
+                        )
+                    )
+                }
+
+                // Live Preview Badge
+                val minutesSaved = (todayTotalBlocks * 1.5).toInt()
+                Spacer(modifier = Modifier.height(12.dp))
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = earth.surface,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, earth.border, RoundedCornerShape(12.dp))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("📊", fontSize = 14.sp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (todayTotalBlocks > 0) {
+                                "Live preview: Reclaimed ~$minutesSaved mins today ($todayTotalBlocks reels blocked)! Streak: $focusStreakDays days."
+                            } else {
+                                "Live preview: Zero impulse distractions detected today! Streak: $focusStreakDays days."
+                            },
+                            color = earth.forestDark,
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // SLEEP & BEDTIME FOCUS SHIELD
+        Text(
+            text = "SLEEP & BEDTIME SHIELD",
+            color = earth.forestGreen,
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp
+        )
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Card(
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(
+                    width = if (habitConfig.isBedtimeActive()) 1.5.dp else 1.dp,
+                    color = if (habitConfig.isBedtimeActive()) earth.error else earth.border,
+                    shape = RoundedCornerShape(18.dp)
+                )
+        ) {
+            Column(modifier = Modifier.padding(18.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("🌙", fontSize = 18.sp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Bedtime Sleep Shield",
+                                color = earth.forestDark,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Text(
+                            text = "Automatic overnight focus lock (11:00 PM – 06:30 AM). Prevents late-night doomscrolling in bed.",
+                            color = earth.textMuted,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+
+                    Switch(
+                        checked = habitConfig.bedtimeShieldEnabled,
+                        onCheckedChange = { enabled ->
+                            onUpdateHabitConfig(habitConfig.copy(bedtimeShieldEnabled = enabled))
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = earth.camelOchre,
+                            uncheckedThumbColor = earth.textMuted,
+                            uncheckedTrackColor = earth.surface
+                        )
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Schedule & Active Status Indicator
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = earth.surface,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, earth.border, RoundedCornerShape(12.dp))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("⏰", fontSize = 14.sp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "11:00 PM ➔ 06:30 AM",
+                                color = earth.textPrimary,
+                                fontSize = 12.5.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = when {
+                                habitConfig.isBedtimeActive() -> earth.error.copy(alpha = 0.15f)
+                                habitConfig.bedtimeShieldEnabled -> earth.forestGreen.copy(alpha = 0.15f)
+                                else -> earth.surfaceSoft
+                            },
+                            modifier = Modifier.border(
+                                width = 1.dp,
+                                color = when {
+                                    habitConfig.isBedtimeActive() -> earth.error
+                                    habitConfig.bedtimeShieldEnabled -> earth.forestGreen
+                                    else -> earth.border
+                                },
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                        ) {
+                            Text(
+                                text = when {
+                                    habitConfig.isBedtimeActive() -> "🌙 ACTIVE NOW (Locked)"
+                                    habitConfig.bedtimeShieldEnabled -> "ARMED FOR 11:00 PM"
+                                    else -> "DISABLED"
+                                },
+                                color = when {
+                                    habitConfig.isBedtimeActive() -> earth.error
+                                    habitConfig.bedtimeShieldEnabled -> earth.forestGreen
+                                    else -> earth.textMuted
+                                },
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
                         }
                     }
                 }

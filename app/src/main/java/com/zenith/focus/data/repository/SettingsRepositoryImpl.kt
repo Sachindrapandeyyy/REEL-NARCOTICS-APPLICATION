@@ -8,9 +8,11 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.zenith.focus.core.notification.HabitNotificationScheduler
 import com.zenith.focus.core.security.PinHasher
 import com.zenith.focus.domain.model.ContentCategory
 import com.zenith.focus.domain.model.FrictionType
+import com.zenith.focus.domain.model.HabitConfig
 import com.zenith.focus.domain.model.ProtectionConfig
 import com.zenith.focus.domain.model.ScheduleConfig
 import com.zenith.focus.domain.repository.SettingsRepository
@@ -49,6 +51,18 @@ class SettingsRepositoryImpl(
         private val KEY_DAILY_SHORTS_LIMIT = intPreferencesKey("daily_shorts_limit")
         private val KEY_ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         private val KEY_APP_THEME = stringPreferencesKey("app_theme")
+
+        private val KEY_MORNING_PLEDGE_ENABLED = booleanPreferencesKey("morning_pledge_enabled")
+        private val KEY_MORNING_PLEDGE_HOUR = intPreferencesKey("morning_pledge_hour")
+        private val KEY_MORNING_PLEDGE_MIN = intPreferencesKey("morning_pledge_min")
+        private val KEY_EVENING_SUMMARY_ENABLED = booleanPreferencesKey("evening_summary_enabled")
+        private val KEY_EVENING_SUMMARY_HOUR = intPreferencesKey("evening_summary_hour")
+        private val KEY_EVENING_SUMMARY_MIN = intPreferencesKey("evening_summary_min")
+        private val KEY_BEDTIME_SHIELD_ENABLED = booleanPreferencesKey("bedtime_shield_enabled")
+        private val KEY_BEDTIME_START_HOUR = intPreferencesKey("bedtime_start_hour")
+        private val KEY_BEDTIME_START_MIN = intPreferencesKey("bedtime_start_min")
+        private val KEY_BEDTIME_END_HOUR = intPreferencesKey("bedtime_end_hour")
+        private val KEY_BEDTIME_END_MIN = intPreferencesKey("bedtime_end_min")
     }
 
     private val _protectionConfig = MutableStateFlow(ProtectionConfig())
@@ -62,6 +76,9 @@ class SettingsRepositoryImpl(
 
     private val _appTheme = MutableStateFlow("SYSTEM")
     override val appTheme: StateFlow<String> = _appTheme.asStateFlow()
+
+    private val _habitConfig = MutableStateFlow(HabitConfig())
+    override val habitConfig: StateFlow<HabitConfig> = _habitConfig.asStateFlow()
 
     init {
         externalScope.launch {
@@ -95,6 +112,22 @@ class SettingsRepositoryImpl(
         _protectionConfig.value = config
         _isOnboardingCompleted.value = prefs[KEY_ONBOARDING_DONE] ?: false
         _appTheme.value = prefs[KEY_APP_THEME] ?: "SYSTEM"
+
+        val habits = HabitConfig(
+            morningPledgeEnabled = prefs[KEY_MORNING_PLEDGE_ENABLED] ?: true,
+            morningPledgeHour = prefs[KEY_MORNING_PLEDGE_HOUR] ?: 8,
+            morningPledgeMinute = prefs[KEY_MORNING_PLEDGE_MIN] ?: 0,
+            eveningSummaryEnabled = prefs[KEY_EVENING_SUMMARY_ENABLED] ?: true,
+            eveningSummaryHour = prefs[KEY_EVENING_SUMMARY_HOUR] ?: 21,
+            eveningSummaryMinute = prefs[KEY_EVENING_SUMMARY_MIN] ?: 0,
+            bedtimeShieldEnabled = prefs[KEY_BEDTIME_SHIELD_ENABLED] ?: false,
+            bedtimeStartHour = prefs[KEY_BEDTIME_START_HOUR] ?: 23,
+            bedtimeStartMinute = prefs[KEY_BEDTIME_START_MIN] ?: 0,
+            bedtimeEndHour = prefs[KEY_BEDTIME_END_HOUR] ?: 6,
+            bedtimeEndMinute = prefs[KEY_BEDTIME_END_MIN] ?: 30
+        )
+        _habitConfig.value = habits
+        HabitNotificationScheduler.reschedule(context, habits)
     }
 
     override suspend fun updateCategory(category: ContentCategory, isBlocked: Boolean) {
@@ -188,5 +221,23 @@ class SettingsRepositoryImpl(
 
     override suspend fun deleteSchedule(id: String) {
         _schedules.value = _schedules.value.filterNot { it.id == id }
+    }
+
+    override suspend fun updateHabitConfig(config: HabitConfig) {
+        context.settingsDataStore.edit { prefs ->
+            prefs[KEY_MORNING_PLEDGE_ENABLED] = config.morningPledgeEnabled
+            prefs[KEY_MORNING_PLEDGE_HOUR] = config.morningPledgeHour
+            prefs[KEY_MORNING_PLEDGE_MIN] = config.morningPledgeMinute
+            prefs[KEY_EVENING_SUMMARY_ENABLED] = config.eveningSummaryEnabled
+            prefs[KEY_EVENING_SUMMARY_HOUR] = config.eveningSummaryHour
+            prefs[KEY_EVENING_SUMMARY_MIN] = config.eveningSummaryMinute
+            prefs[KEY_BEDTIME_SHIELD_ENABLED] = config.bedtimeShieldEnabled
+            prefs[KEY_BEDTIME_START_HOUR] = config.bedtimeStartHour
+            prefs[KEY_BEDTIME_START_MIN] = config.bedtimeStartMinute
+            prefs[KEY_BEDTIME_END_HOUR] = config.bedtimeEndHour
+            prefs[KEY_BEDTIME_END_MIN] = config.bedtimeEndMinute
+        }
+        _habitConfig.value = config
+        HabitNotificationScheduler.reschedule(context, config)
     }
 }

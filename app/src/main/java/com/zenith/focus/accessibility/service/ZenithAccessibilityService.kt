@@ -160,6 +160,7 @@ class ZenithAccessibilityService : AccessibilityService() {
         }
 
         val config = settingsRepo.protectionConfig.value
+        val habitConfig = settingsRepo.habitConfig.value
         val result = detectionEngine.evaluate(effectiveContext, config)
 
         if (result.isBlocked) {
@@ -170,7 +171,8 @@ class ZenithAccessibilityService : AccessibilityService() {
                 lockState = lockState,
                 config = config,
                 nowWallClock = now,
-                nowElapsedRealtime = elapsed
+                nowElapsedRealtime = elapsed,
+                habitConfig = habitConfig
             )
 
             if (!isEnforced) {
@@ -196,10 +198,16 @@ class ZenithAccessibilityService : AccessibilityService() {
                     ).show()
                 } else {
                     closeActiveShortsOrReel()
-                    val statusMsg = if (isNuclear) "☢️ NUCLEAR LOCK" else "🔒 FOCUS LOCK"
+                    val isBedtime = habitConfig.isBedtimeActive(now)
+                    val feedbackText = when {
+                        isNuclear -> "☢️ NUCLEAR LOCK: Reel/Short closed."
+                        lockState.isCurrentlyActive(now) -> "🔒 FOCUS LOCK: Reel/Short closed."
+                        isBedtime -> "🌙 BEDTIME SHIELD: Sleep is your superpower. Put your phone down!"
+                        else -> "🛡️ REEL BLOCKED: Reel/Short closed."
+                    }
                     Toast.makeText(
                         applicationContext,
-                        "$statusMsg: Reel/Short closed.",
+                        feedbackText,
                         Toast.LENGTH_SHORT
                     ).show()
                 }

@@ -2,6 +2,7 @@ package com.zenith.focus.accessibility.policy
 
 import com.zenith.focus.accessibility.detector.DetectionResult
 import com.zenith.focus.domain.model.ContentCategory
+import com.zenith.focus.domain.model.HabitConfig
 import com.zenith.focus.domain.model.LockState
 import com.zenith.focus.domain.model.ProtectionConfig
 import com.zenith.focus.domain.nuclear.NuclearSession
@@ -13,7 +14,7 @@ object NuclearProtectionPolicy {
      * Resolves whether content should be blocked according to the strict priority chain:
      * 1. Nuclear Mode (Absolute highest: all addictive short-form & adult feeds blocked, immutable)
      * 2. Focus Lock Mode (Active countdown window)
-     * 3. Global Protection / Continuous Shield
+     * 3. Bedtime Sleep Shield (Overnight auto-protection against sleep disruption)
      * 4. App Restrictions & Normal Preferences
      */
     fun shouldBlock(
@@ -22,7 +23,8 @@ object NuclearProtectionPolicy {
         lockState: LockState,
         config: ProtectionConfig,
         nowWallClock: Long = System.currentTimeMillis(),
-        nowElapsedRealtime: Long = android.os.SystemClock.elapsedRealtime()
+        nowElapsedRealtime: Long = runCatching { android.os.SystemClock.elapsedRealtime() }.getOrDefault(0L),
+        habitConfig: HabitConfig = HabitConfig()
     ): Boolean {
         if (!result.isBlocked) return false
 
@@ -47,8 +49,13 @@ object NuclearProtectionPolicy {
             }
         }
 
+        // PRIORITY 3: BEDTIME SLEEP SHIELD (Overnight auto-focus lock)
+        if (habitConfig.isBedtimeActive(nowWallClock)) {
+            return isAddictiveOrAdultCategory(result.category)
+        }
+
         // NO LOCK ACTIVE: NO RESTRICTIONS
-        // When neither Nuclear Mode nor Standard Focus Lock is active, NO content is restricted.
+        // When neither Nuclear Mode, Standard Focus Lock, nor Bedtime Shield is active, NO content is restricted.
         return false
     }
 

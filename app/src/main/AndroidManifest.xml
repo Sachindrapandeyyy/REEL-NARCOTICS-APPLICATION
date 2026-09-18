@@ -77,6 +77,11 @@
             android:name=".receiver.LockAlarmReceiver"
             android:exported="false" />
 
+        <!-- Daily Focus Habit & Digest Alarm Receiver -->
+        <receiver
+            android:name=".receiver.HabitAlarmReceiver"
+            android:exported="false" />
+
         <!-- Device Administrator Receiver for OS-level Uninstall Protection -->
         <receiver
             android:name=".receiver.ZenithDeviceAdminReceiver"

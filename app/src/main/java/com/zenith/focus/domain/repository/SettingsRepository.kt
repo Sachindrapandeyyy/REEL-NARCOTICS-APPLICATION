@@ -2,6 +2,7 @@ package com.zenith.focus.domain.repository
 
 import com.zenith.focus.domain.model.ContentCategory
 import com.zenith.focus.domain.model.FrictionType
+import com.zenith.focus.domain.model.HabitConfig
 import com.zenith.focus.domain.model.ProtectionConfig
 import com.zenith.focus.domain.model.ScheduleConfig
 import kotlinx.coroutines.flow.StateFlow
@@ -11,6 +12,7 @@ interface SettingsRepository {
     val schedules: StateFlow<List<ScheduleConfig>>
     val isOnboardingCompleted: StateFlow<Boolean>
     val appTheme: StateFlow<String> // "SYSTEM", "LIGHT", "DARK"
+    val habitConfig: StateFlow<HabitConfig>
 
     suspend fun updateCategory(category: ContentCategory, isBlocked: Boolean)
     suspend fun updateProtectionConfig(config: ProtectionConfig)
@@ -23,4 +25,5 @@ interface SettingsRepository {
     suspend fun setAppTheme(theme: String)
     suspend fun saveSchedule(schedule: ScheduleConfig)
     suspend fun deleteSchedule(id: String)
+    suspend fun updateHabitConfig(config: HabitConfig)
 }
