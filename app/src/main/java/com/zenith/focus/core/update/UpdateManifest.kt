@@ -5,11 +5,13 @@ import org.json.JSONObject
 
 data class ApkMetadata(
     val url: String,
+    val fallbackUrl: String? = null,
     val sizeBytes: Long,
     val sha256: String
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("url", url)
+        fallbackUrl?.let { put("fallbackUrl", it) }
         put("sizeBytes", sizeBytes)
         put("sha256", sha256)
     }
@@ -18,6 +20,7 @@ data class ApkMetadata(
         fun fromJson(json: JSONObject): ApkMetadata {
             return ApkMetadata(
                 url = json.getString("url"),
+                fallbackUrl = json.optString("fallbackUrl").takeIf { !it.isNullOrBlank() },
                 sizeBytes = json.getLong("sizeBytes"),
                 sha256 = json.getString("sha256")
             )

@@ -50,6 +50,13 @@ class UpdateInstaller(
                 return Result.failure(UpdateException.InstallationException("APK file not found: ${apkFile.absolutePath}"))
             }
 
+            if (!canRequestPackageInstalls()) {
+                context.startActivity(getManageUnknownAppSourcesIntent())
+                return Result.failure(
+                    UpdateException.InstallationException("Permission to install unknown apps is required. Please enable it and tap install.")
+                )
+            }
+
             val authority = "${context.packageName}.fileprovider"
             val apkUri = FileProvider.getUriForFile(context, authority, apkFile)
 

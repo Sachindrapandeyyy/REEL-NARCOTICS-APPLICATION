@@ -24,7 +24,7 @@ class UpdateDownloader(
 ) {
     /**
      * Downloads APK from the given manifest with real-time progress.
-     * Uses atomic temporary file naming and ensures cleanup on failure.
+     * Uses atomic temporary file naming, handles CDN redirects, and falls back to secondary URL if needed.
      */
     fun download(manifest: UpdateManifest): Flow<DownloadProgress> = flow {
         val updatesDir = File(context.cacheDir, "updates")
@@ -53,26 +53,97 @@ class UpdateDownloader(
             }
         }
 
-        val url = URL(manifest.apk.url)
-        val connection = (url.openConnection() as? HttpsURLConnection)
-            ?: throw UpdateException.NetworkException("Only secure HTTPS connections are permitted")
+        val candidateUrls = listOfNotNull(
+            manifest.apk.url.takeIf { it.isNotBlank() },
+            manifest.apk.fallbackUrl?.takeIf { it.isNotBlank() }
+        ).distinct()
 
-        connection.connectTimeout = 15000
-        connection.readTimeout = 30000
-        connection.instanceFollowRedirects = true
-        connection.setRequestProperty("Accept-Encoding", "identity")
+        var downloadedSuccessfully = false
+        var lastException: Exception? = null
+
+        for (targetUrl in candidateUrls) {
+            try {
+                downloadSingleUrl(targetUrl, manifest, tempFile) { progress ->
+                    emit(progress)
+                }
+                downloadedSuccessfully = true
+                break
+            } catch (e: Exception) {
+                if (tempFile.exists()) tempFile.delete()
+                lastException = e
+            }
+        }
+
+        if (!downloadedSuccessfully) {
+            if (tempFile.exists()) tempFile.delete()
+            if (finalFile.exists()) finalFile.delete()
+            val err = lastException
+            if (err is UpdateException) throw err
+            throw UpdateException.NetworkException("Failed to download APK: ${err?.localizedMessage}", err)
+        }
+
+        // Atomic rename to final file
+        if (!tempFile.renameTo(finalFile)) {
+            tempFile.copyTo(finalFile, overwrite = true)
+            tempFile.delete()
+        }
+
+        emit(DownloadProgress(100, manifest.apk.sizeBytes, manifest.apk.sizeBytes, completedFile = finalFile))
+    }.flowOn(Dispatchers.IO)
+
+    private suspend fun downloadSingleUrl(
+        urlString: String,
+        manifest: UpdateManifest,
+        tempFile: File,
+        onProgress: suspend (DownloadProgress) -> Unit
+    ) {
+        var currentUrl = urlString
+        var connection: HttpsURLConnection? = null
+        var redirectCount = 0
+        val maxRedirects = 5
 
         try {
-            connection.connect()
-            val responseCode = connection.responseCode
-            if (responseCode != HttpsURLConnection.HTTP_OK) {
-                throw UpdateException.NetworkException("Server responded with HTTP $responseCode")
+            while (redirectCount < maxRedirects) {
+                val parsedUrl = URL(currentUrl)
+                if (!parsedUrl.protocol.equals("https", ignoreCase = true)) {
+                    throw UpdateException.NetworkException("Only secure HTTPS connections are permitted")
+                }
+
+                connection = (parsedUrl.openConnection() as? HttpsURLConnection)
+                    ?: throw UpdateException.NetworkException("Only secure HTTPS connections are permitted")
+
+                connection.connectTimeout = 15000
+                connection.readTimeout = 30000
+                connection.instanceFollowRedirects = false // Manually handle 301/302/307/308
+                connection.setRequestProperty("Accept-Encoding", "identity")
+                connection.setRequestProperty("User-Agent", "ReelNarcotics/${context.packageName}")
+                connection.connect()
+
+                val code = connection.responseCode
+                if (code in 300..399) {
+                    val redirectLocation = connection.getHeaderField("Location")
+                        ?: throw UpdateException.NetworkException("Server returned redirect $code without Location header")
+                    currentUrl = if (redirectLocation.startsWith("http")) {
+                        redirectLocation
+                    } else {
+                        URL(parsedUrl, redirectLocation).toString()
+                    }
+                    connection.disconnect()
+                    redirectCount++
+                    continue
+                }
+
+                if (code != HttpsURLConnection.HTTP_OK) {
+                    throw UpdateException.NetworkException("Server responded with HTTP $code")
+                }
+                break
             }
 
-            val expectedSize = if (manifest.apk.sizeBytes > 0) manifest.apk.sizeBytes else connection.contentLength.toLong()
+            val finalConn = connection ?: throw UpdateException.NetworkException("Failed to establish connection")
+            val expectedSize = if (manifest.apk.sizeBytes > 0) manifest.apk.sizeBytes else finalConn.contentLength.toLong()
             var bytesDownloaded = 0L
 
-            connection.inputStream.use { input ->
+            finalConn.inputStream.use { input ->
                 FileOutputStream(tempFile).use { output ->
                     val buffer = ByteArray(8192)
                     var read: Int
@@ -91,35 +162,20 @@ class UpdateDownloader(
 
                         if (percent != lastReportedPercent) {
                             lastReportedPercent = percent
-                            emit(DownloadProgress(percent, bytesDownloaded, expectedSize))
+                            onProgress(DownloadProgress(percent, bytesDownloaded, expectedSize))
                         }
                     }
                     output.flush()
                 }
             }
 
-            if (bytesDownloaded < manifest.apk.sizeBytes) {
-                tempFile.delete()
+            if (manifest.apk.sizeBytes > 0 && bytesDownloaded < manifest.apk.sizeBytes) {
                 throw UpdateException.NetworkException(
                     "Incomplete download: received $bytesDownloaded of ${manifest.apk.sizeBytes} bytes"
                 )
             }
-
-            // Atomic rename to final file
-            if (!tempFile.renameTo(finalFile)) {
-                tempFile.copyTo(finalFile, overwrite = true)
-                tempFile.delete()
-            }
-
-            emit(DownloadProgress(100, bytesDownloaded, expectedSize, completedFile = finalFile))
-
-        } catch (e: Exception) {
-            if (tempFile.exists()) tempFile.delete()
-            if (finalFile.exists()) finalFile.delete()
-            if (e is UpdateException) throw e
-            throw UpdateException.NetworkException("Failed to download APK: ${e.localizedMessage}", e)
         } finally {
-            connection.disconnect()
+            connection?.disconnect()
         }
-    }.flowOn(Dispatchers.IO)
+    }
 }

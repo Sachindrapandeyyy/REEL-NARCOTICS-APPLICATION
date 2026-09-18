@@ -252,7 +252,7 @@ fun UpdateDialog(
 
                         if (!canInstallPackages) {
                             Text(
-                                text = "Notice: Android requires permission to update from outside app stores.",
+                                text = "Notice: Android requires permission to install updates directly.",
                                 fontSize = 12.sp,
                                 color = earth.error,
                                 lineHeight = 16.sp
@@ -264,21 +264,20 @@ fun UpdateDialog(
                                 shape = RoundedCornerShape(12.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = earth.camelOchre, contentColor = Color.White)
                             ) {
-                                Text("Grant Update Permission ➔", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                Text("1. Grant Update Permission ➔", fontSize = 13.sp, fontWeight = FontWeight.Bold)
                             }
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-
-                        Button(
-                            onClick = { onInstall(state.apkFile) },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = earth.forestDark,
-                                contentColor = Color.White
-                            )
-                        ) {
-                            Text("Install Update Now ➔", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        } else {
+                            Button(
+                                onClick = { onInstall(state.apkFile) },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = earth.forestDark,
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Text("Install Update Now ➔", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
 

@@ -153,6 +153,7 @@ class MainActivity : ComponentActivity() {
                     var showNuclearExtendDialog by remember { mutableStateOf(false) }
                     val updateState by updateManager.state.collectAsState()
                     var showGlobalUpdateDialog by remember { mutableStateOf(false) }
+                    var canInstallPackages by remember { mutableStateOf(updateManager.canRequestPackageInstalls()) }
                     var selectedTab by remember { mutableIntStateOf(0) } // 0=Home, 1=Protection, 2=Stats, 3=Settings
 
                     // Today's reactive metrics
@@ -194,6 +195,7 @@ class MainActivity : ComponentActivity() {
                             nuclearRepo.checkAndUpdateExpiration()
                             lockRepo.refreshLockState()
                             isDeviceAdminActive = ZenithDeviceAdminReceiver.isAdminActive(context)
+                            canInstallPackages = updateManager.canRequestPackageInstalls()
                             delay(1000L)
                         }
                     }
@@ -468,7 +470,7 @@ class MainActivity : ComponentActivity() {
                                         onOpenSettings = {
                                             context.startActivity(updateManager.getManageUnknownAppSourcesIntent())
                                         },
-                                        canInstallPackages = updateManager.canRequestPackageInstalls(),
+                                        canInstallPackages = canInstallPackages,
                                         onRetry = {
                                             updateManager.checkForUpdates()
                                         }
