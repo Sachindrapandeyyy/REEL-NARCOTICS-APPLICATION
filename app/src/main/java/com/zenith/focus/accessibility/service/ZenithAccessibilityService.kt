@@ -37,6 +37,29 @@ class ZenithAccessibilityService : AccessibilityService() {
     companion object {
         private const val FAST_DEBOUNCE_MS = 60L
         private const val EJECT_COOLDOWN_MS = 600L
+
+        // Core system communication and essential utility packages that must never be blocked or intercepted
+        val ESSENTIAL_WHITELISTED_PACKAGES = setOf(
+            "com.google.android.googlequicksearchbox", // Google App / Search
+            "com.android.phone",
+            "com.google.android.dialer",
+            "com.android.incallui",
+            "com.samsung.android.dialer",
+            "com.samsung.android.incallui",
+            "com.google.android.apps.messaging",
+            "com.android.mms",
+            "com.samsung.android.messaging",
+            "com.google.android.gm", // Gmail
+            "com.whatsapp",
+            "com.whatsapp.w4b",
+            "org.telegram.messenger",
+            "org.telegram.messenger.web",
+            "com.google.android.calculator",
+            "com.sec.android.app.popupcalculator",
+            "com.google.android.deskclock",
+            "com.sec.android.app.clockpackage",
+            "com.google.android.apps.maps"
+        )
     }
 
     override fun onServiceConnected() {
@@ -52,7 +75,11 @@ class ZenithAccessibilityService : AccessibilityService() {
         if (event == null) return
 
         val pkg = event.packageName?.toString() ?: return
-        if (pkg.isBlank() || pkg == packageName || pkg.contains("launcher") || pkg.contains("systemui")) {
+        val lowerPkg = pkg.lowercase(java.util.Locale.US)
+        if (lowerPkg.isBlank() || lowerPkg == packageName.lowercase(java.util.Locale.US) ||
+            lowerPkg.contains("launcher") || lowerPkg.contains("systemui") ||
+            ESSENTIAL_WHITELISTED_PACKAGES.contains(lowerPkg)
+        ) {
             return
         }
 
@@ -90,8 +117,11 @@ class ZenithAccessibilityService : AccessibilityService() {
         val settingsRepo = app.container.settingsRepository
         val statsRepo = app.container.statisticsRepository
 
-        val targetPkg = if (screenContext.packageName.isNotBlank()) screenContext.packageName.lowercase() else pkg.lowercase()
-        if (targetPkg.isBlank() || targetPkg == packageName.lowercase() || targetPkg.contains("launcher") || targetPkg.contains("systemui")) {
+        val targetPkg = if (screenContext.packageName.isNotBlank()) screenContext.packageName.lowercase(java.util.Locale.US) else pkg.lowercase(java.util.Locale.US)
+        if (targetPkg.isBlank() || targetPkg == packageName.lowercase(java.util.Locale.US) ||
+            targetPkg.contains("launcher") || targetPkg.contains("systemui") ||
+            ESSENTIAL_WHITELISTED_PACKAGES.contains(targetPkg)
+        ) {
             return
         }
 

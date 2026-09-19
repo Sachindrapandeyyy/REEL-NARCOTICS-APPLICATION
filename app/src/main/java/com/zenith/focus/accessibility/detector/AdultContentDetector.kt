@@ -6,7 +6,7 @@ import com.zenith.focus.domain.model.ProtectionConfig
 
 class AdultContentDetector : ContentDetector {
     override val name = "AdultContentDetector"
-    override val version = "1.2.0"
+    override val version = "1.3.0"
 
     companion object {
         // Tier 1: Definite, unambiguous pornography / adult tokens
@@ -18,26 +18,29 @@ class AdultContentDetector : ContentDetector {
             "creampie", "dildo", "faphouse", "jerkmate"
         )
 
-        // Tier 2: Suspicious tokens requiring multi-signal confirmation
+        // Tier 2: Suspicious tokens requiring multi-signal confirmation (pruned of ambiguous words like escort/naked/sensual)
         private val TIER_2_SUSPICIOUS_TOKENS = setOf(
-            "nude", "naked", "fetish", "erotica", "stripper", "boobs", "escort",
-            "horny", "slut", "masturbate", "sensual", "bdsm"
+            "fetish", "erotica", "stripper", "boobs", "horny", "slut",
+            "masturbate", "bdsm", "threesome", "orgy", "fap", "shemale"
         )
 
-        // Benign tokens to protect harmless educational/scientific contexts (Scunthorpe guard)
+        // Benign tokens to protect harmless educational/governmental/news contexts (Scunthorpe guard)
         private val SAFE_CONTEXT_TOKENS = setOf(
             "documentary", "biology", "medical", "anatomy", "health", "education",
-            "therapy", "sussex", "scunthorpe", "psychology", "clinic"
+            "therapy", "sussex", "scunthorpe", "psychology", "clinic",
+            "news", "article", "report", "police", "security", "government",
+            "officer", "ias", "ips", "upsc", "convoy", "law", "court",
+            "wikipedia", "study", "research", "exam", "holiday", "leave",
+            "service", "official", "rules", "travel", "protocol", "minister",
+            "president", "army", "military", "vehicle", "cosmetics", "makeup",
+            "beauty", "palette", "recipe", "history", "science", "academic"
         )
     }
 
     override fun canHandle(packageName: String): Boolean {
-        // Universal text scanner for enabled adult content, never inspect our own app or launcher
-        val pkg = packageName.lowercase()
-        if (pkg.contains("zenith") || pkg.contains("launcher") || pkg.contains("systemui")) {
-            return false
-        }
-        return true
+        val pkg = packageName.lowercase(java.util.Locale.US)
+        // Strictly inspect supported web browsers only; never inspect non-browser apps or search engines
+        return BrowserUrlDetector.BROWSER_PACKAGES.contains(pkg)
     }
 
     override fun evaluate(context: ScreenContext, config: ProtectionConfig): DetectionResult {
@@ -50,7 +53,7 @@ class AdultContentDetector : ContentDetector {
             return DetectionResult.allowed(ContentCategory.ADULT_KEYWORD, "No text tokens on screen")
         }
 
-        // 1. Guard against harmless educational / medical / news contexts
+        // 1. Guard against harmless educational / medical / governmental / news contexts
         val hasSafeContext = tokens.any { SAFE_CONTEXT_TOKENS.contains(it) }
 
         // 2. Scan Tier 1 unambiguous explicit tokens
@@ -65,9 +68,9 @@ class AdultContentDetector : ContentDetector {
             )
         }
 
-        // 3. Scan Tier 2 suspicious tokens (require at least 2 distinct tokens)
+        // 3. Scan Tier 2 suspicious tokens (strictly require at least 2 distinct tokens, never 1)
         val tier2Matches = tokens.filter { TIER_2_SUSPICIOUS_TOKENS.contains(it) }
-        val threshold = if (config.strictMode) 1 else 2
+        val threshold = 2
         if (tier2Matches.size >= threshold && !hasSafeContext) {
             return DetectionResult(
                 isBlocked = true,

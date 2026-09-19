@@ -300,4 +300,62 @@ class DetectorTestMatrix {
         val result = detector.evaluate(context, defaultConfig)
         assertFalse(result.isBlocked)
     }
+
+    @Test
+    fun testGoogleSearchIASOfficerHolidaySecurityAllowed() {
+        val adultDetector = AdultContentDetector()
+        val googleSearchPkg = "com.google.android.googlequicksearchbox"
+        
+        // 1. AdultContentDetector must NOT handle Google Search app (browsers only)
+        assertFalse("AdultContentDetector must never handle Google Search app", adultDetector.canHandle(googleSearchPkg))
+
+        // 2. Even if evaluated, safe tokens like ias, holiday, security, rules must prevent any block
+        val context = ScreenContext(
+            packageName = googleSearchPkg,
+            className = "com.google.android.apps.search.googleapp.activity.GoogleAppActivity",
+            viewIds = setOf("search_box", "results_view"),
+            visibleTexts = listOf("ias officer ki holiday security escort vehicle official rules"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("ias", "officer", "ki", "holiday", "security", "escort", "vehicle", "official", "rules")
+        )
+        val result = adultDetector.evaluate(context, defaultConfig)
+        assertFalse("Official IAS security query must never be blocked", result.isBlocked)
+    }
+
+    @Test
+    fun testChromeIASOfficerSecurityEscortQueryAllowed() {
+        val adultDetector = AdultContentDetector()
+        // Query inside Chrome browser containing the word escort and official security context
+        val context = ScreenContext(
+            packageName = "com.android.chrome",
+            className = "org.chromium.chrome.browser.ChromeTabbedActivity",
+            viewIds = setOf("url_bar"),
+            visibleTexts = listOf("Government rules for IAS officer holiday security escort protocol"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("government", "rules", "ias", "officer", "holiday", "security", "escort", "protocol")
+        )
+        val result = adultDetector.evaluate(context, defaultConfig)
+        assertFalse("Government escort protocol in Chrome must never trigger adult block", result.isBlocked)
+    }
+
+    @Test
+    fun testEssentialAppExclusionFromGenericShortFormDetector() {
+        val genericDetector = com.zenith.focus.accessibility.detector.GenericShortFormDetector()
+        val essentialApps = listOf(
+            "com.google.android.googlequicksearchbox",
+            "com.android.phone",
+            "com.google.android.dialer",
+            "com.google.android.apps.messaging",
+            "com.google.android.gm",
+            "com.whatsapp",
+            "org.telegram.messenger",
+            "com.google.android.calculator",
+            "com.google.android.deskclock",
+            "com.google.android.apps.maps",
+            "com.android.chrome"
+        )
+        for (pkg in essentialApps) {
+            assertFalse("Generic detector must never handle $pkg", genericDetector.canHandle(pkg))
+        }
+    }
 }
