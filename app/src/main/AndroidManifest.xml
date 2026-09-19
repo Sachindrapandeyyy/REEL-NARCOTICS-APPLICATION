@@ -18,6 +18,9 @@
     <!-- Tactile feedback for anti-impulse friction unlocks -->
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <!-- Required for daily habit pledge & evening focus victory notifications on Android 13+ (API 33+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".ZenithApplication"
         android:allowBackup="false"

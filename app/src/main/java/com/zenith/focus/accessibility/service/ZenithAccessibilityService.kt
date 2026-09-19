@@ -58,8 +58,33 @@ class ZenithAccessibilityService : AccessibilityService() {
             "com.sec.android.app.popupcalculator",
             "com.google.android.deskclock",
             "com.sec.android.app.clockpackage",
-            "com.google.android.apps.maps"
+            "com.google.android.apps.maps",
+            // Xiaomi / POCO
+            "com.android.contacts",
+            "com.miui.calculator",
+            // Vivo / iQOO
+            "com.vivo.calculator",
+            "com.android.BBKClock",
+            // Oppo / Realme / OnePlus
+            "com.coloros.calculator",
+            "com.coloros.alarmclock",
+            "com.oneplus.calculator",
+            "com.oneplus.deskclock",
+            // Transsion / Infinix / Tecno
+            "com.transsion.calculator",
+            "com.transsion.deskclock",
+            "com.sh.smart.caller",
+            "com.transsion.phonemaster"
         )
+
+        fun isEssentialUtility(pkg: String): Boolean {
+            if (pkg.isBlank()) return false
+            if (ESSENTIAL_WHITELISTED_PACKAGES.contains(pkg)) return true
+            return pkg.contains("dialer") || pkg.contains("incallui") || pkg.contains("telecom") ||
+                   pkg.contains("calculator") || pkg.contains("deskclock") || pkg.contains("clockpackage") ||
+                   pkg.contains("bbkclock") || pkg.contains("camera") || pkg.contains("gallery") ||
+                   pkg.contains("alarmclock") || pkg.contains("emergency")
+        }
     }
 
     override fun onServiceConnected() {
@@ -78,7 +103,7 @@ class ZenithAccessibilityService : AccessibilityService() {
         val lowerPkg = pkg.lowercase(java.util.Locale.US)
         if (lowerPkg.isBlank() || lowerPkg == packageName.lowercase(java.util.Locale.US) ||
             lowerPkg.contains("launcher") || lowerPkg.contains("systemui") ||
-            ESSENTIAL_WHITELISTED_PACKAGES.contains(lowerPkg)
+            isEssentialUtility(lowerPkg)
         ) {
             return
         }
@@ -120,7 +145,7 @@ class ZenithAccessibilityService : AccessibilityService() {
         val targetPkg = if (screenContext.packageName.isNotBlank()) screenContext.packageName.lowercase(java.util.Locale.US) else pkg.lowercase(java.util.Locale.US)
         if (targetPkg.isBlank() || targetPkg == packageName.lowercase(java.util.Locale.US) ||
             targetPkg.contains("launcher") || targetPkg.contains("systemui") ||
-            ESSENTIAL_WHITELISTED_PACKAGES.contains(targetPkg)
+            isEssentialUtility(targetPkg)
         ) {
             return
         }
