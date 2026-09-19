@@ -333,14 +333,14 @@ object OemNavigationManager {
             )
             DeviceBrand.TRANSSION -> OemGuidance(
                 brand = brand,
-                step1Title = "1. Open Accessibility & Trigger Restriction",
-                step1Desc = "Tap 'Open Accessibility' below -> Tap 'Downloaded apps' -> Tap 'Reel Narcotics Shield' -> Try to turn ON -> Tap 'OK'.",
-                step2Title = "2. Unlock Restricted Settings in App Info",
-                step2Desc = "Tap 'Open App Info' below -> Tap 3-dots (⋮) at top-right -> Select 'Allow restricted settings'.",
+                step1Title = "1. Enable Reel Narcotics Shield",
+                step1Desc = "Tap 'Open Accessibility' below -> Tap 'Downloaded apps' -> Tap 'Reel Narcotics Shield' -> Toggle the switch ON -> Tap 'Allow'. (Infinix XOS does not use 3-dots in App Info).",
+                step2Title = "2. Special App Access (If Prompted)",
+                step2Desc = "If XOS displays restricted access, open Settings -> App management -> Special app access -> All files / accessibility -> Allow Reel Narcotics.",
                 step3Title = "3. Enable Phone Master Auto-Start",
-                step3Desc = "Return to Downloaded apps -> Turn Shield ON. Then whitelist in Phone Master below.",
+                step3Desc = "Open Phone Master app -> Auto-start management -> Turn Reel Narcotics ON so XOS never suspends the shield in background.",
                 step3ButtonLabel = "OPEN PHONE MASTER AUTOSTART ➔",
-                deviceAdminHint = "💡 Transsion Security: Tap 'Activate' on the system prompt."
+                deviceAdminHint = "💡 Infinix XOS Security: Tap 'Activate' on the system prompt."
             )
             DeviceBrand.OPPO_REALME_ONEPLUS -> OemGuidance(
                 brand = brand,
