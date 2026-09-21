@@ -26,34 +26,28 @@ class SnapchatSpotlightDetector : ContentDetector {
             return DetectionResult.allowed(ContentCategory.SNAPCHAT_SPOTLIGHT, "Snapchat chat/camera active")
         }
 
-        // 2. Scoring for Spotlight
         var confidence = 0.0f
         val reasons = mutableListOf<String>()
 
         if (context.hasAnyViewId("spotlight_container", "spotlight_fullscreen", "spotlight_video_player")) {
-            confidence += 0.70f
+            confidence = 1.0f
             reasons.add("Spotlight player layout active")
         }
 
-        if (context.hasContentDescription("Spotlight tab") || context.hasExactText("Spotlight")) {
-            confidence += 0.50f
-            reasons.add("Spotlight tab selected")
+        val isSpotlightSelected = context.hasSelectedDesc("Spotlight") || context.hasSelectedText("Spotlight")
+        if (isSpotlightSelected) {
+            confidence = maxOf(confidence, 0.95f)
+            reasons.add("Spotlight tab actively selected")
         }
 
-        if (context.hasText("Remix Snap") || context.hasContentDescription("Spotlight replies")) {
-            confidence += 0.35f
-            reasons.add("Spotlight action tokens found")
-        }
+        val threshold = if (config.strictMode) 0.50f else 0.70f
 
-        val finalConfidence = confidence.coerceIn(0f, 1f)
-        val threshold = if (config.strictMode) 0.55f else 0.70f
-
-        return if (finalConfidence >= threshold) {
+        return if (confidence >= threshold) {
             DetectionResult(
                 isBlocked = true,
-                confidence = finalConfidence,
+                confidence = confidence,
                 category = ContentCategory.SNAPCHAT_SPOTLIGHT,
-                ruleId = "SNAP_SPOTLIGHT_MATCH",
+                ruleId = "SNAP_SPOTLIGHT_SURGICAL",
                 reason = reasons.joinToString("; ")
             )
         } else {

@@ -6,10 +6,18 @@ import com.zenith.focus.domain.model.ProtectionConfig
 
 class InstagramReelsDetector : ContentDetector {
     override val name = "InstagramReelsDetector"
-    override val version = "2.0.0-STRICT"
+    override val version = "2.1.0-SURGICAL"
 
     companion object {
         const val PACKAGE_INSTAGRAM = "com.instagram.android"
+
+        // Active full-screen Reels viewer containers
+        val ACTIVE_REELS_VIEWER_IDS = listOf(
+            "clips_viewer_view_pager",
+            "clips_video_container",
+            "clips_swipe_refresh_layout",
+            "reel_viewer_clips_item"
+        )
     }
 
     override fun canHandle(packageName: String): Boolean {
@@ -21,13 +29,32 @@ class InstagramReelsDetector : ContentDetector {
             return DetectionResult.allowed(ContentCategory.INSTAGRAM_REELS, "Reels blocking disabled")
         }
 
+        // 1. Direct Messages / Chats - ALWAYS ALLOWED
+        if (context.hasAnyViewId("direct_thread_feed", "row_thread_composer", "direct_inbox", "message_composer")) {
+            return DetectionResult.allowed(ContentCategory.INSTAGRAM_REELS, "Direct messages active")
+        }
+
+        val isReelsViewerActive = ACTIVE_REELS_VIEWER_IDS.any { context.hasViewId(it) }
+
+        // 2. Search / Explore / Profile - ALLOWED unless full-screen Reels viewer is opened
+        val isSearchOrExplore = context.hasAnyViewId("action_bar_search_edit_text", "search_tab", "explore_tab")
+        if (isSearchOrExplore && !isReelsViewerActive) {
+            return DetectionResult.allowed(ContentCategory.INSTAGRAM_REELS, "Instagram search/explore active")
+        }
+
+        // 3. Normal Feed - ALLOWED unless full-screen viewer is opened
+        val isNormalFeed = context.hasAnyViewId("feed_recycler", "main_feed", "sticky_header_list")
+        if (isNormalFeed && !isReelsViewerActive) {
+            return DetectionResult.allowed(ContentCategory.INSTAGRAM_REELS, "Instagram home feed active")
+        }
+
         var confidence = 0.0f
         val reasons = mutableListOf<String>()
 
-        // Signal 1: Clips viewer layout or container (Definite Reel)
-        if (context.hasAnyViewId("clips_viewer_view_pager", "clips_video_container", "clips_swipe_refresh_layout", "reel_viewer_clips_item")) {
+        // Signal 1: Active Clips/Reel viewer container (Definite Reel opened)
+        if (isReelsViewerActive) {
             confidence = 1.0f
-            reasons.add("Instagram clips viewer active")
+            reasons.add("Instagram full-screen clips viewer active")
         }
 
         // Signal 2: Reels bottom navigation tab selected or active
@@ -39,30 +66,17 @@ class InstagramReelsDetector : ContentDetector {
                 context.hasContentDescription("Reels, tab 4 of 5, selected")
         if (isReelsTabSelected) {
             confidence = maxOf(confidence, 0.95f)
-            reasons.add("Reels tab selected in navigation")
+            reasons.add("Reels tab actively selected in navigation")
         }
 
-        // Signal 3: Reel action tokens
-        if (context.hasContentDescription("Reel by") || context.hasText("Remix this reel") || context.hasText("Use audio") || context.hasText("Original audio") || context.hasText("Watch more reels")) {
-            confidence = maxOf(confidence, 0.85f)
-            reasons.add("Reel audio/remix action tokens present")
-        }
-
-        // Allow DMs only if no clips viewer is active
-        if (confidence < 0.40f) {
-            if (context.hasAnyViewId("direct_thread_feed", "row_thread_composer", "direct_inbox", "message_composer")) {
-                return DetectionResult.allowed(ContentCategory.INSTAGRAM_REELS, "Direct messages active")
-            }
-        }
-
-        val threshold = if (config.strictMode) 0.40f else 0.65f
+        val threshold = if (config.strictMode) 0.50f else 0.70f
 
         return if (confidence >= threshold) {
             DetectionResult(
                 isBlocked = true,
                 confidence = confidence,
                 category = ContentCategory.INSTAGRAM_REELS,
-                ruleId = "IG_REELS_S_PLUS",
+                ruleId = "IG_REELS_SURGICAL",
                 reason = reasons.joinToString("; ")
             )
         } else {

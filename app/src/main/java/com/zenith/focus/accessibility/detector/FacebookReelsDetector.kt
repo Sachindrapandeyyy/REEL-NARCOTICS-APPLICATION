@@ -36,7 +36,6 @@ class FacebookReelsDetector : ContentDetector {
                 "reels_video_player",
                 "reel_viewer",
                 "fb_shorts_viewer",
-                "reels_tray",
                 "reels_page_container",
                 "reels_fragment"
             )
@@ -51,43 +50,20 @@ class FacebookReelsDetector : ContentDetector {
             context.hasContentDescription("Reels, selected") ||
             context.hasContentDescription("Reels tab, selected") ||
             context.hasContentDescription("selected, Reels") ||
-            context.hasContentDescription("Watch Reels") ||
-            context.hasContentDescription("Shorts and reels") ||
-            context.hasContentDescription("Reels video player") ||
-            context.hasContentDescription("Facebook Reels")
+            context.hasContentDescription("Reels video player")
         if (isReelsNavOrViewer) {
             confidence = maxOf(confidence, 0.95f)
             reasons.add("Facebook Reels navigation/viewer node detected")
         }
 
-        // Signal 3: Reel Creator / Audio tokens
-        if (context.hasContentDescription("Reel by") ||
-            context.hasContentDescription("Reel of") ||
-            context.hasText("Remix reel") ||
-            context.hasText("Remix this reel") ||
-            context.hasText("Use audio") ||
-            context.hasText("Original audio") ||
-            context.hasText("Watch more reels") ||
-            context.hasText("Create reel")
-        ) {
-            confidence = maxOf(confidence, 0.90f)
-            reasons.add("Facebook Reel audio/creator tokens detected")
-        }
-
-        // Signal 4: Feed section header (weak contextual signal, not alone sufficient to block)
-        if (context.hasText("Reels and short videos") || context.hasText("Reels & short videos")) {
-            confidence = maxOf(confidence, 0.25f)
-            reasons.add("Facebook Reels feed section header visible")
-        }
-
-        val threshold = if (config.strictMode) 0.40f else 0.60f
+        val threshold = if (config.strictMode) 0.50f else 0.70f
 
         return if (confidence >= threshold) {
             DetectionResult(
                 isBlocked = true,
                 confidence = confidence,
                 category = ContentCategory.FACEBOOK_REELS,
-                ruleId = "FB_REELS_STRICT_V2",
+                ruleId = "FB_REELS_SURGICAL",
                 reason = reasons.joinToString("; ")
             )
         } else {

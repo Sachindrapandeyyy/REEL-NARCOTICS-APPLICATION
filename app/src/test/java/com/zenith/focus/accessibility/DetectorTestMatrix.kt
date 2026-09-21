@@ -51,6 +51,31 @@ class DetectorTestMatrix {
     }
 
     @Test
+    fun testYouTubePWSearchAllowedWithShortsInFeed() {
+        val detector = YouTubeShortsDetector()
+        val context = ScreenContext(
+            packageName = "com.google.android.youtube",
+            className = "com.google.android.apps.youtube.app.search.SearchActivity",
+            viewIds = setOf(
+                "com.google.android.youtube:id/search_results_editor",
+                "com.google.android.youtube:id/search_chip_bar",
+                "com.google.android.youtube:id/reel_shelf",
+                "com.google.android.youtube:id/reel_shelf_header"
+            ),
+            visibleTexts = listOf(
+                "Physics Wallah - Alakh Pandey",
+                "PW Lakshya JEE Full Physics Lecture",
+                "PW Motivation #shorts",
+                "Shorts"
+            ),
+            contentDescriptions = listOf("Search chip", "Shorts shelf"),
+            allNormalizedTokens = setOf("physics", "wallah", "alakh", "pandey", "pw", "lakshya", "jee", "shorts", "motivation")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertFalse("Search results for PW with inline shorts shelf must be allowed!", result.isBlocked)
+    }
+
+    @Test
     fun testYouTubeLongVideoPlayerAllowed() {
         val detector = YouTubeShortsDetector()
         val context = ScreenContext(
