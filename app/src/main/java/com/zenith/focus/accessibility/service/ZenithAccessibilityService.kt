@@ -39,14 +39,14 @@ class ZenithAccessibilityService : AccessibilityService() {
 
     companion object {
         private const val FAST_DEBOUNCE_MS = 60L
-        private const val EJECT_COOLDOWN_MS = 600L
+        private const val EJECT_COOLDOWN_MS = 750L
 
-        // Core system communication and essential utility packages that must never be blocked or intercepted
+        // Core system communication, essential utility, and educational packages that must never be blocked or intercepted
         val ESSENTIAL_WHITELISTED_PACKAGES = setOf(
             "com.google.android.googlequicksearchbox", // Google App / Search
             "com.android.phone",
             "com.google.android.dialer",
-            "com.android.incallui",
+            "com.google.android.incallui",
             "com.samsung.android.dialer",
             "com.samsung.android.incallui",
             "com.google.android.apps.messaging",
@@ -58,6 +58,18 @@ class ZenithAccessibilityService : AccessibilityService() {
             "org.telegram.messenger",
             "org.telegram.messenger.web",
             "com.google.android.calculator",
+            // Educational and learning platforms
+            "xyz.penpencil.physicswala",
+            "com.physicswallah",
+            "com.unacademyapp",
+            "org.khanacademy.android",
+            "org.coursera.android",
+            "com.udemy.android",
+            "com.byjus.thelearningapp",
+            "com.vedantu.student",
+            "com.doubtnut",
+            "com.allen.allenapp",
+            "com.testbook.tbapp",
             "com.sec.android.app.popupcalculator",
             "com.google.android.deskclock",
             "com.sec.android.app.clockpackage",
@@ -86,7 +98,11 @@ class ZenithAccessibilityService : AccessibilityService() {
             return pkg.contains("dialer") || pkg.contains("incallui") || pkg.contains("telecom") ||
                    pkg.contains("calculator") || pkg.contains("deskclock") || pkg.contains("clockpackage") ||
                    pkg.contains("bbkclock") || pkg.contains("camera") || pkg.contains("gallery") ||
-                   pkg.contains("alarmclock") || pkg.contains("emergency")
+                   pkg.contains("alarmclock") || pkg.contains("emergency") ||
+                   pkg.contains("penpencil") || pkg.contains("physicswalla") || pkg.contains("unacademy") ||
+                   pkg.contains("khanacademy") || pkg.contains("coursera") || pkg.contains("udemy") ||
+                   pkg.contains("byjus") || pkg.contains("vedantu") || pkg.contains("doubtnut") ||
+                   pkg.contains("allen") || pkg.contains("testbook")
         }
     }
 
@@ -244,9 +260,14 @@ class ZenithAccessibilityService : AccessibilityService() {
 
             val isDedicatedTab = result.reason.contains("tab actively selected", ignoreCase = true)
 
-            if (now - lastBlockTimestamp < 1500L && targetPkg == lastBlockedPkg) {
+            // When closeActiveShortsOrReel is executed, BACK is pressed surgically to keep the host app alive.
+            // Rapid accessibility events (within 800ms) fired during window transitions must NOT count as consecutive failures.
+            // Only escalate to ejectToHomeScreen if:
+            // 1. It is a dedicated tab (Shorts/Reels bottom tab) where BACK cannot leave the tab, OR
+            // 2. BACK has been pressed at least 3 distinct times (>800ms apart) and the player still refuses to dismiss.
+            if (now - lastBlockTimestamp in 800L..3500L && targetPkg == lastBlockedPkg) {
                 consecutiveBlockCount++
-            } else {
+            } else if (now - lastBlockTimestamp > 3500L) {
                 consecutiveBlockCount = 1
             }
             lastBlockTimestamp = now
@@ -265,9 +286,9 @@ class ZenithAccessibilityService : AccessibilityService() {
                         Toast.LENGTH_SHORT
                     ).show()
                 } else {
-                    // If user is directly on the dedicated Shorts/Reels tab, BACK will not escape the tab.
-                    // Or if consecutive BACK attempts failed to close the player, eject to Home Screen immediately.
-                    if (isDedicatedTab || consecutiveBlockCount >= 2) {
+                    // Dedicated bottom navigation tabs trap the user; BACK cannot exit the tab, so eject to Home.
+                    // For feeds/search shorts, surgical BACK closes the overlay. Eject to Home only after 3 failed attempts.
+                    if (isDedicatedTab || consecutiveBlockCount >= 3) {
                         ejectToHomeScreen()
                     } else {
                         closeActiveShortsOrReel()

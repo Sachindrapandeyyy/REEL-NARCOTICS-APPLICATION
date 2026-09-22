@@ -11,7 +11,7 @@ class InstagramReelsDetector : ContentDetector {
     companion object {
         const val PACKAGE_INSTAGRAM = "com.instagram.android"
 
-        // Active full-screen Reels viewer containers
+        // Active full-screen Reels viewer containers (Clips player only; does NOT match 24h Stories or Explore grid)
         val ACTIVE_REELS_VIEWER_IDS = listOf(
             "clips_viewer_view_pager",
             "clips_video_container",
@@ -20,10 +20,6 @@ class InstagramReelsDetector : ContentDetector {
             "clips_viewer_container",
             "clips_root",
             "clips_pager",
-            "reel_viewer",
-            "reel_viewer_root",
-            "clips_item",
-            "clips_item_container",
             "clips_media_component"
         )
     }

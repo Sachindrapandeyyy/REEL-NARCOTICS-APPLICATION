@@ -140,20 +140,16 @@ class BrowserUrlDetector(
 
     private fun isUrlLike(text: String): Boolean {
         val clean = text.trim()
-        if (clean.contains(" ") || clean.contains("\n") || clean.length > 256) return false
-        return clean.contains(".") && (
-            clean.startsWith("http://", ignoreCase = true) ||
-            clean.startsWith("https://", ignoreCase = true) ||
-            clean.contains(".com", ignoreCase = true) ||
-            clean.contains(".net", ignoreCase = true) ||
-            clean.contains(".org", ignoreCase = true) ||
-            clean.contains(".xxx", ignoreCase = true) ||
-            clean.contains(".porn", ignoreCase = true) ||
-            clean.contains(".tv", ignoreCase = true) ||
-            clean.contains(".io", ignoreCase = true) ||
-            clean.contains(".in", ignoreCase = true) ||
-            clean.contains(".co", ignoreCase = true)
-        )
+        if (clean.contains(" ") || clean.contains("\n") || clean.length < 4 || clean.length > 256) return false
+        if (clean.startsWith("http://", ignoreCase = true) || clean.startsWith("https://", ignoreCase = true)) return true
+        if (!clean.contains(".")) return false
+        if (blockedSuffixes.any { clean.endsWith(it, ignoreCase = true) || clean.contains("$it/", ignoreCase = true) }) return true
+        val dotIdx = clean.lastIndexOf('.')
+        if (dotIdx in 1 until clean.length - 2) {
+            val tld = clean.substring(dotIdx + 1).takeWhile { it.isLetter() }
+            return tld.length >= 2
+        }
+        return false
     }
 
     fun extractDomain(rawUrl: String): String {

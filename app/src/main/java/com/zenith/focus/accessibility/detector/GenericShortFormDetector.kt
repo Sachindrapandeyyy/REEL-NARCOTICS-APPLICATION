@@ -43,7 +43,7 @@ class GenericShortFormDetector : ContentDetector {
             return false
         }
 
-        // Never inspect core utilities, communication, camera, gallery, or settings
+        // Never inspect core utilities, communication, camera, gallery, settings, or educational platforms
         if (EXCLUDED_PACKAGE_PREFIXES.any { pkg.startsWith(it) }) {
             return false
         }
@@ -51,7 +51,11 @@ class GenericShortFormDetector : ContentDetector {
         if (pkg.contains("camera") || pkg.contains("gallery") || pkg.contains("dialer") ||
             pkg.contains("phone") || pkg.contains("contact") || pkg.contains("calculator") ||
             pkg.contains("clock") || pkg.contains("calendar") || pkg.contains("keyboard") ||
-            pkg.contains("inputmethod") || pkg.contains("settings") || pkg.contains("installer")
+            pkg.contains("inputmethod") || pkg.contains("settings") || pkg.contains("installer") ||
+            pkg.contains("penpencil") || pkg.contains("physicswalla") || pkg.contains("unacademy") ||
+            pkg.contains("khanacademy") || pkg.contains("coursera") || pkg.contains("udemy") ||
+            pkg.contains("byjus") || pkg.contains("vedantu") || pkg.contains("doubtnut") ||
+            pkg.contains("allen") || pkg.contains("testbook")
         ) {
             return false
         }

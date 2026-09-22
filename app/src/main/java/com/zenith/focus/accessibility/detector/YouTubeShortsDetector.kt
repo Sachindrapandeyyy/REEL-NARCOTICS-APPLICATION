@@ -13,7 +13,6 @@ class YouTubeShortsDetector : ContentDetector {
 
         // Full-screen dedicated player containers that only exist when a Short is actively open & playing
         val ACTIVE_SHORTS_PLAYER_IDS = listOf(
-            "reel_recycler",
             "reel_watch_fragment_root",
             "reel_player_page_container",
             "reel_player_page_content",
@@ -38,6 +37,7 @@ class YouTubeShortsDetector : ContentDetector {
 
         // Shelf / preview IDs that appear in search results or home feed (MUST NEVER BLOCK)
         val SHELF_PREVIEW_KEYWORDS = listOf(
+            "reel_recycler",
             "reel_shelf",
             "reel_shelf_header",
             "reel_shelf_root",

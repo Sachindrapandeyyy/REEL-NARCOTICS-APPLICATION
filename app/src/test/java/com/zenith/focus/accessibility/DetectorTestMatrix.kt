@@ -8,8 +8,13 @@ import com.zenith.focus.accessibility.detector.InstagramReelsDetector
 import com.zenith.focus.accessibility.detector.SnapchatSpotlightDetector
 import com.zenith.focus.accessibility.detector.TikTokDetector
 import com.zenith.focus.accessibility.detector.YouTubeShortsDetector
+import com.zenith.focus.accessibility.detector.DetectionResult
+import com.zenith.focus.accessibility.policy.NuclearProtectionPolicy
 import com.zenith.focus.domain.model.ContentCategory
+import com.zenith.focus.domain.model.LockState
 import com.zenith.focus.domain.model.ProtectionConfig
+import com.zenith.focus.domain.nuclear.NuclearSession
+import com.zenith.focus.domain.nuclear.NuclearSessionStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -510,5 +515,152 @@ class DetectorTestMatrix {
         )
         val result = detector.evaluate(context, defaultConfig)
         assertFalse("Address bar indicates safe site; body text with badsite.com must not trigger block", result.isBlocked)
+    }
+
+    @Test
+    fun testYouTubeSearchWithReelRecyclerShelfAllowed() {
+        val detector = YouTubeShortsDetector()
+        val context = ScreenContext(
+            packageName = "com.google.android.youtube",
+            className = "com.google.android.apps.youtube.app.search.SearchActivity",
+            viewIds = setOf(
+                "com.google.android.youtube:id/search_results_editor",
+                "com.google.android.youtube:id/search_chip_bar",
+                "com.google.android.youtube:id/reel_recycler"
+            ),
+            visibleTexts = listOf("Physics Wallah Alakh Pandey", "Shorts", "PW Motivation"),
+            contentDescriptions = listOf("Search chip"),
+            allNormalizedTokens = setOf("physics", "wallah", "alakh", "pandey", "shorts", "pw")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertFalse("YouTube search results with reel_recycler shelf must NEVER be blocked!", result.isBlocked)
+    }
+
+    @Test
+    fun testInstagramStoryAllowed() {
+        val detector = InstagramReelsDetector()
+        val context = ScreenContext(
+            packageName = "com.instagram.android",
+            className = "com.instagram.modal.ModalActivity",
+            viewIds = setOf("com.instagram.android:id/reel_viewer", "com.instagram.android:id/reel_viewer_root"),
+            visibleTexts = listOf("Friend's 24h Story", "Send message"),
+            contentDescriptions = listOf("Story by @bestfriend", "Send message"),
+            allNormalizedTokens = setOf("story", "send", "message")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertFalse("Instagram 24-hour Story (reel_viewer) must NOT be blocked as a Reel!", result.isBlocked)
+    }
+
+    @Test
+    fun testInstagramExploreGridAllowed() {
+        val detector = InstagramReelsDetector()
+        val context = ScreenContext(
+            packageName = "com.instagram.android",
+            className = "com.instagram.mainactivity.MainActivity",
+            viewIds = setOf(
+                "com.instagram.android:id/explore_tab",
+                "com.instagram.android:id/clips_item",
+                "com.instagram.android:id/clips_item_container"
+            ),
+            visibleTexts = listOf("Search"),
+            contentDescriptions = listOf("Explore tab"),
+            allNormalizedTokens = setOf("search", "explore")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertFalse("Instagram Explore Grid thumbnails (clips_item) must NOT be blocked!", result.isBlocked)
+    }
+
+    @Test
+    fun testBrowserUrlDetectorBlockedSuffixes() {
+        val detector = BrowserUrlDetector()
+        val suffixes = listOf(".cam", ".sex", ".adult", ".porn", ".xxx")
+        for (suffix in suffixes) {
+            val domain = "model$suffix"
+            val context = ScreenContext(
+                packageName = "com.android.chrome",
+                viewIds = setOf("url_bar"),
+                nodeTextMap = mapOf("url_bar" to "https://$domain/watch"),
+                visibleTexts = listOf("https://$domain/watch")
+            )
+            val result = detector.evaluate(context, defaultConfig)
+            assertTrue("Domain ending in $suffix must be blocked by BrowserUrlDetector", result.isBlocked)
+            assertEquals(ContentCategory.ADULT_WEBSITE, result.category)
+        }
+    }
+
+    @Test
+    fun testEducationalPlatformsImmunity() {
+        val genericDetector = com.zenith.focus.accessibility.detector.GenericShortFormDetector()
+        val educationalApps = listOf(
+            "xyz.penpencil.physicswala",
+            "com.physicswallah",
+            "com.unacademyapp",
+            "org.khanacademy.android",
+            "org.coursera.android",
+            "com.udemy.android",
+            "com.byjus.thelearningapp",
+            "com.vedantu.student",
+            "com.doubtnut",
+            "com.allen.allenapp",
+            "com.testbook.tbapp"
+        )
+        for (pkg in educationalApps) {
+            assertFalse("Generic detector must NEVER inspect $pkg", genericDetector.canHandle(pkg))
+            assertTrue("Accessibility service must recognize $pkg as essential utility",
+                com.zenith.focus.accessibility.service.ZenithAccessibilityService.isEssentialUtility(pkg)
+            )
+        }
+    }
+
+    @Test
+    fun testFocusLockHonorsProtectionConfigToggles() {
+        val now = System.currentTimeMillis()
+        val activeLockState = LockState(
+            isActive = true,
+            endTimeMillis = now + 3600000L,
+            enabledCategories = emptySet() // Empty means follow user's configured toggles
+        )
+        val inactiveNuclear = NuclearSession(
+            status = NuclearSessionStatus.INACTIVE
+        )
+        // User explicitly turned off YouTube Shorts blocking
+        val configWithShortsDisabled = ProtectionConfig(
+            blockYouTubeShorts = false,
+            blockInstagramReels = true
+        )
+
+        val shortsResult = DetectionResult(
+            isBlocked = true,
+            confidence = 1.0f,
+            category = ContentCategory.YOUTUBE_SHORTS,
+            ruleId = "TEST_SHORTS",
+            reason = "Test short"
+        )
+
+        val reelsResult = DetectionResult(
+            isBlocked = true,
+            confidence = 1.0f,
+            category = ContentCategory.INSTAGRAM_REELS,
+            ruleId = "TEST_REELS",
+            reason = "Test reel"
+        )
+
+        val shouldBlockShorts = NuclearProtectionPolicy.shouldBlock(
+            result = shortsResult,
+            nuclearSession = inactiveNuclear,
+            lockState = activeLockState,
+            config = configWithShortsDisabled,
+            nowWallClock = now
+        )
+        assertFalse("Standard Focus Lock must NOT block YouTube Shorts when user toggled it OFF", shouldBlockShorts)
+
+        val shouldBlockReels = NuclearProtectionPolicy.shouldBlock(
+            result = reelsResult,
+            nuclearSession = inactiveNuclear,
+            lockState = activeLockState,
+            config = configWithShortsDisabled,
+            nowWallClock = now
+        )
+        assertTrue("Standard Focus Lock MUST block Instagram Reels when user toggled it ON", shouldBlockReels)
     }
 }

@@ -40,18 +40,24 @@ object NuclearProtectionPolicy {
             }
         }
 
-        // PRIORITY 2: STANDARD FOCUS LOCK (Standard Restriction: Active focus countdown window)
+        // PRIORITY 2: STANDARD FOCUS LOCK (Active countdown window: enforces user's configured shields)
         if (lockState.isCurrentlyActive(nowWallClock)) {
+            if (result.category == ContentCategory.SYSTEM_TAMPER) {
+                return true
+            }
             return if (lockState.enabledCategories.isNotEmpty()) {
                 lockState.enabledCategories.contains(result.category)
             } else {
-                isAddictiveOrAdultCategory(result.category) || config.isCategoryBlocked(result.category)
+                config.isCategoryBlocked(result.category)
             }
         }
 
-        // PRIORITY 3: BEDTIME SLEEP SHIELD (Overnight auto-focus lock)
+        // PRIORITY 3: BEDTIME SLEEP SHIELD (Overnight auto-focus lock: enforces user's configured shields)
         if (habitConfig.isBedtimeActive(nowWallClock)) {
-            return isAddictiveOrAdultCategory(result.category)
+            if (result.category == ContentCategory.SYSTEM_TAMPER) {
+                return true
+            }
+            return config.isCategoryBlocked(result.category)
         }
 
         // NO LOCK ACTIVE: NO RESTRICTIONS
