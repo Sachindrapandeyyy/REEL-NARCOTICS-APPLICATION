@@ -21,6 +21,7 @@ class BootCompletedReceiver : BroadcastReceiver() {
                 try {
                     val app = runCatching { ZenithApplication.instance }.getOrNull() ?: return@launch
                     val lockRepo = app.container.lockRepository
+                    lockRepo.refreshLockState()
                     val state = lockRepo.lockState.value
                     val now = System.currentTimeMillis()
 

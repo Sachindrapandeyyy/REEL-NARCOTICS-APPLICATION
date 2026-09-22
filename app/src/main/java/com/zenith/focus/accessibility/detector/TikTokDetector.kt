@@ -10,7 +10,8 @@ class TikTokDetector : ContentDetector {
 
     override fun canHandle(packageName: String): Boolean {
         return packageName.equals("com.zhiliaoapp.musically", ignoreCase = true) ||
-               packageName.equals("com.ss.android.ugc.trill", ignoreCase = true)
+               packageName.equals("com.ss.android.ugc.trill", ignoreCase = true) ||
+               packageName.equals("com.zhiliaoapp.musically.go", ignoreCase = true)
     }
 
     override fun evaluate(context: ScreenContext, config: ProtectionConfig): DetectionResult {

@@ -31,6 +31,7 @@ object HierarchyTraverser {
         val allNormalizedTokens = mutableSetOf<String>()
         val selectedTexts = mutableSetOf<String>()
         val selectedDescriptions = mutableSetOf<String>()
+        val nodeTextMap = mutableMapOf<String, String>()
 
         val queue = ArrayDeque<Pair<AccessibilityNodeInfo, Int>>()
         queue.add(root to 0)
@@ -44,9 +45,10 @@ object HierarchyTraverser {
 
             // Extract View ID
             val viewId = node.viewIdResourceName
+            var entryName = ""
             if (!viewId.isNullOrBlank()) {
                 viewIds.add(viewId)
-                val entryName = viewId.substringAfterLast(":id/")
+                entryName = viewId.substringAfterLast(":id/")
                 if (entryName.isNotBlank()) {
                     viewIds.add(entryName)
                 }
@@ -58,6 +60,12 @@ object HierarchyTraverser {
                 visibleTexts.add(text)
                 if (isSelected) {
                     selectedTexts.add(text)
+                }
+                if (!viewId.isNullOrBlank()) {
+                    nodeTextMap[viewId] = text
+                    if (entryName.isNotBlank()) {
+                        nodeTextMap[entryName] = text
+                    }
                 }
                 val normalized = TextNormalizer.normalize(text)
                 allNormalizedTokens.addAll(TextNormalizer.extractTokens(normalized))
@@ -111,7 +119,8 @@ object HierarchyTraverser {
             contentDescriptions = contentDescriptions,
             allNormalizedTokens = allNormalizedTokens,
             selectedTexts = selectedTexts,
-            selectedDescriptions = selectedDescriptions
+            selectedDescriptions = selectedDescriptions,
+            nodeTextMap = nodeTextMap
         )
     }
 }

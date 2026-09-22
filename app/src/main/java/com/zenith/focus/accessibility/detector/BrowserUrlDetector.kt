@@ -118,14 +118,42 @@ class BrowserUrlDetector(
     }
 
     private fun findUrlText(context: ScreenContext): String {
-        // Look in visible texts for URL-like patterns
+        // 1. Prioritize text from known browser address bar view IDs
+        for (urlId in URL_BAR_VIEW_IDS) {
+            val addressText = context.nodeTextMap.entries.firstOrNull { (id, text) ->
+                id.contains(urlId, ignoreCase = true) && isUrlLike(text)
+            }?.value
+            if (!addressText.isNullOrBlank()) {
+                return addressText.trim()
+            }
+        }
+
+        // 2. Fallback: inspect visibleTexts with strict URL structure checks (never match phrases with spaces)
         for (text in context.visibleTexts) {
             val clean = text.trim()
-            if (clean.contains(".") && (clean.startsWith("http://") || clean.startsWith("https://") || clean.contains(".com") || clean.contains(".net") || clean.contains(".org") || clean.contains(".xxx") || clean.contains(".porn") || clean.contains(".tv") || clean.contains(".io"))) {
+            if (isUrlLike(clean)) {
                 return clean
             }
         }
         return ""
+    }
+
+    private fun isUrlLike(text: String): Boolean {
+        val clean = text.trim()
+        if (clean.contains(" ") || clean.contains("\n") || clean.length > 256) return false
+        return clean.contains(".") && (
+            clean.startsWith("http://", ignoreCase = true) ||
+            clean.startsWith("https://", ignoreCase = true) ||
+            clean.contains(".com", ignoreCase = true) ||
+            clean.contains(".net", ignoreCase = true) ||
+            clean.contains(".org", ignoreCase = true) ||
+            clean.contains(".xxx", ignoreCase = true) ||
+            clean.contains(".porn", ignoreCase = true) ||
+            clean.contains(".tv", ignoreCase = true) ||
+            clean.contains(".io", ignoreCase = true) ||
+            clean.contains(".in", ignoreCase = true) ||
+            clean.contains(".co", ignoreCase = true)
+        )
     }
 
     fun extractDomain(rawUrl: String): String {

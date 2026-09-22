@@ -137,7 +137,10 @@ class ZenithDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABAS
                     total += count
                     when (cat) {
                         ContentCategory.YOUTUBE_SHORTS.name -> shorts += count
-                        ContentCategory.INSTAGRAM_REELS.name -> reels += count
+                        ContentCategory.INSTAGRAM_REELS.name,
+                        ContentCategory.FACEBOOK_REELS.name,
+                        ContentCategory.TIKTOK.name,
+                        ContentCategory.OTHER_SHORT_VIDEO.name -> reels += count
                         ContentCategory.SNAPCHAT_SPOTLIGHT.name -> spotlight += count
                         ContentCategory.ADULT_WEBSITE.name, ContentCategory.ADULT_KEYWORD.name -> adult += count
                     }

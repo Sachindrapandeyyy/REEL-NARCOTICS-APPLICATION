@@ -186,6 +186,26 @@ fun ProtectionScreen(
             onCheckedChange = { onToggleCategory(ContentCategory.SNAPCHAT_SPOTLIGHT, it) }
         )
 
+        Spacer(modifier = Modifier.height(10.dp))
+
+        ProtectionToggleCard(
+            title = "TikTok",
+            subtitle = "Instantly ejects when TikTok or TikTok Lite feeds are active",
+            isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.TIKTOK) else config.blockTikTok,
+            enabled = !isNuclearActive,
+            onCheckedChange = { onToggleCategory(ContentCategory.TIKTOK, it) }
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        ProtectionToggleCard(
+            title = "Other Short Videos",
+            subtitle = "Detects generic vertical swipe feeds and audio clips in other apps",
+            isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.OTHER_SHORT_VIDEO) else config.blockOtherShortVideo,
+            enabled = !isNuclearActive,
+            onCheckedChange = { onToggleCategory(ContentCategory.OTHER_SHORT_VIDEO, it) }
+        )
+
         Spacer(modifier = Modifier.height(24.dp))
 
         // EXPLICIT CONTENT SECTION

@@ -475,4 +475,40 @@ class DetectorTestMatrix {
             assertFalse("Generic detector must never handle $pkg", genericDetector.canHandle(pkg))
         }
     }
+
+    @Test
+    fun testTikTokLiteDetection() {
+        val detector = TikTokDetector()
+        assertTrue("TikTok detector must handle TikTok Lite", detector.canHandle("com.zhiliaoapp.musically.go"))
+        val context = ScreenContext(packageName = "com.zhiliaoapp.musically.go")
+        val result = detector.evaluate(context, defaultConfig)
+        assertTrue("TikTok Lite feed must be blocked", result.isBlocked)
+        assertEquals(ContentCategory.TIKTOK, result.category)
+    }
+
+    @Test
+    fun testFacebookMessengerChatAllowed() {
+        val detector = FacebookReelsDetector()
+        assertTrue(detector.canHandle("com.facebook.orca"))
+        val context = ScreenContext(
+            packageName = "com.facebook.orca",
+            viewIds = setOf("thread_view", "composer_text_view"),
+            visibleTexts = listOf("Hey, check out this message", "Send")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertFalse("Active Messenger chat thread must never be blocked", result.isBlocked)
+    }
+
+    @Test
+    fun testBrowserUrlDetectorPrioritizesAddressBarOverBodyText() {
+        val detector = BrowserUrlDetector(initialBlockedDomains = setOf("badsite.com"))
+        val context = ScreenContext(
+            packageName = "com.android.chrome",
+            viewIds = setOf("url_bar"),
+            nodeTextMap = mapOf("url_bar" to "https://wikipedia.org"),
+            visibleTexts = listOf("Visit badsite.com for information about cybersecurity")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertFalse("Address bar indicates safe site; body text with badsite.com must not trigger block", result.isBlocked)
+    }
 }

@@ -9,6 +9,7 @@ data class ScreenContext(
     val allNormalizedTokens: Set<String> = emptySet(),
     val selectedTexts: Set<String> = emptySet(),
     val selectedDescriptions: Set<String> = emptySet(),
+    val nodeTextMap: Map<String, String> = emptyMap(),
     val timestamp: Long = System.currentTimeMillis()
 ) {
     fun hasViewId(partialOrFull: String): Boolean {

@@ -91,6 +91,8 @@ fun NuclearArmingDialog(
                 ContentCategory.INSTAGRAM_REELS,
                 ContentCategory.FACEBOOK_REELS,
                 ContentCategory.SNAPCHAT_SPOTLIGHT,
+                ContentCategory.TIKTOK,
+                ContentCategory.OTHER_SHORT_VIDEO,
                 ContentCategory.ADULT_WEBSITE,
                 ContentCategory.ADULT_KEYWORD
             )
@@ -241,6 +243,8 @@ fun NuclearArmingDialog(
                         Triple(ContentCategory.INSTAGRAM_REELS, "Instagram Reels", "📸"),
                         Triple(ContentCategory.FACEBOOK_REELS, "Facebook Reels", "📘"),
                         Triple(ContentCategory.SNAPCHAT_SPOTLIGHT, "Snapchat Spotlight", "👻"),
+                        Triple(ContentCategory.TIKTOK, "TikTok Feeds", "🎵"),
+                        Triple(ContentCategory.OTHER_SHORT_VIDEO, "Other Short Videos", "📱"),
                         Triple(ContentCategory.ADULT_WEBSITE, "Adult & Explicit Sites", "🔞")
                     )
 
