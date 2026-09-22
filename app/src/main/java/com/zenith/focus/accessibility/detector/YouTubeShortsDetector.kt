@@ -26,22 +26,22 @@ class YouTubeShortsDetector : ContentDetector {
             "reel_watch_refresher",
             "reel_player_page_view",
             "reel_view_pager",
-            "shorts_container",
             "shorts_player_fragment",
-            "shorts_player",
-            "reel_container",
-            "reel_player_fragment",
-            "reel_layout",
-            "reel_pager"
+            "reel_player_fragment"
         )
 
-        // Shelf / preview IDs that appear in search results or home feed (MUST NEVER BLOCK)
+        // Shelf / preview IDs that appear in search results, feed, or suggestions below long videos (MUST NEVER BLOCK)
         val SHELF_PREVIEW_KEYWORDS = listOf(
             "reel_recycler",
             "reel_shelf",
             "reel_shelf_header",
             "reel_shelf_root",
-            "reel_carousel"
+            "reel_carousel",
+            "reel_container",
+            "reel_layout",
+            "reel_pager",
+            "shorts_container",
+            "shorts_player"
         )
     }
 
@@ -72,15 +72,7 @@ class YouTubeShortsDetector : ContentDetector {
             return DetectionResult.allowed(ContentCategory.YOUTUBE_SHORTS, "YouTube search results active (PW / study search immune)")
         }
 
-        // 3. Check if normal long-form video player is active
-        val isNormalWatchPlayer = context.hasViewId("watch_while_layout") &&
-            (context.hasViewId("player_fragment") || context.hasViewId("time_bar") || context.hasViewId("play_pause_button")) &&
-            matchedPlayerId == null
-        if (isNormalWatchPlayer) {
-            return DetectionResult.allowed(ContentCategory.YOUTUBE_SHORTS, "Normal YouTube long video")
-        }
-
-        // 4. Check Shorts tab explicitly selected in navigation bar (independent of specific pivot bar ID)
+        // 3. Check Shorts tab explicitly selected in navigation bar (independent of specific pivot bar ID)
         val isShortsTabSelected = context.hasSelectedDesc("Shorts") ||
             context.hasSelectedText("Shorts") ||
             context.hasContentDescription("Shorts, selected") ||
@@ -88,11 +80,41 @@ class YouTubeShortsDetector : ContentDetector {
             context.hasContentDescription("selected, Shorts") ||
             context.contentDescriptions.any { it.startsWith("Shorts", ignoreCase = true) && it.contains("selected", ignoreCase = true) }
 
-        // 5. Check active Shorts player UI controls (Only present in active full-screen player)
+        // 4. Check if normal long-form video player is active (portrait or fullscreen landscape)
+        val isNormalWatchPlayer = (context.hasAnyViewId(
+            "watch_while_layout",
+            "watch_while_coordinator",
+            "watch_panel",
+            "watch_scroll_view",
+            "player_fragment",
+            "player_view",
+            "youtube_controls",
+            "player_control",
+            "video_title",
+            "expandable_title",
+            "channel_name",
+            "subscribe_button",
+            "comments_entry_point",
+            "fullscreen_button",
+            "enter_fullscreen_button",
+            "exit_fullscreen_button",
+            "single_loop_play_button",
+            "time_bar",
+            "play_pause_button"
+        ) || context.contentDescriptions.any {
+            it.contains("full screen", ignoreCase = true) ||
+            it.contains("Seek to", ignoreCase = true) ||
+            it.contains("Expand description", ignoreCase = true) ||
+            it.contains("Collapse description", ignoreCase = true)
+        }) && matchedPlayerId == null && !isShortsTabSelected
+
+        if (isNormalWatchPlayer) {
+            return DetectionResult.allowed(ContentCategory.YOUTUBE_SHORTS, "Normal YouTube long video")
+        }
+
+        // 5. Check active Shorts player UI controls (Only present in active full-screen player; strictly exclude generic "Dislike this video" & "Remix")
         val hasShortsControls = context.hasContentDescription("Dislike this short") ||
-            context.hasContentDescription("Dislike this video") ||
             context.hasContentDescription("Remix this Short") ||
-            context.hasContentDescription("Remix") ||
             context.hasContentDescription("Shorts video player") ||
             context.hasContentDescription("Sound used in this short") ||
             context.hasContentDescription("Show sound details") ||
@@ -101,7 +123,7 @@ class YouTubeShortsDetector : ContentDetector {
             context.hasContentDescription("Play short") ||
             context.hasContentDescription("Share this short")
 
-        // 6. Check if this is merely an inline thumbnail shelf/carousel on feed or search
+        // 6. Check if this is merely an inline thumbnail shelf/carousel on feed, search, or watch suggestions
         // Must NEVER exempt if an active player container, Shorts tab, or player controls are present
         val hasShelfOnly = context.viewIds.any { id ->
             SHELF_PREVIEW_KEYWORDS.any { keyword -> id.contains(keyword, ignoreCase = true) }

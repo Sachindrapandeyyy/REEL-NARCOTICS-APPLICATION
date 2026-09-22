@@ -8,6 +8,7 @@ import com.zenith.focus.accessibility.detector.InstagramReelsDetector
 import com.zenith.focus.accessibility.detector.SnapchatSpotlightDetector
 import com.zenith.focus.accessibility.detector.TikTokDetector
 import com.zenith.focus.accessibility.detector.YouTubeShortsDetector
+import com.zenith.focus.accessibility.detector.GenericShortFormDetector
 import com.zenith.focus.accessibility.detector.DetectionResult
 import com.zenith.focus.accessibility.policy.NuclearProtectionPolicy
 import com.zenith.focus.domain.model.ContentCategory
@@ -494,14 +495,7 @@ class DetectorTestMatrix {
     @Test
     fun testFacebookMessengerChatAllowed() {
         val detector = FacebookReelsDetector()
-        assertTrue(detector.canHandle("com.facebook.orca"))
-        val context = ScreenContext(
-            packageName = "com.facebook.orca",
-            viewIds = setOf("thread_view", "composer_text_view"),
-            visibleTexts = listOf("Hey, check out this message", "Send")
-        )
-        val result = detector.evaluate(context, defaultConfig)
-        assertFalse("Active Messenger chat thread must never be blocked", result.isBlocked)
+        assertFalse("FacebookReelsDetector must never inspect Messenger (pure chat app)", detector.canHandle("com.facebook.orca"))
     }
 
     @Test
@@ -662,5 +656,149 @@ class DetectorTestMatrix {
             nowWallClock = now
         )
         assertTrue("Standard Focus Lock MUST block Instagram Reels when user toggled it ON", shouldBlockReels)
+    }
+
+    @Test
+    fun testYouTubeLongVideoWithControlsHiddenAllowed() {
+        val detector = YouTubeShortsDetector()
+        // Real-world YouTube long video playback: controls faded out after 2s,
+        // Dislike button has "Dislike this video", and action bar has "Remix" button.
+        val context = ScreenContext(
+            packageName = "com.google.android.youtube",
+            className = "com.google.android.apps.youtube.app.watchwhile.WatchWhileActivity",
+            viewIds = setOf(
+                "com.google.android.youtube:id/watch_while_layout",
+                "com.google.android.youtube:id/player_view",
+                "com.google.android.youtube:id/video_title",
+                "com.google.android.youtube:id/channel_name",
+                "com.google.android.youtube:id/subscribe_button",
+                "com.google.android.youtube:id/comments_entry_point"
+            ),
+            visibleTexts = listOf(
+                "Complete Kotlin & Android Development Masterclass",
+                "Tech Channel",
+                "Subscribe",
+                "Comments 1.2K"
+            ),
+            contentDescriptions = listOf(
+                "Like this video along with 45K other people",
+                "Dislike this video",
+                "Remix",
+                "Share",
+                "Download video",
+                "Enter full screen"
+            ),
+            allNormalizedTokens = setOf("kotlin", "android", "development", "masterclass", "tech", "subscribe", "comments")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertFalse("Long video with faded controls and Dislike/Remix buttons must NEVER be blocked!", result.isBlocked)
+    }
+
+    @Test
+    fun testYouTubeLongVideoWithShortsCarouselBelowAllowed() {
+        val detector = YouTubeShortsDetector()
+        // Long video where the suggestions list below contains an inline Shorts shelf with reel_container / reel_layout
+        val context = ScreenContext(
+            packageName = "com.google.android.youtube",
+            className = "com.google.android.apps.youtube.app.watchwhile.WatchWhileActivity",
+            viewIds = setOf(
+                "com.google.android.youtube:id/watch_while_layout",
+                "com.google.android.youtube:id/watch_scroll_view",
+                "com.google.android.youtube:id/player_view",
+                "com.google.android.youtube:id/reel_container",
+                "com.google.android.youtube:id/reel_shelf",
+                "com.google.android.youtube:id/reel_layout",
+                "com.google.android.youtube:id/video_title"
+            ),
+            visibleTexts = listOf(
+                "Building Scalable Backend Systems with gRPC",
+                "Shorts",
+                "Quick tip #shorts"
+            ),
+            contentDescriptions = listOf(
+                "Dislike this video",
+                "Remix",
+                "Expand description"
+            ),
+            allNormalizedTokens = setOf("building", "scalable", "backend", "grpc", "shorts", "quick", "tip")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertFalse("Long video with recommended Shorts shelf below must NEVER be blocked!", result.isBlocked)
+    }
+
+    @Test
+    fun testYouTubeFullscreenLandscapeAllowed() {
+        val detector = YouTubeShortsDetector()
+        val context = ScreenContext(
+            packageName = "com.google.android.youtube",
+            className = "com.google.android.apps.youtube.app.watchwhile.WatchWhileActivity",
+            viewIds = setOf(
+                "com.google.android.youtube:id/watch_while_layout",
+                "com.google.android.youtube:id/watch_while_coordinator",
+                "com.google.android.youtube:id/fullscreen_button"
+            ),
+            visibleTexts = emptyList(),
+            contentDescriptions = listOf("Exit full screen", "Seek to 14 minutes 20 seconds"),
+            allNormalizedTokens = setOf("exit", "full", "screen")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertFalse("Fullscreen landscape playback must NEVER be blocked!", result.isBlocked)
+    }
+
+    @Test
+    fun testGenericShortFormDetectorExcludesYouTube() {
+        val genericDetector = GenericShortFormDetector()
+        assertFalse(
+            "GenericShortFormDetector must NEVER handle YouTube (delegated to specialized detector)",
+            genericDetector.canHandle("com.google.android.youtube")
+        )
+        assertFalse(
+            "GenericShortFormDetector must NEVER handle Instagram",
+            genericDetector.canHandle("com.instagram.android")
+        )
+    }
+
+    @Test
+    fun testFacebookMessengerImmunity() {
+        val detector = FacebookReelsDetector()
+        assertFalse(
+            "FacebookReelsDetector must NEVER inspect Facebook Messenger (pure messaging app)",
+            detector.canHandle("com.facebook.orca")
+        )
+    }
+
+    @Test
+    fun testFacebookStoryWithReelViewerAllowed() {
+        val detector = FacebookReelsDetector()
+        val context = ScreenContext(
+            packageName = "com.facebook.katana",
+            className = "com.facebook.katana.activity.FbMainTabActivity",
+            viewIds = setOf("com.facebook.katana:id/reel_viewer"),
+            visibleTexts = listOf("John Doe's story"),
+            contentDescriptions = listOf("Story"),
+            allNormalizedTokens = setOf("john", "doe", "story")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertFalse("Facebook 24h photo/status story must NEVER be blocked as a Reel!", result.isBlocked)
+    }
+
+    @Test
+    fun testInstagramHomeFeedVideoPostAllowed() {
+        val detector = InstagramReelsDetector()
+        // Feed post with inline video Litho components (clips_video, clips_media_component) on main feed
+        val context = ScreenContext(
+            packageName = "com.instagram.android",
+            className = "com.instagram.mainactivity.MainActivity",
+            viewIds = setOf(
+                "com.instagram.android:id/feed_recycler",
+                "com.instagram.android:id/main_feed",
+                "com.instagram.android:id/clips_video_container"
+            ),
+            visibleTexts = listOf("Friend's Birthday Celebration!"),
+            contentDescriptions = listOf("Like", "Comment", "Share"),
+            allNormalizedTokens = setOf("friend", "birthday", "celebration")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertFalse("Instagram Home Feed video posts must NEVER be blocked!", result.isBlocked)
     }
 }

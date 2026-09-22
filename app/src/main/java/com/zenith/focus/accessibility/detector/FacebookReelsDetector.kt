@@ -11,8 +11,7 @@ class FacebookReelsDetector : ContentDetector {
     companion object {
         val FACEBOOK_PACKAGES = setOf(
             "com.facebook.katana",
-            "com.facebook.lite",
-            "com.facebook.orca"
+            "com.facebook.lite"
         )
     }
 
@@ -28,31 +27,12 @@ class FacebookReelsDetector : ContentDetector {
         var confidence = 0.0f
         val reasons = mutableListOf<String>()
 
-        // Messenger / Direct Chats immunity - ALWAYS ALLOWED
-        val isMessenger = context.packageName.equals("com.facebook.orca", ignoreCase = true)
-        if (isMessenger && context.hasAnyViewId(
-                "thread_view",
-                "message_list",
-                "messages_list",
-                "composer",
-                "composer_text_view",
-                "text_input_bar",
-                "thread_title",
-                "orca_chat_thread_view_root",
-                "direct_inbox",
-                "thread_list"
-            )
-        ) {
-            return DetectionResult.allowed(ContentCategory.FACEBOOK_REELS, "Messenger active chat or inbox immune")
-        }
-
-        // Signal 1: Fullscreen Reels container or view hierarchy
+        // Signal 1: Fullscreen Reels container or view hierarchy (excludes ambiguous 24h story viewers like reel_viewer)
         if (context.hasAnyViewId(
                 "reel_fullscreen_view",
                 "fb_shorts_container",
                 "reels_tab_container",
                 "reels_video_player",
-                "reel_viewer",
                 "fb_shorts_viewer",
                 "reels_page_container",
                 "reels_fragment"

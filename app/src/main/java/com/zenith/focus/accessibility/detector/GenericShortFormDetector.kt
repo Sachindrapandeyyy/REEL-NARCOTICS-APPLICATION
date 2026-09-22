@@ -9,6 +9,18 @@ class GenericShortFormDetector : ContentDetector {
     override val version = "1.1.0"
 
     companion object {
+        private val SPECIALIZED_PACKAGES = setOf(
+            "com.google.android.youtube",
+            "com.instagram.android",
+            "com.facebook.katana",
+            "com.facebook.lite",
+            "com.facebook.orca",
+            "com.snapchat.android",
+            "com.zhiliaoapp.musically",
+            "com.ss.android.ugc.trill",
+            "com.zhiliaoapp.musically.go"
+        )
+
         private val EXCLUDED_PACKAGE_PREFIXES = listOf(
             "com.google.android.googlequicksearchbox",
             "com.google.android.apps.messaging",
@@ -32,6 +44,11 @@ class GenericShortFormDetector : ContentDetector {
 
     override fun canHandle(packageName: String): Boolean {
         val pkg = packageName.lowercase(java.util.Locale.US)
+
+        // Never inspect packages that have dedicated specialized detectors
+        if (SPECIALIZED_PACKAGES.contains(pkg)) {
+            return false
+        }
         
         // Never inspect our own app, launchers, or system UI
         if (pkg.contains("zenith") || pkg.contains("launcher") || pkg.contains("systemui")) {

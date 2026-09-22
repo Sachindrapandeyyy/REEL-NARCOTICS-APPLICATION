@@ -31,14 +31,16 @@ class DetectionEngine(context: Context) {
     fun evaluate(screenContext: ScreenContext, config: ProtectionConfig): DetectionResult {
         val pkg = screenContext.packageName
 
-        // Check app-specific detectors first
+        // Check app-specific specialized detectors first (Specialized Authority Model)
         for (detector in detectors) {
-            if (detector.canHandle(pkg)) {
-                val result = detector.evaluate(screenContext, config)
-                if (result.isBlocked) {
-                    return result
-                }
+            if (detector !is GenericShortFormDetector && detector.canHandle(pkg)) {
+                return detector.evaluate(screenContext, config)
             }
+        }
+
+        // Only fallback to generic detector if no specialized detector handled this app
+        if (genericShortFormDetector.canHandle(pkg)) {
+            return genericShortFormDetector.evaluate(screenContext, config)
         }
 
         return DetectionResult.allowed(ContentCategory.OTHER_SHORT_VIDEO, "Screen verified clean")

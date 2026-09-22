@@ -11,16 +11,12 @@ class InstagramReelsDetector : ContentDetector {
     companion object {
         const val PACKAGE_INSTAGRAM = "com.instagram.android"
 
-        // Active full-screen Reels viewer containers (Clips player only; does NOT match 24h Stories or Explore grid)
+        // Active full-screen Reels viewer containers (Dedicated fullscreen viewer only; does NOT match inline feed video posts or 24h Stories)
         val ACTIVE_REELS_VIEWER_IDS = listOf(
             "clips_viewer_view_pager",
-            "clips_video_container",
-            "clips_swipe_refresh_layout",
-            "reel_viewer_clips_item",
             "clips_viewer_container",
-            "clips_root",
-            "clips_pager",
-            "clips_media_component"
+            "clips_swipe_refresh_layout",
+            "reel_viewer_clips_item"
         )
     }
 
@@ -40,9 +36,9 @@ class InstagramReelsDetector : ContentDetector {
 
         val isReelsViewerActive = ACTIVE_REELS_VIEWER_IDS.any { context.hasViewId(it) } ||
             context.viewIds.any { id ->
-                id.contains("clips_viewer", ignoreCase = true) ||
-                id.contains("clips_video", ignoreCase = true) ||
-                id.contains("reel_viewer_clips", ignoreCase = true)
+                id.contains("clips_viewer_view_pager", ignoreCase = true) ||
+                id.contains("clips_viewer_container", ignoreCase = true) ||
+                id.contains("reel_viewer_clips_item", ignoreCase = true)
             }
 
         // Signal 2: Reels bottom navigation tab selected or active
