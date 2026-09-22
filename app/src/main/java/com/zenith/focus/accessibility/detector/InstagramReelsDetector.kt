@@ -6,7 +6,7 @@ import com.zenith.focus.domain.model.ProtectionConfig
 
 class InstagramReelsDetector : ContentDetector {
     override val name = "InstagramReelsDetector"
-    override val version = "2.1.0-SURGICAL"
+    override val version = "2.2.0-SURGICAL"
 
     companion object {
         const val PACKAGE_INSTAGRAM = "com.instagram.android"
@@ -16,7 +16,15 @@ class InstagramReelsDetector : ContentDetector {
             "clips_viewer_view_pager",
             "clips_video_container",
             "clips_swipe_refresh_layout",
-            "reel_viewer_clips_item"
+            "reel_viewer_clips_item",
+            "clips_viewer_container",
+            "clips_root",
+            "clips_pager",
+            "reel_viewer",
+            "reel_viewer_root",
+            "clips_item",
+            "clips_item_container",
+            "clips_media_component"
         )
     }
 
@@ -34,17 +42,31 @@ class InstagramReelsDetector : ContentDetector {
             return DetectionResult.allowed(ContentCategory.INSTAGRAM_REELS, "Direct messages active")
         }
 
-        val isReelsViewerActive = ACTIVE_REELS_VIEWER_IDS.any { context.hasViewId(it) }
+        val isReelsViewerActive = ACTIVE_REELS_VIEWER_IDS.any { context.hasViewId(it) } ||
+            context.viewIds.any { id ->
+                id.contains("clips_viewer", ignoreCase = true) ||
+                id.contains("clips_video", ignoreCase = true) ||
+                id.contains("reel_viewer_clips", ignoreCase = true)
+            }
 
-        // 2. Search / Explore / Profile - ALLOWED unless full-screen Reels viewer is opened
+        // Signal 2: Reels bottom navigation tab selected or active
+        val isReelsTabSelected = context.hasSelectedDesc("Reels") ||
+            context.hasSelectedText("Reels") ||
+            context.hasContentDescription("Reels, selected") ||
+            context.hasContentDescription("Reels tab, selected") ||
+            context.hasContentDescription("selected, Reels") ||
+            context.hasContentDescription("Reels, tab 4 of 5, selected") ||
+            context.contentDescriptions.any { it.contains("Reels", ignoreCase = true) && it.contains("selected", ignoreCase = true) }
+
+        // 2. Search / Explore / Profile - ALLOWED unless full-screen Reels viewer or Reels tab is opened
         val isSearchOrExplore = context.hasAnyViewId("action_bar_search_edit_text", "search_tab", "explore_tab")
-        if (isSearchOrExplore && !isReelsViewerActive) {
+        if (isSearchOrExplore && !isReelsViewerActive && !isReelsTabSelected) {
             return DetectionResult.allowed(ContentCategory.INSTAGRAM_REELS, "Instagram search/explore active")
         }
 
-        // 3. Normal Feed - ALLOWED unless full-screen viewer is opened
+        // 3. Normal Feed - ALLOWED unless full-screen viewer or Reels tab is opened
         val isNormalFeed = context.hasAnyViewId("feed_recycler", "main_feed", "sticky_header_list")
-        if (isNormalFeed && !isReelsViewerActive) {
+        if (isNormalFeed && !isReelsViewerActive && !isReelsTabSelected) {
             return DetectionResult.allowed(ContentCategory.INSTAGRAM_REELS, "Instagram home feed active")
         }
 
@@ -57,13 +79,6 @@ class InstagramReelsDetector : ContentDetector {
             reasons.add("Instagram full-screen clips viewer active")
         }
 
-        // Signal 2: Reels bottom navigation tab selected or active
-        val isReelsTabSelected = context.hasSelectedDesc("Reels") ||
-                context.hasSelectedText("Reels") ||
-                context.hasContentDescription("Reels, selected") ||
-                context.hasContentDescription("Reels tab, selected") ||
-                context.hasContentDescription("selected, Reels") ||
-                context.hasContentDescription("Reels, tab 4 of 5, selected")
         if (isReelsTabSelected) {
             confidence = maxOf(confidence, 0.95f)
             reasons.add("Reels tab actively selected in navigation")

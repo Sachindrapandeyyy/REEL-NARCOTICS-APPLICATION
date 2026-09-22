@@ -33,6 +33,9 @@ class ZenithAccessibilityService : AccessibilityService() {
     private var lastEventTime = 0L
     private var lastPackageName = ""
     private var lastEjectTime = 0L
+    private var lastBlockedPkg = ""
+    private var consecutiveBlockCount = 0
+    private var lastBlockTimestamp = 0L
 
     companion object {
         private const val FAST_DEBOUNCE_MS = 60L
@@ -239,10 +242,20 @@ class ZenithAccessibilityService : AccessibilityService() {
             }
             lastEjectTime = now
 
+            val isDedicatedTab = result.reason.contains("tab actively selected", ignoreCase = true)
+
+            if (now - lastBlockTimestamp < 1500L && targetPkg == lastBlockedPkg) {
+                consecutiveBlockCount++
+            } else {
+                consecutiveBlockCount = 1
+            }
+            lastBlockTimestamp = now
+            lastBlockedPkg = targetPkg
+
             // 1. PHYSICAL HAPTIC SHOCK
             triggerHapticAlert()
 
-            // 2. SURGICAL SHORT CLOSE: Close only the active short/reel without killing host app
+            // 2. SURGICAL SHORT CLOSE OR INSTANT HOME EJECTION
             withContext(Dispatchers.Main) {
                 if (result.category == ContentCategory.ADULT_WEBSITE || result.category == ContentCategory.ADULT_KEYWORD) {
                     ejectToHomeScreen()
@@ -252,7 +265,14 @@ class ZenithAccessibilityService : AccessibilityService() {
                         Toast.LENGTH_SHORT
                     ).show()
                 } else {
-                    closeActiveShortsOrReel()
+                    // If user is directly on the dedicated Shorts/Reels tab, BACK will not escape the tab.
+                    // Or if consecutive BACK attempts failed to close the player, eject to Home Screen immediately.
+                    if (isDedicatedTab || consecutiveBlockCount >= 2) {
+                        ejectToHomeScreen()
+                    } else {
+                        closeActiveShortsOrReel()
+                    }
+
                     val isBedtime = habitConfig.isBedtimeActive(now)
                     val feedbackText = when {
                         isNuclear -> "☢️ NUCLEAR LOCK: Reel/Short closed."

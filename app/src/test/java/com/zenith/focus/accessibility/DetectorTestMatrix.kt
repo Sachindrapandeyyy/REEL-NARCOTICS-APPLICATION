@@ -164,6 +164,64 @@ class DetectorTestMatrix {
         assertFalse("Home tab with unselected Shorts tab in pivot bar should NOT be blocked", result.isBlocked)
     }
 
+    @Test
+    fun testYouTubeShortsWithReelItemChildLayoutsBlocked() {
+        val detector = YouTubeShortsDetector()
+        // Scenario: Short is playing inside reel_recycler, and child items contain "reel_item".
+        // Must be blocked and NOT misclassified as shelf!
+        val context = ScreenContext(
+            packageName = "com.google.android.youtube",
+            className = "android.widget.FrameLayout",
+            viewIds = setOf(
+                "com.google.android.youtube:id/reel_recycler",
+                "com.google.android.youtube:id/reel_item_holder_layout",
+                "com.google.android.youtube:id/reel_player_page_view"
+            ),
+            visibleTexts = listOf("Viral Short #shorts"),
+            contentDescriptions = listOf("Shorts video player", "Dislike this short", "Remix this Short"),
+            allNormalizedTokens = setOf("viral", "short", "shorts", "remix")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertTrue("Active Short playing in reel_recycler must be blocked even if reel_item child views exist", result.isBlocked)
+        assertEquals(ContentCategory.YOUTUBE_SHORTS, result.category)
+        assertEquals(1.0f, result.confidence, 0.01f)
+    }
+
+    @Test
+    fun testYouTubeShortsTabSelectedWithoutPivotBarBlocked() {
+        val detector = YouTubeShortsDetector()
+        // Scenario: Navigation bar ID is not pivot_bar (e.g. custom or obfuscated), but Shorts tab is selected
+        val context = ScreenContext(
+            packageName = "com.google.android.youtube",
+            className = "android.widget.FrameLayout",
+            viewIds = setOf("com.google.android.youtube:id/bottom_navigation_bar"),
+            visibleTexts = listOf("Home", "Shorts", "Subscriptions"),
+            contentDescriptions = listOf("Home", "Shorts", "Subscriptions"),
+            allNormalizedTokens = setOf("home", "shorts", "subscriptions"),
+            selectedDescriptions = setOf("Shorts")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertTrue("Selected Shorts tab without pivot_bar view ID must trigger instant block", result.isBlocked)
+        assertEquals(1.0f, result.confidence, 0.01f)
+    }
+
+    @Test
+    fun testYouTubeShortsTabSelectedViaContentDescriptionBlocked() {
+        val detector = YouTubeShortsDetector()
+        // Scenario: Bottom tab has accessibility description indicating selected state
+        val context = ScreenContext(
+            packageName = "com.google.android.youtube",
+            className = "android.widget.FrameLayout",
+            viewIds = setOf("com.google.android.youtube:id/navigation_bar"),
+            visibleTexts = listOf("Home", "Shorts"),
+            contentDescriptions = listOf("Shorts, tab 2 of 5, selected"),
+            allNormalizedTokens = setOf("home", "shorts", "selected")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertTrue("Shorts tab indicated via content description must be blocked", result.isBlocked)
+        assertEquals(1.0f, result.confidence, 0.01f)
+    }
+
     // 2. Instagram Reels Matrix
     @Test
     fun testInstagramFeedAllowed() {
@@ -210,6 +268,40 @@ class DetectorTestMatrix {
         assertTrue(result.isBlocked)
         assertEquals(ContentCategory.INSTAGRAM_REELS, result.category)
         assertTrue(result.confidence >= 0.70f)
+    }
+
+    @Test
+    fun testInstagramClipsContainerBlocked() {
+        val detector = InstagramReelsDetector()
+        val context = ScreenContext(
+            packageName = "com.instagram.android",
+            className = "com.instagram.modal.ModalActivity",
+            viewIds = setOf("com.instagram.android:id/clips_viewer_container", "com.instagram.android:id/clips_item"),
+            visibleTexts = listOf("Watch more Reels"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("reels")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertTrue("Clips container must be blocked", result.isBlocked)
+        assertEquals(ContentCategory.INSTAGRAM_REELS, result.category)
+        assertEquals(1.0f, result.confidence, 0.01f)
+    }
+
+    @Test
+    fun testInstagramReelsTabSelectedBlocked() {
+        val detector = InstagramReelsDetector()
+        val context = ScreenContext(
+            packageName = "com.instagram.android",
+            className = "com.instagram.mainactivity.MainActivity",
+            viewIds = setOf("com.instagram.android:id/tab_bar"),
+            visibleTexts = emptyList(),
+            contentDescriptions = listOf("Home", "Search", "Create", "Reels, tab 4 of 5, selected", "Profile"),
+            allNormalizedTokens = setOf("reels")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertTrue("Reels tab actively selected must be blocked", result.isBlocked)
+        assertEquals(ContentCategory.INSTAGRAM_REELS, result.category)
+        assertTrue(result.confidence >= 0.95f)
     }
 
     // 3. Snapchat Spotlight Matrix

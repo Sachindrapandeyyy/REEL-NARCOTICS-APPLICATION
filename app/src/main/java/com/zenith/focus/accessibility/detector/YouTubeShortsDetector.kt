@@ -6,13 +6,14 @@ import com.zenith.focus.domain.model.ProtectionConfig
 
 class YouTubeShortsDetector : ContentDetector {
     override val name = "YouTubeShortsDetector"
-    override val version = "2.1.0-SURGICAL"
+    override val version = "2.2.0-SURGICAL"
 
     companion object {
         const val PACKAGE_YOUTUBE = "com.google.android.youtube"
 
         // Full-screen dedicated player containers that only exist when a Short is actively open & playing
         val ACTIVE_SHORTS_PLAYER_IDS = listOf(
+            "reel_recycler",
             "reel_watch_fragment_root",
             "reel_player_page_container",
             "reel_player_page_content",
@@ -25,7 +26,14 @@ class YouTubeShortsDetector : ContentDetector {
             "reel_player_footer_container",
             "reel_watch_refresher",
             "reel_player_page_view",
-            "reel_view_pager"
+            "reel_view_pager",
+            "shorts_container",
+            "shorts_player_fragment",
+            "shorts_player",
+            "reel_container",
+            "reel_player_fragment",
+            "reel_layout",
+            "reel_pager"
         )
 
         // Shelf / preview IDs that appear in search results or home feed (MUST NEVER BLOCK)
@@ -33,7 +41,6 @@ class YouTubeShortsDetector : ContentDetector {
             "reel_shelf",
             "reel_shelf_header",
             "reel_shelf_root",
-            "reel_item",
             "reel_carousel"
         )
     }
@@ -73,10 +80,32 @@ class YouTubeShortsDetector : ContentDetector {
             return DetectionResult.allowed(ContentCategory.YOUTUBE_SHORTS, "Normal YouTube long video")
         }
 
-        // 4. Check if this is merely an inline thumbnail shelf/carousel on feed or search
+        // 4. Check Shorts tab explicitly selected in navigation bar (independent of specific pivot bar ID)
+        val isShortsTabSelected = context.hasSelectedDesc("Shorts") ||
+            context.hasSelectedText("Shorts") ||
+            context.hasContentDescription("Shorts, selected") ||
+            context.hasContentDescription("Shorts tab, selected") ||
+            context.hasContentDescription("selected, Shorts") ||
+            context.contentDescriptions.any { it.startsWith("Shorts", ignoreCase = true) && it.contains("selected", ignoreCase = true) }
+
+        // 5. Check active Shorts player UI controls (Only present in active full-screen player)
+        val hasShortsControls = context.hasContentDescription("Dislike this short") ||
+            context.hasContentDescription("Dislike this video") ||
+            context.hasContentDescription("Remix this Short") ||
+            context.hasContentDescription("Remix") ||
+            context.hasContentDescription("Shorts video player") ||
+            context.hasContentDescription("Sound used in this short") ||
+            context.hasContentDescription("Show sound details") ||
+            context.hasContentDescription("Create with this sound") ||
+            context.hasContentDescription("Pause short") ||
+            context.hasContentDescription("Play short") ||
+            context.hasContentDescription("Share this short")
+
+        // 6. Check if this is merely an inline thumbnail shelf/carousel on feed or search
+        // Must NEVER exempt if an active player container, Shorts tab, or player controls are present
         val hasShelfOnly = context.viewIds.any { id ->
             SHELF_PREVIEW_KEYWORDS.any { keyword -> id.contains(keyword, ignoreCase = true) }
-        } && matchedPlayerId == null
+        } && matchedPlayerId == null && !isShortsTabSelected && !hasShortsControls
         if (hasShelfOnly) {
             return DetectionResult.allowed(ContentCategory.YOUTUBE_SHORTS, "Shorts thumbnail shelf on feed (not opened)")
         }
@@ -91,18 +120,13 @@ class YouTubeShortsDetector : ContentDetector {
         }
 
         // Signal 2: Shorts tab explicitly selected in bottom navigation bar
-        if (context.hasViewId("pivot_bar")) {
-            if (context.hasSelectedDesc("Shorts") || context.hasSelectedText("Shorts")) {
-                confidence = 1.0f
-                reasons.add("Shorts tab actively selected in navigation bar")
-            }
+        if (isShortsTabSelected) {
+            confidence = 1.0f
+            reasons.add("Shorts tab actively selected in navigation bar")
         }
 
         // Signal 3: Active Shorts player UI controls (Only present in active full-screen player)
-        if (context.hasContentDescription("Dislike this short") ||
-            context.hasContentDescription("Remix this Short") ||
-            context.hasContentDescription("Shorts video player")
-        ) {
+        if (hasShortsControls) {
             // Only consider player actions if not on normal watch or search
             if (!isSearchActive && !isNormalWatchPlayer) {
                 confidence = maxOf(confidence, 0.95f)
