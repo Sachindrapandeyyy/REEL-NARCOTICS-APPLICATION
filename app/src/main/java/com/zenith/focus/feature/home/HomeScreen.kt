@@ -73,7 +73,7 @@ import java.util.Locale
 fun HomeScreen(
     nuclearSession: NuclearSession,
     lockState: LockState,
-    @Suppress("UNUSED_PARAMETER") config: ProtectionConfig,
+    config: ProtectionConfig,
     isServiceConnected: Boolean = true,
     isDeviceAdminActive: Boolean = true,
     todayTotalBlocks: Int,
@@ -794,26 +794,26 @@ fun HomeScreen(
                 val isShortsEnforced = if (isNuclearActive) {
                     nuclearSession.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.YOUTUBE_SHORTS)
                 } else if (isRegularLocked) {
-                    lockState.enabledCategories.isEmpty() || lockState.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.YOUTUBE_SHORTS)
+                    config.blockYouTubeShorts && (lockState.enabledCategories.isEmpty() || lockState.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.YOUTUBE_SHORTS))
                 } else false
 
                 val isReelsEnforced = if (isNuclearActive) {
                     nuclearSession.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.INSTAGRAM_REELS)
                 } else if (isRegularLocked) {
-                    lockState.enabledCategories.isEmpty() || lockState.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.INSTAGRAM_REELS)
+                    config.blockInstagramReels && (lockState.enabledCategories.isEmpty() || lockState.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.INSTAGRAM_REELS))
                 } else false
 
                 val isFacebookEnforced = if (isNuclearActive) {
                     nuclearSession.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.FACEBOOK_REELS)
                 } else if (isRegularLocked) {
-                    lockState.enabledCategories.isEmpty() || lockState.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.FACEBOOK_REELS)
+                    config.blockFacebookReels && (lockState.enabledCategories.isEmpty() || lockState.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.FACEBOOK_REELS))
                 } else false
 
                 val isAdultEnforced = if (isNuclearActive) {
                     nuclearSession.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.ADULT_WEBSITE) ||
                     nuclearSession.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.ADULT_KEYWORD)
                 } else if (isRegularLocked) {
-                    lockState.enabledCategories.isEmpty() || lockState.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.ADULT_WEBSITE)
+                    (config.blockAdultWebsites || config.blockAdultKeywords) && (lockState.enabledCategories.isEmpty() || lockState.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.ADULT_WEBSITE))
                 } else false
 
                 ProtectionItemRow(name = "YouTube Shorts", count = todayShortsBlocks, isEnforced = isShortsEnforced)

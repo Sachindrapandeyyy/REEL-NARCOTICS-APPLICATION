@@ -9,7 +9,7 @@ data class LockState(
     val timeZoneId: String = TimeZone.getDefault().id,
     val mode: LockMode = LockMode.QUICK,
     val label: String = "Focus Lock",
-    val enabledCategories: Set<ContentCategory> = ContentCategory.values().toSet()
+    val enabledCategories: Set<ContentCategory> = emptySet()
 ) {
     fun isCurrentlyActive(nowMillis: Long = System.currentTimeMillis()): Boolean {
         return isActive && nowMillis < endTimeMillis

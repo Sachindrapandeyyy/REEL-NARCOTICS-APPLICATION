@@ -45,11 +45,8 @@ object NuclearProtectionPolicy {
             if (result.category == ContentCategory.SYSTEM_TAMPER) {
                 return true
             }
-            return if (lockState.enabledCategories.isNotEmpty()) {
-                lockState.enabledCategories.contains(result.category)
-            } else {
-                config.isCategoryBlocked(result.category)
-            }
+            val isAllowedBySession = lockState.enabledCategories.isEmpty() || lockState.enabledCategories.contains(result.category)
+            return isAllowedBySession && config.isCategoryBlocked(result.category)
         }
 
         // PRIORITY 3: BEDTIME SLEEP SHIELD (Overnight auto-focus lock: enforces user's configured shields)
