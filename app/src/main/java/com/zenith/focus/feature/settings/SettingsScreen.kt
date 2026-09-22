@@ -410,8 +410,8 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .border(
-                    width = if (habitConfig.isBedtimeActive()) 1.5.dp else 1.dp,
-                    color = if (habitConfig.isBedtimeActive()) earth.error else earth.border,
+                    width = if (habitConfig.bedtimeShieldEnabled && habitConfig.isBedtimeActive()) 1.5.dp else 1.dp,
+                    color = if (habitConfig.bedtimeShieldEnabled && habitConfig.isBedtimeActive()) earth.error else earth.border,
                     shape = RoundedCornerShape(18.dp)
                 )
         ) {
@@ -482,17 +482,18 @@ fun SettingsScreen(
                             )
                         }
 
+                        val isBedtimeActiveNow = habitConfig.bedtimeShieldEnabled && habitConfig.isBedtimeActive()
                         Surface(
                             shape = RoundedCornerShape(8.dp),
                             color = when {
-                                habitConfig.isBedtimeActive() -> earth.error.copy(alpha = 0.15f)
+                                isBedtimeActiveNow -> earth.error.copy(alpha = 0.15f)
                                 habitConfig.bedtimeShieldEnabled -> earth.forestGreen.copy(alpha = 0.15f)
                                 else -> earth.surfaceSoft
                             },
                             modifier = Modifier.border(
                                 width = 1.dp,
                                 color = when {
-                                    habitConfig.isBedtimeActive() -> earth.error
+                                    isBedtimeActiveNow -> earth.error
                                     habitConfig.bedtimeShieldEnabled -> earth.forestGreen
                                     else -> earth.border
                                 },
@@ -501,12 +502,12 @@ fun SettingsScreen(
                         ) {
                             Text(
                                 text = when {
-                                    habitConfig.isBedtimeActive() -> "🌙 ACTIVE NOW (Locked)"
+                                    isBedtimeActiveNow -> "🌙 ACTIVE NOW (Locked)"
                                     habitConfig.bedtimeShieldEnabled -> "ARMED FOR 11:00 PM"
                                     else -> "DISABLED"
                                 },
                                 color = when {
-                                    habitConfig.isBedtimeActive() -> earth.error
+                                    isBedtimeActiveNow -> earth.error
                                     habitConfig.bedtimeShieldEnabled -> earth.forestGreen
                                     else -> earth.textMuted
                                 },

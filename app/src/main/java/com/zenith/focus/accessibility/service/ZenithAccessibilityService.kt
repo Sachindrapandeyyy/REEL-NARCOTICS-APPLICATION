@@ -294,7 +294,7 @@ class ZenithAccessibilityService : AccessibilityService() {
                         closeActiveShortsOrReel()
                     }
 
-                    val isBedtime = habitConfig.isBedtimeActive(now)
+                    val isBedtime = habitConfig.bedtimeShieldEnabled && habitConfig.isBedtimeActive(now)
                     val feedbackText = when {
                         isNuclear -> "☢️ NUCLEAR LOCK: Reel/Short closed."
                         lockState.isCurrentlyActive(now) -> "🔒 FOCUS LOCK: Reel/Short closed."

@@ -132,6 +132,57 @@ class HabitConfigTest {
         assertFalse(shouldNotBlock)
     }
 
+    @Test
+    fun testBedtimeShieldDisabledNeverBlocksEvenAtMidnight() {
+        val disabledBedtimeHabits = HabitConfig(
+            bedtimeShieldEnabled = false,
+            bedtimeStartHour = 23,
+            bedtimeEndHour = 6
+        )
+
+        val reelResult = DetectionResult(
+            isBlocked = true,
+            confidence = 1.0f,
+            category = ContentCategory.INSTAGRAM_REELS,
+            ruleId = "rule_test",
+            reason = "Test reel match"
+        )
+
+        // Midnight hours: 23:30, 01:15, 04:00, 06:00
+        val testHours = listOf(
+            Pair(23, 30),
+            Pair(0, 30),
+            Pair(1, 15),
+            Pair(4, 0),
+            Pair(6, 0)
+        )
+
+        for ((hour, min) in testHours) {
+            val ts = createTimestamp(hour = hour, minute = min)
+            assertFalse("isBedtimeActive must be false at $hour:$min when disabled", disabledBedtimeHabits.isBedtimeActive(ts))
+
+            val shouldBlock = NuclearProtectionPolicy.shouldBlock(
+                result = reelResult,
+                nuclearSession = NuclearSession(), // inactive
+                lockState = LockState(), // inactive
+                config = ProtectionConfig(),
+                nowWallClock = ts,
+                nowElapsedRealtime = 60000L,
+                habitConfig = disabledBedtimeHabits
+            )
+            assertFalse("NuclearProtectionPolicy must NEVER block at $hour:$min when Bedtime Shield is disabled", shouldBlock)
+        }
+    }
+
+    @Test
+    fun testBedtimeShieldDisabledAcross24Hours() {
+        val disabledHabits = HabitConfig(bedtimeShieldEnabled = false)
+        for (h in 0..23) {
+            val ts = createTimestamp(hour = h, minute = 0)
+            assertFalse("isBedtimeActive must be false for hour $h when disabled", disabledHabits.isBedtimeActive(ts))
+        }
+    }
+
     private fun createTimestamp(hour: Int, minute: Int): Long {
         return Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, hour)

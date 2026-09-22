@@ -24,6 +24,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
+import kotlinx.coroutines.flow.catch
+
 private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "zenith_settings_preferences")
 
 class SettingsRepositoryImpl(
@@ -82,12 +84,15 @@ class SettingsRepositoryImpl(
 
     init {
         externalScope.launch {
-            loadSettings()
+            context.settingsDataStore.data
+                .catch { emit(androidx.datastore.preferences.core.emptyPreferences()) }
+                .collect { prefs ->
+                    loadSettingsFromPrefs(prefs)
+                }
         }
     }
 
-    private suspend fun loadSettings() {
-        val prefs = context.settingsDataStore.data.first()
+    private fun loadSettingsFromPrefs(prefs: Preferences) {
         val friction = runCatching {
             FrictionType.valueOf(prefs[KEY_FRICTION_TYPE] ?: FrictionType.HOLD_BUTTON.name)
         }.getOrDefault(FrictionType.HOLD_BUTTON)
@@ -147,24 +152,28 @@ class SettingsRepositoryImpl(
     }
 
     override suspend fun updateProtectionConfig(config: ProtectionConfig) {
-        context.settingsDataStore.edit { prefs ->
-            prefs[KEY_BLOCK_SHORTS] = config.blockYouTubeShorts
-            prefs[KEY_BLOCK_REELS] = config.blockInstagramReels
-            prefs[KEY_BLOCK_SPOTLIGHT] = config.blockSnapchatSpotlight
-            prefs[KEY_BLOCK_FB_REELS] = config.blockFacebookReels
-            prefs[KEY_BLOCK_TIKTOK] = config.blockTikTok
-            prefs[KEY_BLOCK_OTHER] = config.blockOtherShortVideo
-            prefs[KEY_BLOCK_ADULT_SITES] = config.blockAdultWebsites
-            prefs[KEY_BLOCK_ADULT_KEYWORDS] = config.blockAdultKeywords
-            prefs[KEY_BROWSER_PROTECTION] = config.browserProtectionEnabled
-            prefs[KEY_STRICT_MODE] = config.strictMode
-            prefs[KEY_NUCLEAR_MODE] = config.nuclearMode
-            prefs[KEY_FRICTION_TYPE] = config.frictionType.name
-            prefs[KEY_UNLOCK_PHRASE] = config.unlockPhrase
-            prefs[KEY_PIN_HASH] = config.pinHash
-            prefs[KEY_PIN_SALT] = config.pinSalt
-        }
         _protectionConfig.value = config
+        externalScope.launch {
+            runCatching {
+                context.settingsDataStore.edit { prefs ->
+                    prefs[KEY_BLOCK_SHORTS] = config.blockYouTubeShorts
+                    prefs[KEY_BLOCK_REELS] = config.blockInstagramReels
+                    prefs[KEY_BLOCK_SPOTLIGHT] = config.blockSnapchatSpotlight
+                    prefs[KEY_BLOCK_FB_REELS] = config.blockFacebookReels
+                    prefs[KEY_BLOCK_TIKTOK] = config.blockTikTok
+                    prefs[KEY_BLOCK_OTHER] = config.blockOtherShortVideo
+                    prefs[KEY_BLOCK_ADULT_SITES] = config.blockAdultWebsites
+                    prefs[KEY_BLOCK_ADULT_KEYWORDS] = config.blockAdultKeywords
+                    prefs[KEY_BROWSER_PROTECTION] = config.browserProtectionEnabled
+                    prefs[KEY_STRICT_MODE] = config.strictMode
+                    prefs[KEY_NUCLEAR_MODE] = config.nuclearMode
+                    prefs[KEY_FRICTION_TYPE] = config.frictionType.name
+                    prefs[KEY_UNLOCK_PHRASE] = config.unlockPhrase
+                    prefs[KEY_PIN_HASH] = config.pinHash
+                    prefs[KEY_PIN_SALT] = config.pinSalt
+                }
+            }
+        }
     }
 
     override suspend fun setStrictMode(enabled: Boolean) {
@@ -224,20 +233,26 @@ class SettingsRepositoryImpl(
     }
 
     override suspend fun updateHabitConfig(config: HabitConfig) {
-        context.settingsDataStore.edit { prefs ->
-            prefs[KEY_MORNING_PLEDGE_ENABLED] = config.morningPledgeEnabled
-            prefs[KEY_MORNING_PLEDGE_HOUR] = config.morningPledgeHour
-            prefs[KEY_MORNING_PLEDGE_MIN] = config.morningPledgeMinute
-            prefs[KEY_EVENING_SUMMARY_ENABLED] = config.eveningSummaryEnabled
-            prefs[KEY_EVENING_SUMMARY_HOUR] = config.eveningSummaryHour
-            prefs[KEY_EVENING_SUMMARY_MIN] = config.eveningSummaryMinute
-            prefs[KEY_BEDTIME_SHIELD_ENABLED] = config.bedtimeShieldEnabled
-            prefs[KEY_BEDTIME_START_HOUR] = config.bedtimeStartHour
-            prefs[KEY_BEDTIME_START_MIN] = config.bedtimeStartMinute
-            prefs[KEY_BEDTIME_END_HOUR] = config.bedtimeEndHour
-            prefs[KEY_BEDTIME_END_MIN] = config.bedtimeEndMinute
-        }
         _habitConfig.value = config
-        HabitNotificationScheduler.reschedule(context, config)
+        externalScope.launch {
+            runCatching {
+                context.settingsDataStore.edit { prefs ->
+                    prefs[KEY_MORNING_PLEDGE_ENABLED] = config.morningPledgeEnabled
+                    prefs[KEY_MORNING_PLEDGE_HOUR] = config.morningPledgeHour
+                    prefs[KEY_MORNING_PLEDGE_MIN] = config.morningPledgeMinute
+                    prefs[KEY_EVENING_SUMMARY_ENABLED] = config.eveningSummaryEnabled
+                    prefs[KEY_EVENING_SUMMARY_HOUR] = config.eveningSummaryHour
+                    prefs[KEY_EVENING_SUMMARY_MIN] = config.eveningSummaryMinute
+                    prefs[KEY_BEDTIME_SHIELD_ENABLED] = config.bedtimeShieldEnabled
+                    prefs[KEY_BEDTIME_START_HOUR] = config.bedtimeStartHour
+                    prefs[KEY_BEDTIME_START_MIN] = config.bedtimeStartMinute
+                    prefs[KEY_BEDTIME_END_HOUR] = config.bedtimeEndHour
+                    prefs[KEY_BEDTIME_END_MIN] = config.bedtimeEndMinute
+                }
+            }
+            runCatching {
+                HabitNotificationScheduler.reschedule(context, config)
+            }
+        }
     }
 }

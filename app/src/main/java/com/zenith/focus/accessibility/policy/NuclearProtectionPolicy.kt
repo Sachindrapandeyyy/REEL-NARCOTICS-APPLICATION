@@ -50,7 +50,7 @@ object NuclearProtectionPolicy {
         }
 
         // PRIORITY 3: BEDTIME SLEEP SHIELD (Overnight auto-focus lock: enforces user's configured shields)
-        if (habitConfig.isBedtimeActive(nowWallClock)) {
+        if (habitConfig.bedtimeShieldEnabled && habitConfig.isBedtimeActive(nowWallClock)) {
             if (result.category == ContentCategory.SYSTEM_TAMPER) {
                 return true
             }
