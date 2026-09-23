@@ -72,7 +72,8 @@ object NuclearProtectionPolicy {
             ContentCategory.OTHER_SHORT_VIDEO,
             ContentCategory.ADULT_WEBSITE,
             ContentCategory.ADULT_KEYWORD,
-            ContentCategory.SYSTEM_TAMPER -> true
+            ContentCategory.SYSTEM_TAMPER,
+            ContentCategory.APP_LOCK -> true
         }
     }
 }

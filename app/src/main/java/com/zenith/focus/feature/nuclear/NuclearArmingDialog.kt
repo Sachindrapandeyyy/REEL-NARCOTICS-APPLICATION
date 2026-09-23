@@ -66,6 +66,8 @@ import java.util.Locale
 
 @Composable
 fun NuclearArmingDialog(
+    nuclearAppsCount: Int = 0,
+    onManageApps: (() -> Unit)? = null,
     onDismiss: () -> Unit,
     onArmSession: (durationMillis: Long, enabledCategories: Set<ContentCategory>) -> Unit,
     onConfirmActivation: () -> Unit
@@ -602,6 +604,52 @@ fun NuclearArmingDialog(
                         )
                     }
 
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // APPS LOCKED DURING THIS SESSION PREVIEW
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinen),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, EarthBorderLinen, RoundedCornerShape(12.dp))
+                            .clickable(enabled = onManageApps != null) { onManageApps?.invoke() }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("📱", fontSize = 16.sp)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        text = "App Lock Shield",
+                                        color = EarthForestDark,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = if (nuclearAppsCount == 0) "No apps set for Nuclear Mode" else "$nuclearAppsCount installed apps locked",
+                                        color = EarthTextMuted,
+                                        fontSize = 10.5.sp
+                                    )
+                                }
+                            }
+                            if (onManageApps != null) {
+                                Text(
+                                    text = "Edit Apps ➔",
+                                    color = EarthForestGreen,
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+
                     if (!isAdminActive) {
                         Spacer(modifier = Modifier.height(14.dp))
                         Card(
@@ -752,6 +800,22 @@ fun NuclearArmingDialog(
                                 color = EarthTextDark,
                                 fontSize = 11.5.sp
                             )
+
+                            if (nuclearAppsCount > 0) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "LOCKED APPS ($nuclearAppsCount):",
+                                    color = EarthForestGreen,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Black
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "$nuclearAppsCount installed apps locked for this session",
+                                    color = EarthTextDark,
+                                    fontSize = 11.5.sp
+                                )
+                            }
                         }
                     }
 

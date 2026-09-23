@@ -2,6 +2,7 @@ package com.zenith.focus.feature.protection
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zenith.focus.core.designsystem.*
+import com.zenith.focus.domain.model.AppLockConfig
 import com.zenith.focus.domain.model.ContentCategory
 import com.zenith.focus.domain.model.ProtectionConfig
 import com.zenith.focus.domain.nuclear.NuclearSession
@@ -40,6 +42,8 @@ import java.util.Locale
 fun ProtectionScreen(
     nuclearSession: NuclearSession,
     config: ProtectionConfig,
+    appLockConfig: AppLockConfig = AppLockConfig(),
+    onNavigateAppLock: () -> Unit = {},
     onToggleCategory: (ContentCategory, Boolean) -> Unit,
     onToggleBrowserProtection: (Boolean) -> Unit,
     onToggleStrictMode: (Boolean) -> Unit
@@ -133,6 +137,94 @@ fun ProtectionScreen(
                     lineHeight = 17.sp,
                     modifier = Modifier.padding(top = 8.dp)
                 )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // APP LOCK & BLOCKER SHIELD CARD (OPAL / APPBLOCK STYLE)
+        Card(
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.5.dp, earth.forestGreen.copy(alpha = 0.6f), RoundedCornerShape(18.dp))
+                .clickable { onNavigateAppLock() }
+        ) {
+            Column(modifier = Modifier.padding(18.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "🛡️ APP LOCK SHIELD",
+                            color = earth.forestGreen,
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                if (appLockConfig.isAppLockEnabled) earth.forestGreen else earth.surface,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = if (appLockConfig.isAppLockEnabled) "ACTIVE" else "OFF",
+                            color = if (appLockConfig.isAppLockEnabled) Color.White else earth.textMuted,
+                            fontSize = 9.5.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Text(
+                    text = "Installed Apps & Games Blocker",
+                    color = earth.forestDark,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Serif
+                )
+
+                Text(
+                    text = "Lock specific apps permanently (24/7) or isolate them during active Nuclear Mode sessions.",
+                    color = earth.textMuted,
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp,
+                    modifier = Modifier.padding(top = 3.dp, bottom = 12.dp)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = if (appLockConfig.totalCount == 0) {
+                            "0 apps locked"
+                        } else {
+                            "${appLockConfig.totalCount} locked (${appLockConfig.permanentCount} Perm • ${appLockConfig.nuclearCount} Nuclear)"
+                        },
+                        color = earth.textPrimary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Text(
+                        text = "Manage Apps →",
+                        color = earth.forestGreen,
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
 

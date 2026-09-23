@@ -91,6 +91,7 @@ class MainActivity : ComponentActivity() {
         val nuclearRepo = container.nuclearModeRepository
         val settingsRepo = container.settingsRepository
         val statsRepo = container.statisticsRepository
+        val appLockRepo = container.appLockRepository
         val updateManager = container.updateManager
 
         checkAccessibilityStatus()
@@ -126,6 +127,7 @@ class MainActivity : ComponentActivity() {
                     val nuclearSession by nuclearRepo.session.collectAsState()
                     val config by settingsRepo.protectionConfig.collectAsState()
                     val habitConfig by settingsRepo.habitConfig.collectAsState()
+                    val appLockConfig by appLockRepo.appLockConfig.collectAsState()
                     val isServiceConnected by ServiceStateBroadcaster.isServiceConnected.collectAsState()
 
                     val context = LocalContext.current
@@ -151,6 +153,9 @@ class MainActivity : ComponentActivity() {
                     var showUnlockDialog by remember { mutableStateOf(false) }
                     var showNuclearArmingDialog by remember { mutableStateOf(false) }
                     var showNuclearExtendDialog by remember { mutableStateOf(false) }
+                    var showAppLockScreen by remember { mutableStateOf(false) }
+                    var showAppPickerDialog by remember { mutableStateOf(false) }
+                    var pickerInitialMode by remember { mutableStateOf(com.zenith.focus.domain.model.AppLockMode.NUCLEAR_ONLY) }
                     val updateState by updateManager.state.collectAsState()
                     var showGlobalUpdateDialog by remember { mutableStateOf(false) }
                     var canInstallPackages by remember { mutableStateOf(updateManager.canRequestPackageInstalls()) }
@@ -301,6 +306,8 @@ class MainActivity : ComponentActivity() {
                                     1 -> ProtectionScreen(
                                         nuclearSession = nuclearSession,
                                         config = config,
+                                        appLockConfig = appLockConfig,
+                                        onNavigateAppLock = { showAppLockScreen = true },
                                         onToggleCategory = { cat, blocked ->
                                             coroutineScope.launch { settingsRepo.updateCategory(cat, blocked) }
                                         },
@@ -397,6 +404,11 @@ class MainActivity : ComponentActivity() {
                                 // Nuclear Arming Flow Modal (Commitment Warning -> Duration -> 3s Hold to Activate)
                                 if (showNuclearArmingDialog) {
                                     NuclearArmingDialog(
+                                        nuclearAppsCount = appLockConfig.nuclearCount,
+                                        onManageApps = {
+                                            showNuclearArmingDialog = false
+                                            showAppLockScreen = true
+                                        },
                                         onDismiss = {
                                             coroutineScope.launch {
                                                 nuclearRepo.cancelArming()
@@ -447,6 +459,46 @@ class MainActivity : ComponentActivity() {
                                         onAcknowledge = {
                                             coroutineScope.launch {
                                                 nuclearRepo.acknowledgeCompletedSession()
+                                            }
+                                        }
+                                    )
+                                }
+
+                                // App Lock Shield Dashboard Screen Modal
+                                if (showAppLockScreen) {
+                                    androidx.activity.compose.BackHandler {
+                                        showAppLockScreen = false
+                                    }
+                                    com.zenith.focus.feature.applock.AppLockScreen(
+                                        appLockConfig = appLockConfig,
+                                        isNuclearActive = nuclearSession.isCurrentlyActive(),
+                                        onBackClicked = { showAppLockScreen = false },
+                                        onToggleAppLock = { enabled ->
+                                            coroutineScope.launch { appLockRepo.setAppLockEnabled(enabled) }
+                                        },
+                                        onAddAppsClicked = {
+                                            pickerInitialMode = com.zenith.focus.domain.model.AppLockMode.NUCLEAR_ONLY
+                                            showAppPickerDialog = true
+                                        },
+                                        onUpdateMode = { pkg, mode ->
+                                            coroutineScope.launch { appLockRepo.updateAppLockMode(pkg, mode) }
+                                        },
+                                        onUnlockApp = { pkg ->
+                                            coroutineScope.launch { appLockRepo.unlockApp(pkg) }
+                                        }
+                                    )
+                                }
+
+                                // App Picker Dialog
+                                if (showAppPickerDialog) {
+                                    com.zenith.focus.feature.applock.AppPickerDialog(
+                                        appLockRepository = appLockRepo,
+                                        initialMode = pickerInitialMode,
+                                        onDismiss = { showAppPickerDialog = false },
+                                        onAppsSelected = { apps, mode ->
+                                            coroutineScope.launch {
+                                                appLockRepo.lockApps(apps, mode)
+                                                showAppPickerDialog = false
                                             }
                                         }
                                     )

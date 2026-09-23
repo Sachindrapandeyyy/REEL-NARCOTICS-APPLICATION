@@ -37,4 +37,8 @@ class ZenithAppContainer(context: Context) {
     val permissionOrchestrator: com.zenith.focus.core.permission.PermissionOrchestrator by lazy {
         com.zenith.focus.core.permission.PermissionOrchestrator(context.applicationContext)
     }
+
+    val appLockRepository: com.zenith.focus.domain.repository.AppLockRepository by lazy {
+        com.zenith.focus.data.repository.AppLockRepositoryImpl(context.applicationContext)
+    }
 }

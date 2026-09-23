@@ -233,6 +233,43 @@ class ZenithAccessibilityService : AccessibilityService() {
             }
         }
 
+        // --- APP LOCK & BLOCKER SHIELD ENFORCEMENT ---
+        val appLockRepo = app.container.appLockRepository
+        val appLockConfig = appLockRepo.appLockConfig.value
+
+        if (appLockConfig.isPackageLocked(targetPkg, isNuclear)) {
+            val rule = appLockConfig.getRule(targetPkg)
+            val isPermanent = rule?.lockMode == com.zenith.focus.domain.model.AppLockMode.PERMANENT || rule?.lockMode == com.zenith.focus.domain.model.AppLockMode.BOTH
+            val appTitle = rule?.appName ?: targetPkg
+
+            if (now - lastEjectTime >= EJECT_COOLDOWN_MS) {
+                lastEjectTime = now
+                triggerHapticAlert()
+
+                withContext(Dispatchers.Main) {
+                    val reason = if (isPermanent) {
+                        "🔒 PERMANENT LOCK: $appTitle is permanently blocked to safeguard your attention."
+                    } else {
+                        "☢️ NUCLEAR LOCK: $appTitle is locked during your active Nuclear session."
+                    }
+
+                    ejectToHomeScreen()
+                    Toast.makeText(applicationContext, reason, Toast.LENGTH_SHORT).show()
+                }
+
+                statsRepo.recordBlockEvent(
+                    BlockEvent(
+                        timestamp = now,
+                        packageName = targetPkg,
+                        category = ContentCategory.APP_LOCK,
+                        confidence = 1.0f,
+                        ruleId = if (isPermanent) "app_lock_permanent" else "app_lock_nuclear"
+                    )
+                )
+            }
+            return
+        }
+
         val config = settingsRepo.protectionConfig.value
         val habitConfig = settingsRepo.habitConfig.value
         val result = detectionEngine.evaluate(effectiveContext, config)

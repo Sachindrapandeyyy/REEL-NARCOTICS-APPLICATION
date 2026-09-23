@@ -28,6 +28,7 @@ data class ProtectionConfig(
             ContentCategory.ADULT_WEBSITE -> blockAdultWebsites
             ContentCategory.ADULT_KEYWORD -> blockAdultKeywords
             ContentCategory.SYSTEM_TAMPER -> true
+            ContentCategory.APP_LOCK -> true
         }
     }
 }

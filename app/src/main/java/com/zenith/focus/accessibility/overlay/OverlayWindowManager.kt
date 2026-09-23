@@ -75,12 +75,7 @@ class OverlayWindowManager(
 
         mainHandler.post {
             if (isOverlayShowing) return@post
-
-            if (Settings.canDrawOverlays(service)) {
-                createAndAttachWindowOverlay(category, remainingMillis, reason)
-            } else {
-                launchFallbackActivity(category, remainingMillis, reason)
-            }
+            launchFallbackActivity(category, remainingMillis, reason)
         }
     }
 
@@ -171,6 +166,7 @@ fun BlockOverlayContent(
     }
 
     val isAdult = category == ContentCategory.ADULT_WEBSITE || category == ContentCategory.ADULT_KEYWORD
+    val isAppLock = category == ContentCategory.APP_LOCK
 
     Box(
         modifier = Modifier
@@ -204,7 +200,11 @@ fun BlockOverlayContent(
 
             // Heading
             Text(
-                text = if (isAdult) "EXPLICIT CONTENT INTERCEPTED" else "REEL NARCOTICS",
+                text = when {
+                    isAppLock -> "APPLICATION LOCKED"
+                    isAdult -> "EXPLICIT CONTENT INTERCEPTED"
+                    else -> "REEL NARCOTICS"
+                },
                 color = Color.White,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Black,
@@ -218,6 +218,8 @@ fun BlockOverlayContent(
             Text(
                 text = if (reason.isNotBlank()) {
                     reason
+                } else if (isAppLock) {
+                    "This app is locked to protect your focus and dopamine baseline. Ejecting to Home Screen."
                 } else if (isAdult) {
                     "This destination is blocked by your Adult Protection shield. Your mind deserves peace."
                 } else {
@@ -232,19 +234,37 @@ fun BlockOverlayContent(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Timer Pill
-            Box(
-                modifier = Modifier
-                    .background(Color(0xFF1E293B), shape = RoundedCornerShape(16.dp))
-                    .padding(horizontal = 20.dp, vertical = 10.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "${com.zenith.focus.core.time.DateTimeUtils.formatRemaining(remaining)} remaining",
-                    color = Color(0xFF10B981),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
+            // Timer / Enforcement Pill
+            if (remaining > 0L) {
+                Box(
+                    modifier = Modifier
+                        .background(Color(0xFF1E293B), shape = RoundedCornerShape(16.dp))
+                        .padding(horizontal = 20.dp, vertical = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "${com.zenith.focus.core.time.DateTimeUtils.formatRemaining(remaining)} remaining",
+                        color = Color(0xFF10B981),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            } else if (isAppLock) {
+                Box(
+                    modifier = Modifier
+                        .background(Color(0xFF1E293B), shape = RoundedCornerShape(16.dp))
+                        .border(1.dp, Color(0xFFD97706), RoundedCornerShape(16.dp))
+                        .padding(horizontal = 18.dp, vertical = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "🔒 PERMANENT 24/7 LOCK",
+                        color = Color(0xFFFBBF24),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(32.dp))

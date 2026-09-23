@@ -9,7 +9,8 @@ enum class ContentCategory(val displayName: String, val defaultPackageName: Stri
     OTHER_SHORT_VIDEO("Other Short Video", "generic.shortvideo"),
     ADULT_WEBSITE("Adult Website", "browser.adult.domain"),
     ADULT_KEYWORD("Explicit Content", "content.explicit.keyword"),
-    SYSTEM_TAMPER("Tamper Protection", "com.android.settings");
+    SYSTEM_TAMPER("Tamper Protection", "com.android.settings"),
+    APP_LOCK("App Lock Shield", "app.lock.shield");
 
     companion object {
         fun fromPackage(packageName: String): ContentCategory? {

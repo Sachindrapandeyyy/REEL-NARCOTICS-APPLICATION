@@ -147,6 +147,7 @@ class SettingsRepositoryImpl(
             ContentCategory.ADULT_WEBSITE -> current.copy(blockAdultWebsites = isBlocked)
             ContentCategory.ADULT_KEYWORD -> current.copy(blockAdultKeywords = isBlocked)
             ContentCategory.SYSTEM_TAMPER -> current
+            ContentCategory.APP_LOCK -> current
         }
         updateProtectionConfig(updated)
     }
