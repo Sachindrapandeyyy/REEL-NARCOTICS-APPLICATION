@@ -23,6 +23,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
+import android.util.LruCache
+import androidx.compose.ui.graphics.ImageBitmap
+
+private val iconCache = LruCache<String, ImageBitmap>(150)
+
 @Composable
 fun AppIcon(
     packageName: String,
@@ -31,10 +36,12 @@ fun AppIcon(
 ) {
     val context = LocalContext.current
     val imageBitmap = remember(packageName) {
-        runCatching {
+        iconCache.get(packageName) ?: runCatching {
             val pm = context.packageManager
             val drawable = pm.getApplicationIcon(packageName)
-            drawableToBitmap(drawable)?.asImageBitmap()
+            drawableToBitmap(drawable)?.asImageBitmap()?.also { bitmap ->
+                iconCache.put(packageName, bitmap)
+            }
         }.getOrNull()
     }
 

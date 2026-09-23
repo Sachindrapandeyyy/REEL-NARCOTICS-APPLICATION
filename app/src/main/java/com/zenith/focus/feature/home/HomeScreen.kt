@@ -89,7 +89,10 @@ fun HomeScreen(
     onNavigateProtection: () -> Unit,
     onNavigateStats: () -> Unit,
     onEnableAccessibility: () -> Unit = {},
-    onEnableDeviceAdmin: () -> Unit = {}
+    onEnableDeviceAdmin: () -> Unit = {},
+    onOpenGuide: () -> Unit = {},
+    onNavigateAppLock: () -> Unit = {},
+    lockedAppsCount: Int = 0
 ) {
     val earth = EarthTheme.colors
     val context = LocalContext.current
@@ -290,7 +293,7 @@ fun HomeScreen(
                 icon = Icons.Outlined.HelpOutline,
                 containerColor = earth.forestGreen,
                 iconTint = Color.White,
-                onClick = onEnableAccessibility
+                onClick = onOpenGuide
             )
         }
 
@@ -357,6 +360,56 @@ fun HomeScreen(
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
+                }
+            }
+
+            // APP LOCK STATUS CARD (QUICK ACCESS FROM HOME)
+            if (lockedAppsCount > 0) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Card(
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, earth.border, RoundedCornerShape(18.dp))
+                        .clickable { onNavigateAppLock() }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(text = "⚡", fontSize = 16.sp)
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "APP LOCK SHIELD ACTIVE",
+                                    color = earth.forestGreen,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.5.sp
+                                )
+                                Text(
+                                    text = "$lockedAppsCount apps protected • Tap to manage",
+                                    color = earth.textMuted,
+                                    fontSize = 11.sp,
+                                    modifier = Modifier.padding(top = 2.dp)
+                                )
+                            }
+                        }
+                        Text(
+                            text = "MANAGE ➔",
+                            color = earth.forestGreen,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
 

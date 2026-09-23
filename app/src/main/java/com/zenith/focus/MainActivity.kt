@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -155,6 +156,7 @@ class MainActivity : ComponentActivity() {
                     var showNuclearExtendDialog by remember { mutableStateOf(false) }
                     var showAppLockScreen by remember { mutableStateOf(false) }
                     var showAppPickerDialog by remember { mutableStateOf(false) }
+                    var showGuideDialog by remember { mutableStateOf(false) }
                     var pickerInitialMode by remember { mutableStateOf(com.zenith.focus.domain.model.AppLockMode.NUCLEAR_ONLY) }
                     val updateState by updateManager.state.collectAsState()
                     var showGlobalUpdateDialog by remember { mutableStateOf(false) }
@@ -243,11 +245,32 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     } else {
+                        // Global system BackHandler for proper back-stack navigation
+                        androidx.activity.compose.BackHandler(enabled = true) {
+                            when {
+                                showAppPickerDialog -> showAppPickerDialog = false
+                                showAppLockScreen -> showAppLockScreen = false
+                                showGuideDialog -> showGuideDialog = false
+                                showNuclearArmingDialog -> showNuclearArmingDialog = false
+                                showNuclearExtendDialog -> showNuclearExtendDialog = false
+                                showLockDialog -> showLockDialog = false
+                                showUnlockDialog -> showUnlockDialog = false
+                                showGlobalUpdateDialog -> showGlobalUpdateDialog = false
+                                selectedTab != 0 -> selectedTab = 0
+                                else -> finish()
+                            }
+                        }
+
                         Scaffold(
                             bottomBar = {
                                 ZenithBottomNavigation(
                                     selectedTab = selectedTab,
-                                    onTabSelected = { selectedTab = it },
+                                    onTabSelected = { tab ->
+                                        showAppLockScreen = false
+                                        showAppPickerDialog = false
+                                        showGuideDialog = false
+                                        selectedTab = tab
+                                    },
                                     onFabClicked = { showLockDialog = true }
                                 )
                             }
@@ -301,7 +324,10 @@ class MainActivity : ComponentActivity() {
                                         },
                                         onEnableDeviceAdmin = {
                                             ZenithDeviceAdminReceiver.openDeviceAdminActivation(context)
-                                        }
+                                        },
+                                        onOpenGuide = { showGuideDialog = true },
+                                        onNavigateAppLock = { showAppLockScreen = true },
+                                        lockedAppsCount = appLockConfig.totalCount
                                     )
                                     1 -> ProtectionScreen(
                                         nuclearSession = nuclearSession,
@@ -466,9 +492,6 @@ class MainActivity : ComponentActivity() {
 
                                 // App Lock Shield Dashboard Screen Modal
                                 if (showAppLockScreen) {
-                                    androidx.activity.compose.BackHandler {
-                                        showAppLockScreen = false
-                                    }
                                     com.zenith.focus.feature.applock.AppLockScreen(
                                         appLockConfig = appLockConfig,
                                         isNuclearActive = nuclearSession.isCurrentlyActive(),
@@ -501,6 +524,13 @@ class MainActivity : ComponentActivity() {
                                                 showAppPickerDialog = false
                                             }
                                         }
+                                    )
+                                }
+
+                                // In-App Feature Guide Dialog
+                                if (showGuideDialog) {
+                                    com.zenith.focus.core.ui.ZenithGuideDialog(
+                                        onDismiss = { showGuideDialog = false }
                                     )
                                 }
 
@@ -560,7 +590,9 @@ fun ZenithBottomNavigation(
         color = earth.surfaceSoft,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
         shadowElevation = 8.dp,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
     ) {
         Row(
             modifier = Modifier

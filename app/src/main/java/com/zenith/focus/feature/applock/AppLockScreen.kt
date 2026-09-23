@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -33,9 +34,11 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -77,6 +80,7 @@ fun AppLockScreen(
 
     var selectedTab by remember { mutableIntStateOf(0) } // 0: All, 1: Permanent, 2: Nuclear
     var searchQuery by remember { mutableStateOf("") }
+    var appToUnlock by remember { mutableStateOf<LockedAppRule?>(null) }
 
     val lockedList = remember(appLockConfig.lockedApps) {
         appLockConfig.lockedApps.values.sortedBy { it.appName.lowercase(Locale.US) }
@@ -101,20 +105,22 @@ fun AppLockScreen(
 
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddAppsClicked,
-                containerColor = earth.forestGreen,
-                contentColor = Color.White,
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+            if (lockedList.isNotEmpty()) {
+                FloatingActionButton(
+                    onClick = onAddAppsClicked,
+                    containerColor = earth.forestGreen,
+                    contentColor = Color.White,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.padding(bottom = 16.dp)
                 ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = "Add")
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Lock Apps", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(imageVector = Icons.Default.Add, contentDescription = "Add")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Lock Apps", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    }
                 }
             }
         }
@@ -137,7 +143,7 @@ fun AppLockScreen(
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back",
-                            tint = earth.forestDark
+                            tint = earth.textPrimary
                         )
                     }
                     Spacer(modifier = Modifier.width(4.dp))
@@ -151,7 +157,7 @@ fun AppLockScreen(
                         )
                         Text(
                             text = "App Lock Shield",
-                            color = earth.forestDark,
+                            color = earth.textPrimary,
                             fontSize = 24.sp,
                             fontFamily = FontFamily.Serif,
                             fontWeight = FontWeight.Normal
@@ -161,11 +167,18 @@ fun AppLockScreen(
 
                 // Master Shield Switch
                 Switch(
-                    checked = appLockConfig.isAppLockEnabled,
-                    onCheckedChange = { onToggleAppLock(it) },
+                    checked = if (isNuclearActive) true else appLockConfig.isAppLockEnabled,
+                    enabled = !isNuclearActive,
+                    onCheckedChange = {
+                        if (isNuclearActive) {
+                            Toast.makeText(context, "☢️ Master App Lock is locked ON during Nuclear Mode!", Toast.LENGTH_SHORT).show()
+                        } else {
+                            onToggleAppLock(it)
+                        }
+                    },
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = Color.White,
-                        checkedTrackColor = earth.forestGreen,
+                        checkedTrackColor = if (isNuclearActive) earth.camelOchre else earth.forestGreen,
                         uncheckedThumbColor = earth.textMuted,
                         uncheckedTrackColor = earth.surface
                     )
@@ -310,9 +323,7 @@ fun AppLockScreen(
                         focusedTextColor = earth.textPrimary,
                         unfocusedTextColor = earth.textPrimary
                     ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
+                    modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -349,7 +360,7 @@ fun AppLockScreen(
 
                         Text(
                             text = "No Apps Locked Yet",
-                            color = earth.forestDark,
+                            color = earth.textPrimary,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.Serif
@@ -402,14 +413,14 @@ fun AppLockScreen(
                             isNuclearActive = isNuclearActive,
                             onUpdateMode = { newMode -> onUpdateMode(rule.packageName, newMode) },
                             onUnlock = {
-                                if (isNuclearActive && (rule.lockMode == AppLockMode.NUCLEAR_ONLY || rule.lockMode == AppLockMode.BOTH)) {
+                                if (isNuclearActive) {
                                     Toast.makeText(
                                         context,
                                         "🔒 Cannot unlock ${rule.appName} while Nuclear Mode is active!",
                                         Toast.LENGTH_LONG
                                     ).show()
                                 } else {
-                                    onUnlockApp(rule.packageName)
+                                    appToUnlock = rule
                                 }
                             }
                         )
@@ -420,6 +431,57 @@ fun AppLockScreen(
                     }
                 }
             }
+        }
+
+        // CONFIRMATION DIALOG FOR UNLOCKING AN APP
+        if (appToUnlock != null) {
+            val rule = appToUnlock!!
+            val isPermanent = rule.lockMode == AppLockMode.PERMANENT || rule.lockMode == AppLockMode.BOTH
+            AlertDialog(
+                onDismissRequest = { appToUnlock = null },
+                containerColor = earth.surfaceSoft,
+                shape = RoundedCornerShape(20.dp),
+                title = {
+                    Text(
+                        text = "Unlock ${rule.appName}?",
+                        color = earth.textPrimary,
+                        fontFamily = FontFamily.Serif,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                },
+                text = {
+                    Text(
+                        text = "Are you sure you want to remove protection for ${rule.appName}? " +
+                                if (isPermanent) "This app is currently locked continuously 24/7."
+                                else "This app is set to lock during Nuclear mode sessions.",
+                        color = earth.textPrimary,
+                        fontSize = 13.sp,
+                        lineHeight = 18.sp
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val pkg = rule.packageName
+                            appToUnlock = null
+                            onUnlockApp(pkg)
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text("Remove Lock", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.5.sp)
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(
+                        onClick = { appToUnlock = null },
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text("Keep Locked", color = earth.textPrimary, fontSize = 12.5.sp)
+                    }
+                }
+            )
         }
     }
 }
@@ -467,7 +529,7 @@ private fun LockedAppCard(
     onUnlock: () -> Unit
 ) {
     val earth = EarthTheme.colors
-    val isLockedInNuclear = isNuclearActive && (rule.lockMode == AppLockMode.NUCLEAR_ONLY || rule.lockMode == AppLockMode.BOTH)
+    val isLockedInNuclear = isNuclearActive
 
     Card(
         shape = RoundedCornerShape(16.dp),
@@ -505,45 +567,45 @@ private fun LockedAppCard(
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                // Mode Switcher Pills
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    // Nuclear Pill
-                    val isNuclear = rule.lockMode == AppLockMode.NUCLEAR_ONLY
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(if (isNuclear) earth.camelOchre else earth.surface)
-                            .border(1.dp, if (isNuclear) earth.camelOchre else earth.border, RoundedCornerShape(6.dp))
-                            .clickable(enabled = !isLockedInNuclear) {
-                                onUpdateMode(AppLockMode.NUCLEAR_ONLY)
-                            }
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                // Active Lock Mode Badge and Mode Switcher
+                val isPermanent = rule.lockMode == AppLockMode.PERMANENT || rule.lockMode == AppLockMode.BOTH
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Status Badge
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (isPermanent) Color(0xFFD97706).copy(alpha = 0.15f) else earth.camelOchre.copy(alpha = 0.15f),
+                        modifier = Modifier.border(
+                            width = 1.dp,
+                            color = if (isPermanent) Color(0xFFD97706) else earth.camelOchre,
+                            shape = RoundedCornerShape(8.dp)
+                        )
                     ) {
                         Text(
-                            text = "☢️ Nuclear",
-                            color = if (isNuclear) Color.White else earth.textPrimary,
-                            fontSize = 10.sp,
-                            fontWeight = if (isNuclear) FontWeight.Bold else FontWeight.Normal
+                            text = if (isPermanent) "🔒 Permanent 24/7" else "☢️ Nuclear Only",
+                            color = if (isPermanent) Color(0xFFD97706) else earth.camelOchre,
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                         )
                     }
 
-                    // Permanent Pill
-                    val isPermanent = rule.lockMode == AppLockMode.PERMANENT || rule.lockMode == AppLockMode.BOTH
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(if (isPermanent) Color(0xFFD97706) else earth.surface)
-                            .border(1.dp, if (isPermanent) Color(0xFFD97706) else earth.border, RoundedCornerShape(6.dp))
-                            .clickable(enabled = !isLockedInNuclear) {
-                                onUpdateMode(AppLockMode.PERMANENT)
-                            }
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
-                    ) {
+                    // Mode Switch Action
+                    if (!isLockedInNuclear) {
                         Text(
-                            text = "🔒 Permanent",
-                            color = if (isPermanent) Color.White else earth.textPrimary,
-                            fontSize = 10.sp,
-                            fontWeight = if (isPermanent) FontWeight.Bold else FontWeight.Normal
+                            text = if (isPermanent) "⇄ Nuclear" else "⇄ Permanent",
+                            color = earth.forestGreen,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .clickable {
+                                    val nextMode = if (isPermanent) AppLockMode.NUCLEAR_ONLY else AppLockMode.PERMANENT
+                                    onUpdateMode(nextMode)
+                                }
+                                .padding(horizontal = 4.dp, vertical = 2.dp)
                         )
                     }
                 }

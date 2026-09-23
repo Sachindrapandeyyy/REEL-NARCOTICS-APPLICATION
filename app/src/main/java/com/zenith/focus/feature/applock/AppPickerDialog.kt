@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -105,46 +107,62 @@ fun AppPickerDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
-            modifier = Modifier
-                .fillMaxWidth(0.95f)
-                .fillMaxHeight(0.92f)
-                .clip(RoundedCornerShape(24.dp)),
+            modifier = Modifier.fillMaxSize(),
             color = earth.canvas
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(20.dp)
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
             ) {
-                // Header with title and close
+                // Header with title, close, and selected badge
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Column {
-                        Text(
-                            text = "APP LOCK SHIELD",
-                            color = earth.forestGreen,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.2.sp
-                        )
-                        Text(
-                            text = "Select Apps to Lock",
-                            color = earth.forestDark,
-                            fontSize = 22.sp,
-                            fontFamily = FontFamily.Serif,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = onDismiss) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Close",
+                                tint = earth.textPrimary
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Column {
+                            Text(
+                                text = "APP LOCK SHIELD",
+                                color = earth.forestGreen,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 1.2.sp
+                            )
+                            Text(
+                                text = "Select Apps to Lock",
+                                color = earth.textPrimary,
+                                fontSize = 20.sp,
+                                fontFamily = FontFamily.Serif,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
 
-                    IconButton(onClick = onDismiss) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
-                            tint = earth.textMuted
-                        )
+                    if (selectedPackages.isNotEmpty()) {
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = earth.forestGreen
+                        ) {
+                            Text(
+                                text = "${selectedPackages.size} Selected",
+                                color = Color.White,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                            )
+                        }
                     }
                 }
 
@@ -177,20 +195,22 @@ fun AppPickerDialog(
                                 shape = RoundedCornerShape(12.dp)
                             )
                             .clickable { selectedMode = AppLockMode.NUCLEAR_ONLY }
-                            .padding(vertical = 10.dp, horizontal = 12.dp),
+                            .padding(vertical = 10.dp, horizontal = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = "☢️ Nuclear Mode",
-                                color = if (isNuclearSelected) earth.forestDark else earth.textPrimary,
+                                color = if (isNuclearSelected) earth.camelOchre else earth.textPrimary,
                                 fontSize = 13.sp,
                                 fontWeight = if (isNuclearSelected) FontWeight.Bold else FontWeight.Medium
                             )
+                            Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Locked during Nuclear only",
+                                text = "During Nuclear sessions",
                                 color = earth.textMuted,
-                                fontSize = 10.sp
+                                fontSize = 10.5.sp,
+                                maxLines = 1
                             )
                         }
                     }
@@ -208,20 +228,22 @@ fun AppPickerDialog(
                                 shape = RoundedCornerShape(12.dp)
                             )
                             .clickable { selectedMode = AppLockMode.PERMANENT }
-                            .padding(vertical = 10.dp, horizontal = 12.dp),
+                            .padding(vertical = 10.dp, horizontal = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = "🔒 Permanent 24/7",
-                                color = if (isPermanentSelected) earth.forestDark else earth.textPrimary,
+                                color = if (isPermanentSelected) Color(0xFFD97706) else earth.textPrimary,
                                 fontSize = 13.sp,
                                 fontWeight = if (isPermanentSelected) FontWeight.Bold else FontWeight.Medium
                             )
+                            Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "Continuous around-the-clock",
                                 color = earth.textMuted,
-                                fontSize = 10.sp
+                                fontSize = 10.5.sp,
+                                maxLines = 1
                             )
                         }
                     }
@@ -264,9 +286,7 @@ fun AppPickerDialog(
                         focusedTextColor = earth.textPrimary,
                         unfocusedTextColor = earth.textPrimary
                     ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp)
+                    modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))
