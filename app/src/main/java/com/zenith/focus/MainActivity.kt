@@ -360,7 +360,10 @@ class MainActivity : ComponentActivity() {
                                         onClearStats = {
                                             statsRepo.clearAllStatistics()
                                             refreshStats()
-                                        }
+                                        },
+                                        onNavigateBack = { selectedTab = 0 },
+                                        onNavigateAppLock = { showAppLockScreen = true },
+                                        onStartLockClicked = { showLockDialog = true }
                                     )
                                     3 -> SettingsScreen(
                                         config = config,
