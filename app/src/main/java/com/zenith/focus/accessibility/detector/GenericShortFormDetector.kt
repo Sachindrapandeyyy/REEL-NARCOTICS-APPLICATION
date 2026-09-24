@@ -12,6 +12,8 @@ class GenericShortFormDetector : ContentDetector {
         private val SPECIALIZED_PACKAGES = setOf(
             "com.google.android.youtube",
             "com.instagram.android",
+            "com.instagram.lite",
+            "com.instagram.barcelona",
             "com.facebook.katana",
             "com.facebook.lite",
             "com.facebook.orca",

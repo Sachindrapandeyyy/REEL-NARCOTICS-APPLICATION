@@ -176,6 +176,60 @@ class ZenithAccessibilityService : AccessibilityService() {
                 }
                 return
             }
+
+            // NUCLEAR HOST APP SHIELD:
+            // When Nuclear Mode is active with Instagram or TikTok armed, host apps cannot open at all!
+            val nuclearSession = nuclearRepo.session.value
+            val isInstagramArmed = nuclearSession.enabledCategories.contains(ContentCategory.INSTAGRAM_REELS) || nuclearSession.enabledCategories.isEmpty()
+            val isTikTokArmed = nuclearSession.enabledCategories.contains(ContentCategory.TIKTOK) || nuclearSession.enabledCategories.isEmpty()
+
+            val isInstagramHost = lowerPkg == "com.instagram.android" ||
+                                  lowerPkg == "com.instagram.lite" ||
+                                  lowerPkg == "com.instagram.barcelona" ||
+                                  lowerPkg.startsWith("com.instagram.")
+
+            val isTikTokHost = lowerPkg == "com.zhiliaoapp.musically" ||
+                               lowerPkg == "com.ss.android.ugc.trill" ||
+                               lowerPkg == "com.zhiliaoapp.musically.go"
+
+            if (isNuclear && ((isInstagramArmed && isInstagramHost) || (isTikTokArmed && isTikTokHost))) {
+                val appTitle = when {
+                    lowerPkg == "com.instagram.lite" -> "Instagram Lite"
+                    isInstagramHost -> "Instagram"
+                    else -> "TikTok"
+                }
+
+                // 1. Instant global eject to Home Screen
+                ejectToHomeScreen()
+
+                // 2. Physical haptic alert
+                triggerHapticAlert()
+
+                // 3. User toast & statistics with debounce
+                if (nowTime - lastEjectTime >= EJECT_COOLDOWN_MS) {
+                    lastEjectTime = nowTime
+                    serviceScope.launch(Dispatchers.Main) {
+                        Toast.makeText(
+                            applicationContext,
+                            "☢️ NUCLEAR LOCK: $appTitle is locked during your active Nuclear session!",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                    serviceScope.launch {
+                        app.container.statisticsRepository.recordBlockEvent(
+                            BlockEvent(
+                                timestamp = nowTime,
+                                packageName = lowerPkg,
+                                category = if (isInstagramHost) ContentCategory.INSTAGRAM_REELS else ContentCategory.TIKTOK,
+                                confidence = 1.0f,
+                                ruleId = "nuclear_host_eject"
+                            )
+                        )
+                    }
+                }
+                return
+            }
         }
 
         // Debounce only extremely rapid duplicate events within 60ms

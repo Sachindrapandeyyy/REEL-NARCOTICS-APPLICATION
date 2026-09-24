@@ -310,6 +310,23 @@ class DetectorTestMatrix {
         assertTrue(result.confidence >= 0.95f)
     }
 
+    @Test
+    fun testInstagramLiteReelsBlocked() {
+        val detector = InstagramReelsDetector()
+        val context = ScreenContext(
+            packageName = "com.instagram.lite",
+            className = "com.instagram.lite.MainActivity",
+            viewIds = setOf("video_player", "reels_tab"),
+            visibleTexts = listOf("Reels", "Original audio"),
+            contentDescriptions = listOf("Watch Reels"),
+            allNormalizedTokens = setOf("reels", "audio")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertTrue("Instagram Lite Reels must be blocked", result.isBlocked)
+        assertEquals(ContentCategory.INSTAGRAM_REELS, result.category)
+        assertEquals(1.0f, result.confidence, 0.01f)
+    }
+
     // 3. Snapchat Spotlight Matrix
     @Test
     fun testSnapchatChatAllowed() {
@@ -339,6 +356,22 @@ class DetectorTestMatrix {
         )
         val result = detector.evaluate(context, defaultConfig)
         assertTrue(result.isBlocked)
+        assertEquals(ContentCategory.SNAPCHAT_SPOTLIGHT, result.category)
+    }
+
+    @Test
+    fun testSnapchatOperaViewerBlocked() {
+        val detector = SnapchatSpotlightDetector()
+        val context = ScreenContext(
+            packageName = "com.snapchat.android",
+            className = "com.snap.opera.OperaActivity",
+            viewIds = setOf("opera_page_view", "opera_story_viewer"),
+            visibleTexts = listOf("Trending Sound"),
+            contentDescriptions = listOf("Watch Spotlight"),
+            allNormalizedTokens = setOf("spotlight", "opera")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertTrue("Snapchat Opera player must be blocked", result.isBlocked)
         assertEquals(ContentCategory.SNAPCHAT_SPOTLIGHT, result.category)
     }
 
