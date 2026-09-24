@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="https://reel-narcotics.vercel.app/"><img src="https://img.shields.io/badge/Live%20Website-Visit%20Site-10B981?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Live Site"></a>
-  <a href="https://reel-narcotics.vercel.app/assets/ReelNarcotics-v2.5.0-Release.apk"><img src="https://img.shields.io/badge/Download-APK%20(v2.5.0%20Build%2023)-059669?style=for-the-badge&logo=android&logoColor=white" alt="Download APK"></a>
+  <a href="https://reel-narcotics.vercel.app/assets/ReelNarcotics-v2.5.0-Release.apk"><img src="https://img.shields.io/badge/Download-APK%20(v2.5.0%20Build%2024)-059669?style=for-the-badge&logo=android&logoColor=white" alt="Download APK"></a>
   <img src="https://img.shields.io/badge/Android-8.0%20--%2015-141D32?style=for-the-badge&logo=android&logoColor=34D399" alt="Android Support">
   <img src="https://img.shields.io/badge/Privacy-100%25%20Offline-070A11?style=for-the-badge&logo=shield&logoColor=white" alt="100% Offline">
 </p>
@@ -20,10 +20,10 @@
 
 Captured live on device running Android 13 with active Focus Lock:
 
-| 1. Focus Command Center | 2. Content Shields | 3. App Lock Armor | 4. Settings & Habit Loop |
-| :---: | :---: | :---: | :---: |
-| <img src="docs/assets/screenshot_home.png" width="220" alt="Home Dashboard" /> | <img src="docs/assets/screenshot_shields.png" width="220" alt="Content Shield" /> | <img src="docs/assets/screenshot_applock.png" width="220" alt="App Lock Armor" /> | <img src="docs/assets/screenshot_settings.png" width="220" alt="Settings & Notifications" /> |
-| **Active Lock & Timer**<br>Live session countdown, real-time status badge & one-tap challenges. | **Surgical Enforcement**<br>Granular platform toggles: Shorts, Reels, Spotlight, Adult Web. | **App Lock Armor**<br>Permanent 24/7 or Nuclear Session app locking with 0ms ejection. | **Daily Habit Engine**<br>Morning Focus Pledge, Evening Victory Digest & Night theme. |
+| 1. Focus Command Center | 2. Content Shields | 3. App Lock Armor | 4. Attention Insights | 5. Settings & Guard |
+| :---: | :---: | :---: | :---: | :---: |
+| <img src="docs/assets/screenshot_home.png" width="180" alt="Home Dashboard" /> | <img src="docs/assets/screenshot_shields.png" width="180" alt="Content Shield" /> | <img src="docs/assets/screenshot_applock.png" width="180" alt="App Lock Armor" /> | <img src="docs/assets/screenshot_stats.png" width="180" alt="Attention Insights" /> | <img src="docs/assets/screenshot_settings.png" width="180" alt="Settings & Guard" /> |
+| **Active Lock & Timer**<br>Live session countdown, real-time status badge & one-tap challenges. | **Surgical Enforcement**<br>Granular platform toggles: Shorts, Reels, Spotlight, Adult Web. | **App Lock Armor**<br>Permanent 24/7 or Nuclear Session app locking with 0ms ejection. | **Attention Insights**<br>Reclaimed minutes, weekly pattern graphs & deflection ledger. | **Daily Habit Engine**<br>Morning Focus Pledge, Evening Victory Digest & Night theme. |
 
 ---
 
