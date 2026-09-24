@@ -161,6 +161,7 @@ class MainActivity : ComponentActivity() {
                     var pickerInitialMode by remember { mutableStateOf(com.zenith.focus.domain.model.AppLockMode.NUCLEAR_ONLY) }
                     val updateState by updateManager.state.collectAsState()
                     var showGlobalUpdateDialog by remember { mutableStateOf(false) }
+                    var userTriggeredUpdateCheck by remember { mutableStateOf(false) }
                     var canInstallPackages by remember { mutableStateOf(updateManager.canRequestPackageInstalls()) }
                     var selectedTab by remember { mutableIntStateOf(0) } // 0=Home, 1=Protection, 2=Stats, 3=Settings
 
@@ -378,7 +379,11 @@ class MainActivity : ComponentActivity() {
                                         },
                                         todayTotalBlocks = todayTotal,
                                         focusStreakDays = streakDays,
-                                        onShowUpdateDialog = { showGlobalUpdateDialog = true },
+                                        onShowUpdateDialog = {
+                                            userTriggeredUpdateCheck = true
+                                            updateManager.checkForUpdates()
+                                            showGlobalUpdateDialog = true
+                                        },
                                         onSelectFrictionType = { friction ->
                                             coroutineScope.launch { settingsRepo.setFrictionType(friction) }
                                         },
@@ -539,12 +544,15 @@ class MainActivity : ComponentActivity() {
                                 }
 
                                 // Global In-App OTA Update Dialog
-                                if (showGlobalUpdateDialog && updateState !is UpdateState.Idle && updateState !is UpdateState.Checking && updateState !is UpdateState.UpToDate) {
+                                if (showGlobalUpdateDialog && updateState !is UpdateState.Idle &&
+                                    (userTriggeredUpdateCheck || (updateState !is UpdateState.Checking && updateState !is UpdateState.UpToDate))
+                                ) {
                                     UpdateDialog(
                                         state = updateState,
                                         currentVersionName = updateManager.currentVersionName,
                                         onDismiss = {
                                             showGlobalUpdateDialog = false
+                                            userTriggeredUpdateCheck = false
                                             updateManager.resetState()
                                         },
                                         onStartDownload = { manifest ->
