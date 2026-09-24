@@ -3,67 +3,116 @@ package com.zenith.focus.core.designsystem
 import androidx.compose.ui.graphics.Color
 
 // ============================================================================
-// REEL NARCOTICS - ORGANIC EARTH & LINEN MINIMALIST PALETTE
-// Extracted directly from reference image:
-// 1. EarthCanvasCream: Warm Oatmeal / Linen Background (#F3EBE5)
-// 2. EarthSurfaceLinen: Soft Off-White / Sand Surface (#FAF7F2, #EDE8E2)
-// 3. EarthForestGreen: Deep Botanical Pine Green (#204844, #173330)
-// 4. EarthCamelOchre: Warm Golden Camel Accent & FAB (#BC9259, #C9A97E)
-// 5. EarthSageOlive: Muted Botanical Sage (#868D7D, #A3AB9B)
-// 6. EarthSandCard: Soft Sand Oatmeal (#DED5C7, #EAE3D9)
-// 7. EarthTextDark: High-Contrast Deep Charcoal/Pine (#1E2B28)
-// 8. EarthTextMuted: Calming Sage Charcoal (#66706B)
-// 9. EarthAccentRule: Warm Ochre Divider (#BC9B6D)
+// REEL NARCOTICS - MINDFUL PASTEL NEUMORPHIC & FROSTED GLASS PALETTE
+// Extracted directly from user reference design:
+// 1. PastelCanvas: Soft blush cream & lavender mist (#FBF8FD, #FFF3F2)
+// 2. PastelSurface: Translucent Frosted White (#FFFFFF)
+// 3. PastelSurfaceSoft: Gentle Lilac Mist (#FAF7FD)
+// 4. PastelSurfaceVariant: Soft Violet Tint (#F3EDF9)
+// 5. PastelStrawberryPink: Vibrant Strawberry Rose Accent (#FF6584)
+// 6. PastelViolet: Mindful Pastel Violet (#8B5CF6)
+// 7. PastelPeach: Sunrise Coral (#FF9E7D)
+// 8. PastelTextPrimary: Deep Nocturnal Slate (#1E192B)
+// 9. PastelTextMuted: Mindful Lavender Slate (#7E7792)
+// 10. PastelTrack: Soft Ring Track Lavender (#EDE7F5)
 // ============================================================================
 
-// ORGANIC EARTH PALETTE TOKENS (LIGHT)
-val EarthCanvasCream = Color(0xFFF3EBE5)
-val EarthCanvasCreamLight = Color(0xFFFAF7F2)
-val EarthSurfaceLinen = Color(0xFFEDE8E2)
-val EarthSurfaceLinenSoft = Color(0xFFFAF8F5)
-val EarthSandCard = Color(0xFFDED5C7)
-val EarthSandCardLight = Color(0xFFEBE4D8)
+// MINDFUL PASTEL TOKENS (LIGHT)
+val PastelCanvas = Color(0xFFFBF8FD)
+val PastelCanvasBlush = Color(0xFFFFF2F4)
+val PastelCanvasLavender = Color(0xFFF4EDFC)
+val PastelCanvasElevated = Color(0xFFFFF6F7)
+val PastelSurface = Color(0xFFFFFFFF)
+val PastelSurfaceSoft = Color(0xFFFAF7FD)
+val PastelSurfaceVariant = Color(0xFFF3EDF9)
+val PastelBorder = Color(0xFFEDE4F4)
+val PastelBorderSubtle = Color(0xFFF6EFFB)
 
-val EarthForestGreen = Color(0xFF204844)
-val EarthForestDark = Color(0xFF173330)
-val EarthForestDeep = Color(0xFF102422)
-val EarthForestLight = Color(0xFF2E635D)
+val PastelStrawberryPink = Color(0xFFFF6584)
+val PastelStrawberryLight = Color(0xFFFF94A8)
+val PastelStrawberryDeep = Color(0xFFE04566)
 
-val EarthCamelOchre = Color(0xFFBC9259)
-val EarthCamelLight = Color(0xFFDFCAAB)
-val EarthCamelDeep = Color(0xFF916A37)
-val EarthAccentRule = Color(0xFFBC9B6D)
+val PastelViolet = Color(0xFF8B5CF6)
+val PastelVioletLight = Color(0xFFDDD6FE)
+val PastelVioletDeep = Color(0xFF6D28D9)
 
-val EarthSageOlive = Color(0xFF868D7D)
-val EarthSageLight = Color(0xFFBCC2B4)
-val EarthSageDeep = Color(0xFF5E6556)
+val PastelPeach = Color(0xFFFF9E7D)
+val PastelPeachLight = Color(0xFFFFD4C7)
+val PastelPeachDeep = Color(0xFFE27450)
 
-val EarthTextDark = Color(0xFF1E2B28)
-val EarthTextPrimary = Color(0xFF1E2B28)
-val EarthTextMuted = Color(0xFF66706B)
-val EarthTextSubtle = Color(0xFF8C9590)
+val PastelTextPrimary = Color(0xFF1E192B)
+val PastelTextMuted = Color(0xFF7E7792)
+val PastelTextSubtle = Color(0xFFA59EBA)
+val PastelTrack = Color(0xFFEDE7F5)
 
-val EarthBorderLinen = Color(0xFFDDD4C6)
-val EarthBorderSubtle = Color(0xFFE8E1D5)
+// NOCTURNAL AMETHYST TOKENS (DARK)
+val NightCanvas = Color(0xFF13111C)
+val NightCanvasElevated = Color(0xFF1A1626)
+val NightSurface = Color(0xFF1E1A2C)
+val NightSurfaceSoft = Color(0xFF262137)
+val NightSurfaceVariant = Color(0xFF2E2843)
+val NightBorder = Color(0xFF383152)
+val NightBorderSubtle = Color(0xFF453D63)
 
-// SCANDINAVIAN MIDNIGHT PALETTE TOKENS (NIGHT / DARK)
-val EarthNightBg = Color(0xFF101715)
-val EarthNightBgElevated = Color(0xFF15201D)
-val EarthNightSurface = Color(0xFF182421)
-val EarthNightSurfaceSoft = Color(0xFF1F2E2A)
-val EarthNightSurfaceVariant = Color(0xFF253732)
-val EarthNightBorder = Color(0xFF2C3E38)
-val EarthNightBorderSubtle = Color(0xFF384D46)
+val NightTextPrimary = Color(0xFFFAF7FF)
+val NightTextMuted = Color(0xFFAAA3BF)
+val NightTextSubtle = Color(0xFF7D7791)
 
-val EarthNightText = Color(0xFFF2ECE6)
-val EarthNightTextMuted = Color(0xFF9BA8A1)
-val EarthNightTextSubtle = Color(0xFF7A8780)
+val NightStrawberryPink = Color(0xFFFF6584)
+val NightStrawberryLight = Color(0xFFFF8DA3)
+val NightViolet = Color(0xFFA78BFA)
+val NightVioletLight = Color(0xFFC4B5FD)
+val NightPeach = Color(0xFFFFB099)
+val NightTrack = Color(0xFF2D2742)
 
-val EarthNightGreen = Color(0xFF357A6F)
-val EarthNightGreenDark = Color(0xFF23554D)
-val EarthNightCamel = Color(0xFFD6A76E)
-val EarthNightCamelLight = Color(0xFFE5BF8F)
-val EarthNightSage = Color(0xFF9AA593)
+// BACKWARD-COMPATIBLE EARTH MAPPINGS (MAPPING DIRECTLY TO PASTEL DESIGN)
+val EarthCanvasCream = PastelCanvas
+val EarthCanvasCreamLight = PastelCanvasElevated
+val EarthSurfaceLinen = PastelSurface
+val EarthSurfaceLinenSoft = PastelSurfaceSoft
+val EarthSandCard = PastelSurfaceVariant
+val EarthSandCardLight = PastelBorderSubtle
+
+val EarthForestGreen = PastelStrawberryPink
+val EarthForestDark = PastelTextPrimary
+val EarthForestDeep = Color(0xFF14101F)
+val EarthForestLight = PastelStrawberryLight
+
+val EarthCamelOchre = PastelViolet
+val EarthCamelLight = PastelVioletLight
+val EarthCamelDeep = PastelVioletDeep
+val EarthAccentRule = PastelViolet
+
+val EarthSageOlive = PastelPeach
+val EarthSageLight = PastelPeachLight
+val EarthSageDeep = PastelPeachDeep
+
+val EarthTextDark = PastelTextPrimary
+val EarthTextPrimary = PastelTextPrimary
+val EarthTextMuted = PastelTextMuted
+val EarthTextSubtle = PastelTextSubtle
+
+val EarthBorderLinen = PastelBorder
+val EarthBorderSubtle = PastelBorderSubtle
+
+// NIGHT MAPPINGS
+val EarthNightBg = NightCanvas
+val EarthNightBgElevated = NightCanvasElevated
+val EarthNightSurface = NightSurface
+val EarthNightSurfaceSoft = NightSurfaceSoft
+val EarthNightSurfaceVariant = NightSurfaceVariant
+val EarthNightBorder = NightBorder
+val EarthNightBorderSubtle = NightBorderSubtle
+
+val EarthNightText = NightTextPrimary
+val EarthNightTextMuted = NightTextMuted
+val EarthNightTextSubtle = NightTextSubtle
+
+val EarthNightGreen = NightStrawberryPink
+val EarthNightGreenDark = NightStrawberryPink
+val EarthNightCamel = NightViolet
+val EarthNightCamelLight = NightVioletLight
+val EarthNightSage = NightPeach
 
 // SEMANTIC EARTH COLORS FOR DAY & NIGHT
 data class EarthColors(
@@ -83,47 +132,59 @@ data class EarthColors(
     val camelLight: Color,
     val sageOlive: Color,
     val error: Color,
-    val isDark: Boolean
+    val isDark: Boolean,
+    val strawberryPink: Color = PastelStrawberryPink,
+    val pastelViolet: Color = PastelViolet,
+    val softPeach: Color = PastelPeach,
+    val gaugeTrack: Color = PastelTrack
 )
 
 val LightEarthColors = EarthColors(
-    canvas = EarthCanvasCream,
-    canvasElevated = EarthCanvasCreamLight,
-    surface = EarthSurfaceLinen,
-    surfaceSoft = EarthSurfaceLinenSoft,
-    surfaceVariant = EarthSandCard,
-    border = EarthBorderLinen,
-    borderSubtle = EarthBorderSubtle,
-    textPrimary = EarthTextDark,
-    textMuted = EarthTextMuted,
-    textSubtle = EarthTextSubtle,
-    forestGreen = EarthForestGreen,
-    forestDark = EarthForestDark,
-    camelOchre = EarthCamelOchre,
-    camelLight = EarthCamelLight,
-    sageOlive = EarthSageOlive,
-    error = Color(0xFFB83A3A),
-    isDark = false
+    canvas = PastelCanvas,
+    canvasElevated = PastelCanvasElevated,
+    surface = PastelSurface,
+    surfaceSoft = PastelSurfaceSoft,
+    surfaceVariant = PastelSurfaceVariant,
+    border = PastelBorder,
+    borderSubtle = PastelBorderSubtle,
+    textPrimary = PastelTextPrimary,
+    textMuted = PastelTextMuted,
+    textSubtle = PastelTextSubtle,
+    forestGreen = PastelStrawberryPink,
+    forestDark = PastelTextPrimary,
+    camelOchre = PastelViolet,
+    camelLight = PastelVioletLight,
+    sageOlive = PastelPeach,
+    error = Color(0xFFE54D66),
+    isDark = false,
+    strawberryPink = PastelStrawberryPink,
+    pastelViolet = PastelViolet,
+    softPeach = PastelPeach,
+    gaugeTrack = PastelTrack
 )
 
 val DarkEarthColors = EarthColors(
-    canvas = EarthNightBg,
-    canvasElevated = EarthNightBgElevated,
-    surface = EarthNightSurface,
-    surfaceSoft = EarthNightSurfaceSoft,
-    surfaceVariant = EarthNightSurfaceVariant,
-    border = EarthNightBorder,
-    borderSubtle = EarthNightBorderSubtle,
-    textPrimary = EarthNightText,
-    textMuted = EarthNightTextMuted,
-    textSubtle = EarthNightTextSubtle,
-    forestGreen = EarthNightGreen,
-    forestDark = EarthNightText,
-    camelOchre = EarthNightCamel,
-    camelLight = EarthNightCamelLight,
-    sageOlive = EarthNightSage,
-    error = Color(0xFFE57373),
-    isDark = true
+    canvas = NightCanvas,
+    canvasElevated = NightCanvasElevated,
+    surface = NightSurface,
+    surfaceSoft = NightSurfaceSoft,
+    surfaceVariant = NightSurfaceVariant,
+    border = NightBorder,
+    borderSubtle = NightBorderSubtle,
+    textPrimary = NightTextPrimary,
+    textMuted = NightTextMuted,
+    textSubtle = NightTextSubtle,
+    forestGreen = NightStrawberryPink,
+    forestDark = NightTextPrimary,
+    camelOchre = NightViolet,
+    camelLight = NightVioletLight,
+    sageOlive = NightPeach,
+    error = Color(0xFFFF6B81),
+    isDark = true,
+    strawberryPink = NightStrawberryPink,
+    pastelViolet = NightViolet,
+    softPeach = NightPeach,
+    gaugeTrack = NightTrack
 )
 
 val LocalEarthColors = androidx.compose.runtime.staticCompositionLocalOf { LightEarthColors }
@@ -134,72 +195,72 @@ object EarthTheme {
         get() = LocalEarthColors.current
 }
 
-// SPIDER-MAN BACKWARD COMPATIBLE BINDINGS (Redirected to Organic Earth)
-val SpiderRed = EarthForestGreen
-val SpiderRedAccent = EarthCamelOchre
-val SpiderRedDark = EarthForestDark
-val SpiderRedDeep = EarthForestDeep
+// SPIDER-MAN BACKWARD COMPATIBLE BINDINGS (Redirected to Mindful Pastel)
+val SpiderRed = PastelStrawberryPink
+val SpiderRedAccent = PastelViolet
+val SpiderRedDark = PastelStrawberryDeep
+val SpiderRedDeep = Color(0xFF14101F)
 
-val SpiderBlue = EarthForestGreen
-val SpiderBlueAccent = EarthCamelOchre
-val SpiderBlueDark = EarthForestDark
-val SpiderBlueDeep = EarthForestDeep
+val SpiderBlue = PastelViolet
+val SpiderBlueAccent = PastelPeach
+val SpiderBlueDark = PastelVioletDeep
+val SpiderBlueDeep = Color(0xFF14101F)
 
-val SpiderStealthBg = EarthCanvasCream
-val SpiderSurfaceDark = EarthSurfaceLinenSoft
-val SpiderCardDark = EarthSurfaceLinen
-val SpiderBorderDark = EarthBorderLinen
-val SpiderBorderSubtle = EarthBorderSubtle
+val SpiderStealthBg = PastelCanvas
+val SpiderSurfaceDark = PastelSurfaceSoft
+val SpiderCardDark = PastelSurface
+val SpiderBorderDark = PastelBorder
+val SpiderBorderSubtle = PastelBorderSubtle
 
-val SpiderWebWhite = EarthTextDark
-val SpiderTextSecondary = EarthTextMuted
-val SpiderGold = EarthCamelOchre
+val SpiderWebWhite = PastelTextPrimary
+val SpiderTextSecondary = PastelTextMuted
+val SpiderGold = PastelViolet
 
 // ZENITH SYSTEM BINDINGS
-val ZenithNavy = EarthSurfaceLinenSoft
-val ZenithNavyLight = EarthSurfaceLinen
-val ZenithNavyDark = EarthCanvasCream
+val ZenithNavy = PastelSurfaceSoft
+val ZenithNavyLight = PastelSurface
+val ZenithNavyDark = PastelCanvas
 
-val ZenithEmerald = EarthForestGreen
-val ZenithEmeraldAccent = EarthCamelOchre
-val ZenithSage = EarthSageOlive
+val ZenithEmerald = PastelStrawberryPink
+val ZenithEmeraldAccent = PastelViolet
+val ZenithSage = PastelPeach
 
-val ZenithAlabaster = EarthCanvasCream
-val ZenithSurfaceWhite = EarthSurfaceLinenSoft
-val ZenithBorderLight = EarthBorderLinen
-val ZenithTextMutedLight = EarthTextMuted
+val ZenithAlabaster = PastelCanvas
+val ZenithSurfaceWhite = PastelSurfaceSoft
+val ZenithBorderLight = PastelBorder
+val ZenithTextMutedLight = PastelTextMuted
 
-val ZenithBurgundy = EarthForestGreen
-val ZenithBurgundyDeep = EarthForestDark
-val ZenithBurgundyAccent = EarthCamelOchre
+val ZenithBurgundy = PastelStrawberryPink
+val ZenithBurgundyDeep = PastelStrawberryDeep
+val ZenithBurgundyAccent = PastelViolet
 
-val ZenithDarkBg = EarthCanvasCream
-val ZenithDarkSurface = EarthSurfaceLinenSoft
-val ZenithCardDark = EarthSurfaceLinen
-val ZenithDarkSurfaceVariant = EarthSandCard
-val ZenithDarkBorder = EarthBorderLinen
+val ZenithDarkBg = PastelCanvas
+val ZenithDarkSurface = PastelSurfaceSoft
+val ZenithCardDark = PastelSurface
+val ZenithDarkSurfaceVariant = PastelSurfaceVariant
+val ZenithDarkBorder = PastelBorder
 
-val ZenithLightBg = EarthCanvasCream
-val ZenithLightSurface = EarthSurfaceLinenSoft
-val ZenithLightSurfaceVariant = EarthSandCard
-val ZenithLightBorder = EarthBorderLinen
+val ZenithLightBg = PastelCanvas
+val ZenithLightSurface = PastelSurfaceSoft
+val ZenithLightSurfaceVariant = PastelSurfaceVariant
+val ZenithLightBorder = PastelBorder
 
-val ZenithPrimary = EarthForestGreen
-val ZenithPrimaryDark = EarthForestDark
-val ZenithPrimaryContainer = EarthSurfaceLinen
+val ZenithPrimary = PastelStrawberryPink
+val ZenithPrimaryDark = PastelStrawberryDeep
+val ZenithPrimaryContainer = PastelSurfaceVariant
 val ZenithOnPrimary = Color(0xFFFFFFFF)
 
-val ZenithSecondary = EarthCamelOchre
-val ZenithSecondaryContainer = EarthCamelLight
+val ZenithSecondary = PastelViolet
+val ZenithSecondaryContainer = PastelVioletLight
 val ZenithOnSecondary = Color(0xFFFFFFFF)
 
-val ZenithCoral = EarthCamelOchre
-val ZenithCoralContainer = EarthCamelLight
-val ZenithAmber = EarthCamelOchre
-val ZenithAmberContainer = EarthCamelLight
-val ZenithPurple = EarthSageOlive
+val ZenithCoral = PastelPeach
+val ZenithCoralContainer = PastelPeachLight
+val ZenithAmber = PastelPeach
+val ZenithAmberContainer = PastelPeachLight
+val ZenithPurple = PastelViolet
 
-val ZenithTextPrimaryDark = EarthTextDark
-val ZenithTextSecondaryDark = EarthTextMuted
-val ZenithTextPrimaryLight = EarthTextDark
-val ZenithTextSecondaryLight = EarthTextMuted
+val ZenithTextPrimaryDark = PastelTextPrimary
+val ZenithTextSecondaryDark = PastelTextMuted
+val ZenithTextPrimaryLight = PastelTextPrimary
+val ZenithTextSecondaryLight = PastelTextMuted

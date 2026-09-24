@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -589,74 +590,80 @@ fun ZenithBottomNavigation(
     onFabClicked: () -> Unit
 ) {
     val earth = com.zenith.focus.core.designsystem.EarthTheme.colors
-    Surface(
-        color = earth.surfaceSoft,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        shadowElevation = 8.dp,
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 8.dp)
     ) {
-        Row(
+        Surface(
+            color = if (earth.isDark) earth.surface.copy(alpha = 0.92f) else Color.White.copy(alpha = 0.92f),
+            shape = RoundedCornerShape(32.dp),
+            shadowElevation = 10.dp,
             modifier = Modifier
                 .fillMaxWidth()
                 .border(
                     width = 1.dp,
-                    color = earth.border,
-                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+                    color = if (earth.isDark) earth.border else Color.White.copy(alpha = 0.85f),
+                    shape = RoundedCornerShape(32.dp)
                 )
-                .padding(horizontal = 14.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
         ) {
-            // 0: HOME
-            BottomNavItem(
-                label = "Home",
-                icon = androidx.compose.material.icons.Icons.Outlined.Home,
-                isSelected = selectedTab == 0,
-                onClick = { onTabSelected(0) }
-            )
-
-            // 1: SHIELDS
-            BottomNavItem(
-                label = "Shields",
-                icon = androidx.compose.material.icons.Icons.Outlined.Shield,
-                isSelected = selectedTab == 1,
-                onClick = { onTabSelected(1) }
-            )
-
-            // CENTER FAB: Quick Lock (+)
-            Box(
+            Row(
                 modifier = Modifier
-                    .size(46.dp)
-                    .clip(CircleShape)
-                    .background(earth.camelOchre)
-                    .clickable { onFabClicked() },
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = androidx.compose.material.icons.Icons.Default.Add,
-                    contentDescription = "Quick Lock",
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
+                // 0: HOME
+                BottomNavItem(
+                    label = "Home",
+                    icon = androidx.compose.material.icons.Icons.Outlined.Home,
+                    isSelected = selectedTab == 0,
+                    onClick = { onTabSelected(0) }
+                )
+
+                // 1: SHIELDS
+                BottomNavItem(
+                    label = "Shields",
+                    icon = androidx.compose.material.icons.Icons.Outlined.Shield,
+                    isSelected = selectedTab == 1,
+                    onClick = { onTabSelected(1) }
+                )
+
+                // CENTER FAB: Quick Lock (+)
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(earth.strawberryPink)
+                        .clickable { onFabClicked() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = androidx.compose.material.icons.Icons.Default.Add,
+                        contentDescription = "Quick Lock",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                // 2: INSIGHTS (ANALYTICS)
+                BottomNavItem(
+                    label = "Insights",
+                    icon = androidx.compose.material.icons.Icons.Outlined.BarChart,
+                    isSelected = selectedTab == 2,
+                    onClick = { onTabSelected(2) }
+                )
+
+                // 3: MORE (SETTINGS)
+                BottomNavItem(
+                    label = "More",
+                    icon = androidx.compose.material.icons.Icons.Outlined.MoreHoriz,
+                    isSelected = selectedTab == 3,
+                    onClick = { onTabSelected(3) }
                 )
             }
-
-            // 2: INSIGHTS (ANALYTICS)
-            BottomNavItem(
-                label = "Insights",
-                icon = androidx.compose.material.icons.Icons.Outlined.BarChart,
-                isSelected = selectedTab == 2,
-                onClick = { onTabSelected(2) }
-            )
-
-            // 3: MORE (SETTINGS)
-            BottomNavItem(
-                label = "More",
-                icon = androidx.compose.material.icons.Icons.Outlined.MoreHoriz,
-                isSelected = selectedTab == 3,
-                onClick = { onTabSelected(3) }
-            )
         }
     }
 }
@@ -669,26 +676,29 @@ private fun BottomNavItem(
     onClick: () -> Unit
 ) {
     val earth = com.zenith.focus.core.designsystem.EarthTheme.colors
-    Column(
+    Row(
         modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(20.dp))
+            .background(if (isSelected) earth.strawberryPink.copy(alpha = 0.12f) else Color.Transparent)
             .clickable { onClick() }
-            .padding(horizontal = 10.dp, vertical = 4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .padding(horizontal = if (isSelected) 12.dp else 8.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = icon,
             contentDescription = label,
-            tint = if (isSelected) earth.forestGreen else earth.textMuted,
-            modifier = Modifier.size(24.dp)
+            tint = if (isSelected) earth.strawberryPink else earth.textMuted,
+            modifier = Modifier.size(22.dp)
         )
-        Spacer(modifier = Modifier.height(2.dp))
-        Text(
-            text = label,
-            color = if (isSelected) earth.forestGreen else earth.textMuted,
-            fontSize = 11.sp,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-        )
+        if (isSelected) {
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = label,
+                color = earth.strawberryPink,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }
