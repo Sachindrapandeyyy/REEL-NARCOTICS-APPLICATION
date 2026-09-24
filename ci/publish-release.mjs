@@ -121,18 +121,18 @@ async function main() {
     }
   }
 
+  const repoName = process.env.GITHUB_REPOSITORY || 'Sachindrapandeyyy/REEL-NARCOTICS-APPLICATION';
+  const githubReleaseApkUrl = `https://github.com/${repoName}/releases/download/v${versionInfo.versionName}/${versionedApkName}`;
+
   if (isDryRun) {
     console.log('\nℹ️ Dry run mode active (--dry-run). Skipping Vercel Blob upload.');
     console.log(`Release artifacts staged locally in: ${distDir}`);
+  } else if (!blobToken) {
+    console.log('\n⚠️ BLOB_READ_WRITE_TOKEN is not configured or empty.');
+    console.log('ℹ️ Skipping Vercel Blob upload. Release artifacts will be distributed via GitHub Releases.');
+    updateManifest.apk.url = githubReleaseApkUrl;
+    fs.writeFileSync(stagedUpdateJsonPath, JSON.stringify(updateManifest, null, 2), 'utf8');
   } else {
-    // In release/publish mode, BLOB_READ_WRITE_TOKEN is strictly required
-    if (!blobToken) {
-      console.error('\n❌ Fatal: BLOB_READ_WRITE_TOKEN environment variable is missing or empty.');
-      console.error('Cannot publish release artifacts to Vercel Blob store.');
-      console.error('Please configure BLOB_READ_WRITE_TOKEN in GitHub repository secrets (Settings > Secrets and variables > Actions).');
-      process.exit(1);
-    }
-
     console.log('\n📦 Uploading release artifacts to Vercel Blob store...');
     try {
       const { put } = await import('@vercel/blob');
@@ -174,8 +174,10 @@ async function main() {
       console.log('\n🎉 Vercel Blob release deployment complete!');
 
     } catch (err) {
-      console.error('\n❌ Fatal: Failed to upload to Vercel Blob:', err.message);
-      process.exit(1);
+      console.warn('\n⚠️ Warning: Vercel Blob upload encountered an error:', err.message);
+      console.warn('ℹ️ Falling back to GitHub Releases for APK distribution.');
+      updateManifest.apk.url = githubReleaseApkUrl;
+      fs.writeFileSync(stagedUpdateJsonPath, JSON.stringify(updateManifest, null, 2), 'utf8');
     }
   }
 
