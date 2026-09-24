@@ -176,60 +176,6 @@ class ZenithAccessibilityService : AccessibilityService() {
                 }
                 return
             }
-
-            // NUCLEAR HOST APP SHIELD:
-            // When Nuclear Mode is active with Instagram or TikTok armed, host apps cannot open at all!
-            val nuclearSession = nuclearRepo.session.value
-            val isInstagramArmed = nuclearSession.enabledCategories.contains(ContentCategory.INSTAGRAM_REELS) || nuclearSession.enabledCategories.isEmpty()
-            val isTikTokArmed = nuclearSession.enabledCategories.contains(ContentCategory.TIKTOK) || nuclearSession.enabledCategories.isEmpty()
-
-            val isInstagramHost = lowerPkg == "com.instagram.android" ||
-                                  lowerPkg == "com.instagram.lite" ||
-                                  lowerPkg == "com.instagram.barcelona" ||
-                                  lowerPkg.startsWith("com.instagram.")
-
-            val isTikTokHost = lowerPkg == "com.zhiliaoapp.musically" ||
-                               lowerPkg == "com.ss.android.ugc.trill" ||
-                               lowerPkg == "com.zhiliaoapp.musically.go"
-
-            if (isNuclear && ((isInstagramArmed && isInstagramHost) || (isTikTokArmed && isTikTokHost))) {
-                val appTitle = when {
-                    lowerPkg == "com.instagram.lite" -> "Instagram Lite"
-                    isInstagramHost -> "Instagram"
-                    else -> "TikTok"
-                }
-
-                // 1. Instant global eject to Home Screen
-                ejectToHomeScreen()
-
-                // 2. Physical haptic alert
-                triggerHapticAlert()
-
-                // 3. User toast & statistics with debounce
-                if (nowTime - lastEjectTime >= EJECT_COOLDOWN_MS) {
-                    lastEjectTime = nowTime
-                    serviceScope.launch(Dispatchers.Main) {
-                        Toast.makeText(
-                            applicationContext,
-                            "☢️ NUCLEAR LOCK: $appTitle is locked during your active Nuclear session!",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-
-                    serviceScope.launch {
-                        app.container.statisticsRepository.recordBlockEvent(
-                            BlockEvent(
-                                timestamp = nowTime,
-                                packageName = lowerPkg,
-                                category = if (isInstagramHost) ContentCategory.INSTAGRAM_REELS else ContentCategory.TIKTOK,
-                                confidence = 1.0f,
-                                ruleId = "nuclear_host_eject"
-                            )
-                        )
-                    }
-                }
-                return
-            }
         }
 
         // Debounce only extremely rapid duplicate events within 60ms
@@ -450,22 +396,23 @@ class ZenithAccessibilityService : AccessibilityService() {
 
             // 2. SURGICAL SHORT CLOSE OR INSTANT HOME EJECTION
             withContext(Dispatchers.Main) {
-                if (result.category == ContentCategory.ADULT_WEBSITE || result.category == ContentCategory.ADULT_KEYWORD || isNuclear) {
-                    // Nuclear Mode or Explicit Content: INSTANT ZERO-TOLERANCE EJECTION TO HOME!
+                val isWholeAppCategory = result.category == ContentCategory.ADULT_WEBSITE || 
+                                         result.category == ContentCategory.ADULT_KEYWORD ||
+                                         result.category == ContentCategory.TIKTOK
+
+                if (isWholeAppCategory) {
+                    // Adult sites or pure short-video apps (TikTok): eject to Home immediately
                     ejectToHomeScreen()
-                    val feedbackText = if (isNuclear) {
-                        "☢️ NUCLEAR LOCK: Reel/Short closed."
+                    val feedbackText = if (result.category == ContentCategory.TIKTOK) {
+                        "🎵 TIKTOK BLOCKED: Feed closed."
                     } else {
                         "🛡️ Explicit content blocked. Exiting to Home."
                     }
-                    Toast.makeText(
-                        applicationContext,
-                        feedbackText,
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(applicationContext, feedbackText, Toast.LENGTH_SHORT).show()
                 } else {
                     // Dedicated bottom navigation tabs trap the user; BACK cannot exit the tab, so eject to Home.
-                    // For feeds/search shorts, surgical BACK closes the overlay. Eject to Home only after 3 failed attempts.
+                    // For feeds/search shorts, surgical BACK closes the overlay, keeping the host app alive!
+                    // Eject to Home only after 3 consecutive failed dismissals.
                     if (isDedicatedTab || consecutiveBlockCount >= 3) {
                         ejectToHomeScreen()
                     } else {
@@ -474,9 +421,10 @@ class ZenithAccessibilityService : AccessibilityService() {
 
                     val isBedtime = habitConfig.bedtimeShieldEnabled && habitConfig.isBedtimeActive(now)
                     val feedbackText = when {
+                        isNuclear -> "☢️ NUCLEAR SHIELD: Reel/Short closed."
                         lockState.isCurrentlyActive(now) -> "🔒 FOCUS LOCK: Reel/Short closed."
                         isBedtime -> "🌙 BEDTIME SHIELD: Sleep is your superpower. Put your phone down!"
-                        else -> "🛡️ REEL BLOCKED: Reel/Short closed."
+                        else -> "🛡️ SURGICAL SHIELD: Reel/Short closed."
                     }
                     Toast.makeText(
                         applicationContext,

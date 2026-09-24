@@ -27,8 +27,6 @@ class InstagramReelsDetector : ContentDetector {
             "swipe_refresh_clips",
             "reel_player_view",
             "reels_page_view",
-            "reels_tray",
-            "clips_carousel",
             "reels_video_player"
         )
     }
@@ -46,8 +44,10 @@ class InstagramReelsDetector : ContentDetector {
             return DetectionResult.allowed(ContentCategory.INSTAGRAM_REELS, "Reels blocking disabled")
         }
 
-        // 1. Direct Messages / Chats - ALWAYS ALLOWED unless a Reel player is explicitly active
-        val isDirectChat = context.hasAnyViewId("direct_thread_feed", "row_thread_composer", "direct_inbox", "message_composer")
+        // 1. Direct Messages / Chats - ALWAYS ALLOWED unless a full-screen Reel player is actively mounted
+        val isDirectChat = context.hasAnyViewId("direct_thread_feed", "row_thread_composer", "direct_inbox", "message_composer", "direct_recipient_picker")
+
+        val isDedicatedClipsViewer = context.hasAnyViewId("clips_viewer_view_pager", "clips_viewer_container", "reels_page_view", "reels_video_player")
 
         val isReelsViewerActive = ACTIVE_REELS_VIEWER_IDS.any { context.hasViewId(it) } ||
             context.viewIds.any { id ->
@@ -85,48 +85,53 @@ class InstagramReelsDetector : ContentDetector {
             (text.contains("Original audio", ignoreCase = true))
         }
 
-        // Signal 4: Instagram Lite video surface
+        // Signal 4: Instagram Lite dedicated clips surface
         val isInstagramLite = context.packageName.equals(PACKAGE_INSTAGRAM_LITE, ignoreCase = true)
-        val isLiteReels = isInstagramLite && (
+        val isLiteClipsViewer = isInstagramLite && (
             isReelsTabSelected ||
-            hasReelsMetadata ||
+            context.hasViewId("reels_tab") ||
+            context.hasViewId("reels_tab_container") ||
             context.viewIds.any { id ->
-                id.contains("reel", ignoreCase = true) ||
-                id.contains("video", ignoreCase = true) ||
-                id.contains("player", ignoreCase = true) ||
-                id.contains("clip", ignoreCase = true)
+                id.contains("reels_tab", ignoreCase = true) ||
+                id.contains("clips_viewer", ignoreCase = true) ||
+                id.contains("reels_page", ignoreCase = true) ||
+                id.contains("reel_player", ignoreCase = true)
             } ||
-            context.contentDescriptions.any { it.contains("Reel", ignoreCase = true) || it.contains("Watch", ignoreCase = true) || it.contains("Audio", ignoreCase = true) } ||
-            context.visibleTexts.any { it.contains("Reels", ignoreCase = true) || it.contains("Original audio", ignoreCase = true) }
+            (hasReelsMetadata && (context.hasViewId("video_player") || context.hasViewId("video_container") || context.hasViewId("clips_container")))
         )
 
-        val isDedicatedClipsViewer = context.hasAnyViewId("clips_viewer_view_pager", "clips_viewer_container", "reels_page_view", "reels_video_player")
+        // Exclusions 1: Direct Messages (Always immune when not inside dedicated fullscreen viewer)
+        if (isDirectChat && !isDedicatedClipsViewer && !isReelsTabSelected) {
+            return DetectionResult.allowed(ContentCategory.INSTAGRAM_REELS, "Direct messages active")
+        }
 
-        // Exclusions: 24h stories (reel_viewer) without clips metadata must NOT be blocked
-        val is24hStory = (context.hasViewId("reel_viewer") || context.hasViewId("reel_viewer_root")) &&
+        // Exclusions 2: 24h stories (reel_viewer) without dedicated clips viewer must NOT be blocked
+        val is24hStory = (context.hasViewId("reel_viewer") || context.hasViewId("reel_viewer_root") || context.hasViewId("reel_viewer_framelayout")) &&
             !isDedicatedClipsViewer &&
-            !hasReelsMetadata && !isReelsTabSelected && !isLiteReels
+            !isReelsTabSelected && !isLiteClipsViewer
         if (is24hStory) {
             return DetectionResult.allowed(ContentCategory.INSTAGRAM_REELS, "Instagram 24h Story active")
         }
 
-        // Exclusions: Explore Grid thumbnails (explore_tab) without active full-screen viewer must be allowed
-        val isExploreGrid = context.hasViewId("explore_tab") && !isDedicatedClipsViewer && !hasReelsMetadata && !isReelsTabSelected && !isLiteReels
+        // Exclusions 3: User Profiles & Account settings
+        val isUserProfile = (context.hasAnyViewId("profile_tab", "profile_pager", "user_profile_header", "profile_header")) &&
+            !isDedicatedClipsViewer && !isReelsTabSelected
+        if (isUserProfile) {
+            return DetectionResult.allowed(ContentCategory.INSTAGRAM_REELS, "Instagram user profile active")
+        }
+
+        // Exclusions 4: Explore Grid thumbnails (explore_tab) without dedicated full-screen viewer must be allowed
+        val isExploreGrid = (context.hasViewId("explore_tab") || context.hasViewId("search_tab")) &&
+            !isDedicatedClipsViewer && !isReelsTabSelected && !isLiteClipsViewer
         if (isExploreGrid) {
             return DetectionResult.allowed(ContentCategory.INSTAGRAM_REELS, "Instagram explore grid active")
         }
 
-        // Exclusions: Normal Home Feed without active full-screen viewer or reels metadata
+        // Exclusions 5: Normal Home Feed (Photos, normal carousel/feed video posts) without dedicated full-screen viewer
         val isNormalFeed = (context.hasAnyViewId("feed_recycler", "main_feed", "sticky_header_list")) &&
-            !isDedicatedClipsViewer &&
-            !hasReelsMetadata && !isReelsTabSelected && !isLiteReels
+            !isDedicatedClipsViewer && !isReelsTabSelected && !isLiteClipsViewer
         if (isNormalFeed) {
             return DetectionResult.allowed(ContentCategory.INSTAGRAM_REELS, "Instagram home feed active")
-        }
-
-        // Exclusions: Direct messages without active reels player
-        if (isDirectChat && !isReelsViewerActive && !hasReelsMetadata && !isReelsTabSelected) {
-            return DetectionResult.allowed(ContentCategory.INSTAGRAM_REELS, "Direct messages active")
         }
 
         var confidence = 0.0f
@@ -142,12 +147,12 @@ class InstagramReelsDetector : ContentDetector {
             reasons.add("Reels tab actively selected in navigation")
         }
 
-        if (hasReelsMetadata) {
+        if (hasReelsMetadata && (isDedicatedClipsViewer || isReelsViewerActive)) {
             confidence = maxOf(confidence, 0.95f)
             reasons.add("Reels content metadata detected")
         }
 
-        if (isLiteReels) {
+        if (isLiteClipsViewer) {
             confidence = 1.0f
             reasons.add("Instagram Lite Reels surface active")
         }

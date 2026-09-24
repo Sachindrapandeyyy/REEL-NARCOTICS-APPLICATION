@@ -15,8 +15,6 @@ class SnapchatSpotlightDetector : ContentDetector {
             "spotlight_container",
             "spotlight_fullscreen",
             "spotlight_video_player",
-            "opera_page_view",
-            "opera_story_viewer",
             "full_screen_player",
             "spotlight_carousel",
             "spotlight_feed",
@@ -25,11 +23,7 @@ class SnapchatSpotlightDetector : ContentDetector {
             "ff_spotlight",
             "neon_spotlight",
             "action_spotlight",
-            "story_viewer",
-            "snap_player_view",
-            "discover_feed",
-            "stories_recycler",
-            "playback_view"
+            "discover_feed"
         )
     }
 
@@ -42,12 +36,10 @@ class SnapchatSpotlightDetector : ContentDetector {
             return DetectionResult.allowed(ContentCategory.SNAPCHAT_SPOTLIGHT, "Spotlight blocking disabled")
         }
 
-        // 1. Check if viewer or spotlight layout is active
+        // 1. Check if Spotlight viewer or layout is active
         val isSpotlightViewerActive = SPOTLIGHT_VIEWER_IDS.any { context.hasViewId(it) } ||
             context.viewIds.any { id ->
                 id.contains("spotlight", ignoreCase = true) ||
-                id.contains("opera_page", ignoreCase = true) ||
-                id.contains("opera_story", ignoreCase = true) ||
                 id.contains("discover_feed", ignoreCase = true)
             }
 
@@ -72,10 +64,10 @@ class SnapchatSpotlightDetector : ContentDetector {
             text.contains("Spotlight", ignoreCase = true) && (text.contains("Sound", ignoreCase = true) || text.contains("Remix", ignoreCase = true) || text.contains("Subscribe", ignoreCase = true))
         }
 
-        // Excluded surfaces: Pure 1-on-1 Chat and pure Camera preview (without active spotlight viewer or tab)
-        val isChatInput = context.hasAnyViewId("chat_v3_container", "chat_input_text_field", "chat_message_input")
-        val isCameraView = context.hasAnyViewId("camera_view", "camera_layout") && !isSpotlightViewerActive && !isSpotlightTabActive
-        if ((isChatInput || isCameraView) && !isSpotlightViewerActive && !isSpotlightTabActive && !hasSpotlightContent) {
+        // Excluded surfaces: 1-on-1 Chats, Friends list, and Camera preview (without active spotlight viewer or tab)
+        val isChatSurface = context.hasAnyViewId("chat_v3_container", "chat_input_text_field", "chat_message_input", "feed_view", "friends_feed")
+        val isCameraView = context.hasAnyViewId("camera_view", "camera_layout", "camera_capture_button") && !isSpotlightViewerActive && !isSpotlightTabActive
+        if ((isChatSurface || isCameraView) && !isSpotlightViewerActive && !isSpotlightTabActive && !hasSpotlightContent) {
             return DetectionResult.allowed(ContentCategory.SNAPCHAT_SPOTLIGHT, "Snapchat chat/camera active")
         }
 
