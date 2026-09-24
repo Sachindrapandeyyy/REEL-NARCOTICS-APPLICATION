@@ -335,7 +335,7 @@ fun HomeScreen(
             // 3. EDITORIAL GREETING: "Good evening, Olivia!" Style
             // ====================================================================
             Text(
-                text = "$greeting, Olivia!",
+                text = "$greeting!",
                 color = earth.textPrimary,
                 fontSize = 28.sp,
                 fontFamily = FontFamily.Serif,

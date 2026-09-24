@@ -523,7 +523,7 @@ private fun ShieldToggleRow(
 }
 
 @Composable
-private fun EtherealDivider() {
+fun EtherealDivider() {
     Divider(
         color = Color(0xFFF0EBE1),
         thickness = 1.dp

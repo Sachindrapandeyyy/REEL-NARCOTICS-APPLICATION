@@ -7,6 +7,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,7 +19,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -44,15 +47,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zenith.focus.R
-import com.zenith.focus.core.designsystem.EarthTheme
+import com.zenith.focus.core.designsystem.*
 import com.zenith.focus.core.ui.OemPermissionCard
 import com.zenith.focus.core.ui.RestrictedSettingsBanner
 import com.zenith.focus.core.ui.RestrictedSettingsGuideDialog
 import com.zenith.focus.domain.model.ContentCategory
 import com.zenith.focus.domain.model.ProtectionConfig
-
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import com.zenith.focus.feature.protection.EtherealDivider
+import com.zenith.focus.feature.protection.EtherealToggle
 
 @Composable
 fun OnboardingScreen(
@@ -73,11 +75,22 @@ fun OnboardingScreen(
         RestrictedSettingsGuideDialog(onDismiss = { showRestrictedDialog = false })
     }
 
+    // Warm Ivory Linen & Peach Mist Gradient Canvas
+    val canvasBrush = remember {
+        androidx.compose.ui.graphics.Brush.verticalGradient(
+            colors = listOf(
+                Color(0xFFFAF7F2),
+                Color(0xFFFBF1E8),
+                Color(0xFFF6EFEB)
+            )
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(earth.canvas)
-            .padding(20.dp)
+            .background(canvasBrush)
+            .padding(horizontal = 22.dp, vertical = 20.dp)
     ) {
         Column(
             modifier = Modifier
@@ -98,29 +111,28 @@ fun OnboardingScreen(
                             .padding(horizontal = 4.dp)
                             .size(if (i == currentPage) 26.dp else 8.dp, 6.dp)
                             .clip(RoundedCornerShape(3.dp))
-                            .background(if (i == currentPage) earth.camelOchre else earth.border)
+                            .background(if (i == currentPage) OrbitalCoral else earth.border)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            // 3D Brand Logo with refined border
+            // Brand Logo with refined border
             Image(
                 painter = painterResource(id = R.drawable.ic_reel_narcotics_logo),
                 contentDescription = "Reel Narcotics",
                 modifier = Modifier
-                    .size(90.dp)
-                    .clip(RoundedCornerShape(22.dp))
-                    .border(1.dp, earth.border, RoundedCornerShape(22.dp))
+                    .size(86.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .border(1.5.dp, earth.border, RoundedCornerShape(24.dp))
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             // Page Content Container
             Box(
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.TopCenter
             ) {
                 when (currentPage) {
@@ -128,7 +140,7 @@ fun OnboardingScreen(
                     0 -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "REEL NARCOTICS • 100% OFFLINE",
-                            color = earth.camelOchre,
+                            color = OrbitalCoral,
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp
@@ -136,36 +148,36 @@ fun OnboardingScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "Break the Scroll.\nTake Back Attention.",
-                            color = earth.forestGreen,
-                            fontSize = 24.sp,
+                            color = earth.textPrimary,
+                            fontSize = 26.sp,
                             fontFamily = FontFamily.Serif,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.Normal,
                             textAlign = TextAlign.Center,
-                            lineHeight = 30.sp
+                            lineHeight = 32.sp
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = "Surgical distraction blocker engineered to destroy endless dopamine loops. Keeps long tutorials and chats open, but terminates infinite feeds the instant they appear.",
-                            color = earth.textPrimary,
+                            color = earth.textMuted,
                             fontSize = 13.sp,
                             textAlign = TextAlign.Center,
                             lineHeight = 18.sp
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(20.dp))
 
                         // 3 Value Pillars
                         Card(
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
+                            shape = RoundedCornerShape(22.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.90f)),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .border(1.dp, earth.border, RoundedCornerShape(16.dp))
+                                .border(1.dp, earth.border, RoundedCornerShape(22.dp))
                         ) {
-                            Column(modifier = Modifier.padding(14.dp)) {
+                            Column(modifier = Modifier.padding(18.dp)) {
                                 ValuePillarRow("🛡️", "Surgical Precision", "Only kills Shorts & Reels. YouTube tutorials & DMs stay accessible.")
-                                Spacer(modifier = Modifier.height(10.dp))
+                                Spacer(modifier = Modifier.height(14.dp))
                                 ValuePillarRow("🔒", "100% Offline & Private", "Zero tracking, zero cloud accounts, zero ads, and zero telemetry.")
-                                Spacer(modifier = Modifier.height(10.dp))
+                                Spacer(modifier = Modifier.height(14.dp))
                                 ValuePillarRow("⚡", "Sub-Millisecond Response", "Terminates addictive feeds instantly before your dopamine spike triggers.")
                             }
                         }
@@ -175,29 +187,29 @@ fun OnboardingScreen(
                     1 -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "STEP 2 OF 3 • SMART PERMISSION",
-                            color = earth.camelOchre,
+                            color = OrbitalCoral,
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
                         )
-                        Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "Activate Reel Shield",
-                            color = earth.forestGreen,
-                            fontSize = 22.sp,
+                            color = earth.textPrimary,
+                            fontSize = 24.sp,
                             fontFamily = FontFamily.Serif,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.Normal,
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "Used strictly to detect when short-form video players appear so Reel Narcotics can close them. Your chats, photos, and passwords are NEVER collected.",
-                            color = earth.textPrimary,
-                            fontSize = 12.5.sp,
+                            color = earth.textMuted,
+                            fontSize = 13.sp,
                             textAlign = TextAlign.Center,
-                            lineHeight = 17.sp
+                            lineHeight = 18.sp
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(18.dp))
 
                         OemPermissionCard(
                             isServiceConnected = isServiceConnected,
@@ -209,52 +221,73 @@ fun OnboardingScreen(
                     2 -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "STEP 3 OF 3 • CUSTOMIZE",
-                            color = earth.camelOchre,
+                            color = OrbitalCoral,
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
                         )
-                        Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "Choose Your Targets",
-                            color = earth.forestGreen,
-                            fontSize = 22.sp,
+                            color = earth.textPrimary,
+                            fontSize = 24.sp,
                             fontFamily = FontFamily.Serif,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.Normal,
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = "Select which addictive feeds Reel Narcotics should intercept:",
                             color = earth.textMuted,
-                            fontSize = 12.sp,
+                            fontSize = 13.sp,
                             textAlign = TextAlign.Center
                         )
-                        Spacer(modifier = Modifier.height(14.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                        OnboardingToggleRow("YouTube Shorts", config.blockYouTubeShorts) {
-                            onToggleCategory(ContentCategory.YOUTUBE_SHORTS, it)
-                        }
-                        OnboardingToggleRow("Instagram Reels", config.blockInstagramReels) {
-                            onToggleCategory(ContentCategory.INSTAGRAM_REELS, it)
-                        }
-                        OnboardingToggleRow("Snapchat Spotlight", config.blockSnapchatSpotlight) {
-                            onToggleCategory(ContentCategory.SNAPCHAT_SPOTLIGHT, it)
-                        }
-                        OnboardingToggleRow("Adult Websites (Browser)", config.blockAdultWebsites) {
-                            onToggleCategory(ContentCategory.ADULT_WEBSITE, it)
+                        Card(
+                            shape = RoundedCornerShape(22.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.90f)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(1.dp, earth.border, RoundedCornerShape(22.dp))
+                        ) {
+                            Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 6.dp)) {
+                                OnboardingToggleRow("YouTube Shorts", config.blockYouTubeShorts) {
+                                    onToggleCategory(ContentCategory.YOUTUBE_SHORTS, it)
+                                }
+                                com.zenith.focus.feature.protection.EtherealDivider()
+                                OnboardingToggleRow("Instagram Reels", config.blockInstagramReels) {
+                                    onToggleCategory(ContentCategory.INSTAGRAM_REELS, it)
+                                }
+                                com.zenith.focus.feature.protection.EtherealDivider()
+                                OnboardingToggleRow("Facebook Reels", config.blockFacebookReels) {
+                                    onToggleCategory(ContentCategory.FACEBOOK_REELS, it)
+                                }
+                                com.zenith.focus.feature.protection.EtherealDivider()
+                                OnboardingToggleRow("Snapchat Spotlight", config.blockSnapchatSpotlight) {
+                                    onToggleCategory(ContentCategory.SNAPCHAT_SPOTLIGHT, it)
+                                }
+                                com.zenith.focus.feature.protection.EtherealDivider()
+                                OnboardingToggleRow("TikTok", config.blockTikTok) {
+                                    onToggleCategory(ContentCategory.TIKTOK, it)
+                                }
+                                com.zenith.focus.feature.protection.EtherealDivider()
+                                OnboardingToggleRow("Adult Websites", config.blockAdultWebsites) {
+                                    onToggleCategory(ContentCategory.ADULT_WEBSITE, it)
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Bottom Navigation Buttons
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 12.dp),
+                    .padding(bottom = 16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -262,7 +295,8 @@ fun OnboardingScreen(
                     OutlinedButton(
                         onClick = { currentPage-- },
                         border = BorderStroke(1.dp, earth.border),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.height(48.dp)
                     ) {
                         Text("BACK", color = earth.textMuted, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                     }
@@ -279,16 +313,16 @@ fun OnboardingScreen(
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (currentPage == totalPages - 1) earth.camelOchre else earth.forestGreen,
+                        containerColor = OrbitalCoral,
                         contentColor = Color.White
                     ),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.height(44.dp)
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.height(48.dp)
                 ) {
                     Text(
-                        text = if (currentPage == totalPages - 1) "ENTER FOCUS MODE 🚀" else "NEXT ➔",
+                        text = if (currentPage == totalPages - 1) "ENTER FOCUS MODE ➔" else "NEXT ➔",
                         fontWeight = FontWeight.Bold,
-                        fontSize = 12.5.sp
+                        fontSize = 13.sp
                     )
                 }
             }
@@ -303,20 +337,20 @@ private fun ValuePillarRow(icon: String, title: String, description: String) {
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Top
     ) {
-        Text(icon, fontSize = 16.sp)
-        Spacer(modifier = Modifier.width(10.dp))
+        Text(icon, fontSize = 18.sp)
+        Spacer(modifier = Modifier.width(12.dp))
         Column {
             Text(
                 text = title,
-                color = earth.forestDark,
-                fontSize = 12.5.sp,
+                color = earth.textPrimary,
+                fontSize = 13.5.sp,
                 fontWeight = FontWeight.Bold
             )
             Text(
                 text = description,
                 color = earth.textMuted,
-                fontSize = 11.sp,
-                lineHeight = 15.sp,
+                fontSize = 12.sp,
+                lineHeight = 16.sp,
                 modifier = Modifier.padding(top = 2.dp)
             )
         }
@@ -324,68 +358,21 @@ private fun ValuePillarRow(icon: String, title: String, description: String) {
 }
 
 @Composable
-fun OnboardingPageContent(tag: String, title: String, description: String) {
-    val earth = EarthTheme.colors
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(horizontal = 8.dp)
-    ) {
-        Text(
-            text = tag,
-            color = earth.camelOchre,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.2.sp
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = title,
-            color = earth.forestGreen,
-            fontSize = 26.sp,
-            fontFamily = FontFamily.Serif,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(14.dp))
-        Text(
-            text = description,
-            color = earth.textPrimary,
-            fontSize = 14.sp,
-            textAlign = TextAlign.Center,
-            lineHeight = 22.sp
-        )
-    }
-}
-
-@Composable
 fun OnboardingToggleRow(title: String, isChecked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     val earth = EarthTheme.colors
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .border(1.dp, earth.border, RoundedCornerShape(16.dp))
+            .clickable { onCheckedChange(!isChecked) }
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(text = title, color = earth.textPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
-            Switch(
-                checked = isChecked,
-                onCheckedChange = onCheckedChange,
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = Color.White,
-                    checkedTrackColor = earth.forestGreen,
-                    uncheckedThumbColor = earth.textMuted,
-                    uncheckedTrackColor = earth.surface
-                )
-            )
-        }
+        Text(text = title, color = earth.textPrimary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        com.zenith.focus.feature.protection.EtherealToggle(
+            checked = isChecked,
+            onCheckedChange = onCheckedChange,
+            activeColor = OrbitalCoral
+        )
     }
 }

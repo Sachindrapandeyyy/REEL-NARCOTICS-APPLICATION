@@ -252,9 +252,9 @@ class ZenithAccessibilityService : AccessibilityService() {
                     } else {
                         "☢️ NUCLEAR LOCK: $appTitle is locked during your active Nuclear session."
                     }
-
-                    ejectToHomeScreen()
-                    Toast.makeText(applicationContext, reason, Toast.LENGTH_SHORT).show()
+                    val remaining = if (isNuclear) nuclearSession.remainingMillis(now, elapsed) else 0L
+                    performGlobalAction(GLOBAL_ACTION_BACK)
+                    overlayWindowManager.showOverlay(ContentCategory.APP_LOCK, remaining, reason)
                 }
 
                 statsRepo.recordBlockEvent(

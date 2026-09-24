@@ -67,8 +67,20 @@ class OverlayWindowManager(
     private val windowManager = service.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private val mainHandler = Handler(Looper.getMainLooper())
     private var overlayView: View? = null
-    private var isOverlayShowing = false
-    private var lastDismissTime = 0L
+
+    companion object {
+        @Volatile
+        var isOverlayShowing = false
+            private set
+        @Volatile
+        var lastDismissTime = 0L
+            private set
+
+        fun notifyDismissed() {
+            isOverlayShowing = false
+            lastDismissTime = System.currentTimeMillis()
+        }
+    }
 
     fun isCoolingDown(): Boolean {
         return System.currentTimeMillis() - lastDismissTime < 800L
@@ -79,7 +91,11 @@ class OverlayWindowManager(
 
         mainHandler.post {
             if (isOverlayShowing) return@post
-            launchFallbackActivity(category, remainingMillis, reason)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(service)) {
+                createAndAttachWindowOverlay(category, remainingMillis, reason)
+            } else {
+                launchFallbackActivity(category, remainingMillis, reason)
+            }
         }
     }
 
@@ -106,7 +122,7 @@ class OverlayWindowManager(
 
             val composeView = ComposeView(service).apply {
                 setContent {
-                    MaterialTheme {
+                    ZenithFocusTheme {
                         BlockOverlayContent(
                             category = category,
                             initialRemainingMillis = remainingMillis,
@@ -147,8 +163,7 @@ class OverlayWindowManager(
                 }
                 overlayView = null
             }
-            isOverlayShowing = false
-            lastDismissTime = System.currentTimeMillis()
+            notifyDismissed()
         }
     }
 }

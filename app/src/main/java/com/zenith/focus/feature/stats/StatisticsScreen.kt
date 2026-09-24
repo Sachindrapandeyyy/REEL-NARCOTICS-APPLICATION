@@ -300,18 +300,26 @@ fun StatisticsScreen(
                     .border(1.dp, earth.border, RoundedCornerShape(22.dp))
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
-                    // Normalize daily counts over the last 7 days
-                    val dayLabels = listOf("M", "T", "W", "T", "F", "S", "S")
+                    // Calculate actual day initials for the last 7 days ending today
+                    val dayLabels = remember {
+                        (6 downTo 0).map { daysAgo ->
+                            val cal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -daysAgo) }
+                            SimpleDateFormat("EEE", Locale.getDefault()).format(cal.time).take(1)
+                        }
+                    }
                     val counts = remember(dailyStats, todayTotalBlocks) {
                         if (dailyStats.isNotEmpty()) {
-                            val last7 = dailyStats.takeLast(7).map { it.totalBlocks.toFloat() }
+                            val last7 = dailyStats.takeLast(7).map { it.totalBlocks.toFloat() }.toMutableList()
+                            if (last7.isNotEmpty()) {
+                                last7[last7.size - 1] = maxOf(last7.last(), todayTotalBlocks.toFloat())
+                            }
                             if (last7.size < 7) {
                                 val padded = MutableList(7 - last7.size) { 0f }
                                 padded.addAll(last7)
                                 padded
                             } else last7
                         } else {
-                            listOf(2f, 5f, 3f, 7f, 4f, 6f, todayTotalBlocks.toFloat().coerceAtLeast(1f))
+                            listOf(0f, 0f, 0f, 0f, 0f, 0f, todayTotalBlocks.toFloat())
                         }
                     }
 

@@ -30,23 +30,35 @@ class BlockScreenActivity : ComponentActivity() {
         insets.isAppearanceLightStatusBars = true
         insets.isAppearanceLightNavigationBars = true
 
+        val returnHome = {
+            val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+                addCategory(Intent.CATEGORY_HOME)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+            startActivity(homeIntent)
+            finish()
+        }
+
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                returnHome()
+            }
+        })
+
         setContent {
-            MaterialTheme {
+            com.zenith.focus.core.designsystem.ZenithFocusTheme {
                 BlockOverlayContent(
                     category = category,
                     initialRemainingMillis = remainingMillis,
                     reason = reason,
-                    onGoBack = {
-                        // Return to Home Screen
-                        val homeIntent = Intent(Intent.ACTION_MAIN).apply {
-                            addCategory(Intent.CATEGORY_HOME)
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                        }
-                        startActivity(homeIntent)
-                        finish()
-                    }
+                    onGoBack = returnHome
                 )
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        com.zenith.focus.accessibility.overlay.OverlayWindowManager.notifyDismissed()
     }
 }
