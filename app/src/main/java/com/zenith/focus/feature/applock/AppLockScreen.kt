@@ -26,12 +26,12 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
@@ -39,8 +39,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -51,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
@@ -59,10 +58,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.zenith.focus.core.designsystem.EarthTheme
+import com.zenith.focus.core.designsystem.*
 import com.zenith.focus.domain.model.AppLockConfig
 import com.zenith.focus.domain.model.AppLockMode
 import com.zenith.focus.domain.model.LockedAppRule
+import com.zenith.focus.feature.protection.EtherealToggle
 import java.util.Locale
 
 @Composable
@@ -103,119 +103,115 @@ fun AppLockScreen(
         }
     }
 
-    Scaffold(
-        floatingActionButton = {
-            if (lockedList.isNotEmpty()) {
-                FloatingActionButton(
-                    onClick = onAddAppsClicked,
-                    containerColor = earth.forestGreen,
-                    contentColor = Color.White,
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.padding(bottom = 16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(imageVector = Icons.Default.Add, contentDescription = "Add")
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Lock Apps", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    }
-                }
-            }
-        }
-    ) { paddingValues ->
+    // Warm Ivory Linen & Peach Mist Gradient Canvas
+    val canvasBrush = remember {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color(0xFFFAF7F2),
+                Color(0xFFFBF1E8),
+                Color(0xFFF6EFEB)
+            )
+        )
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(canvasBrush)
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(earth.canvas)
-                .padding(paddingValues)
-                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .padding(horizontal = 22.dp, vertical = 16.dp)
         ) {
-            // Top Bar
+            // ====================================================================
+            // 1. TOP BAR: Squircle Back | Title | Master Toggle
+            // ====================================================================
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onBackClicked) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color.White.copy(alpha = 0.90f))
+                            .border(1.dp, earth.border, RoundedCornerShape(16.dp))
+                            .clickable { onBackClicked() },
+                        contentAlignment = Alignment.Center
+                    ) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back",
-                            tint = earth.textPrimary
+                            tint = earth.textPrimary,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(14.dp))
                     Column {
                         Text(
-                            text = "⚡ APPS & GAMES SHIELD",
-                            color = earth.forestGreen,
-                            fontSize = 11.sp,
+                            text = "APPLICATION SHIELD",
+                            color = OrbitalMint,
+                            fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp
                         )
                         Text(
-                            text = "App Lock Shield",
+                            text = "App Lock",
                             color = earth.textPrimary,
-                            fontSize = 24.sp,
+                            fontSize = 22.sp,
                             fontFamily = FontFamily.Serif,
                             fontWeight = FontWeight.Normal
                         )
                     }
                 }
 
-                // Master Shield Switch
-                Switch(
+                // Master Shield Toggle
+                EtherealToggle(
                     checked = if (isNuclearActive) true else appLockConfig.isAppLockEnabled,
                     enabled = !isNuclearActive,
+                    activeColor = OrbitalMint,
                     onCheckedChange = {
                         if (isNuclearActive) {
                             Toast.makeText(context, "☢️ Master App Lock is locked ON during Nuclear Mode!", Toast.LENGTH_SHORT).show()
                         } else {
                             onToggleAppLock(it)
                         }
-                    },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = if (isNuclearActive) earth.camelOchre else earth.forestGreen,
-                        uncheckedThumbColor = earth.textMuted,
-                        uncheckedTrackColor = earth.surface
-                    )
+                    }
                 )
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
             // Nuclear Active Tamper Warning
             if (isNuclearActive) {
-                Box(
+                Card(
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.90f)),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(earth.surfaceSoft)
-                        .border(1.dp, earth.camelOchre, RoundedCornerShape(14.dp))
-                        .padding(14.dp)
+                        .border(1.dp, OrbitalCoral.copy(alpha = 0.7f), RoundedCornerShape(18.dp))
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "☢️",
-                            fontSize = 20.sp,
-                            modifier = Modifier.padding(end = 12.dp)
-                        )
+                    Row(
+                        modifier = Modifier.padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = "☢️", fontSize = 18.sp, modifier = Modifier.padding(end = 10.dp))
                         Column {
                             Text(
                                 text = "NUCLEAR LOCK ACTIVE",
-                                color = earth.camelOchre,
-                                fontSize = 12.sp,
+                                color = OrbitalCoral,
+                                fontSize = 11.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 0.5.sp
                             )
                             Text(
-                                text = "Nuclear-locked apps cannot be modified or unlocked until your session expires.",
+                                text = "Locked apps cannot be modified or unlocked until your session expires.",
                                 color = earth.textPrimary,
                                 fontSize = 11.5.sp,
-                                lineHeight = 16.sp
+                                lineHeight = 15.sp
                             )
                         }
                     }
@@ -223,7 +219,9 @@ fun AppLockScreen(
                 Spacer(modifier = Modifier.height(14.dp))
             }
 
-            // Metrics Summary Row (Opal / AppBlock style)
+            // ====================================================================
+            // 2. 3-METRIC SUMMARY CARDS
+            // ====================================================================
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -231,26 +229,28 @@ fun AppLockScreen(
                 MetricSummaryCard(
                     title = "Total Locked",
                     count = appLockConfig.totalCount,
-                    accentColor = earth.forestGreen,
+                    accentColor = OrbitalMint,
                     modifier = Modifier.weight(1f)
                 )
                 MetricSummaryCard(
-                    title = "🔒 Permanent",
+                    title = "Permanent",
                     count = appLockConfig.permanentCount,
-                    accentColor = Color(0xFFD97706),
+                    accentColor = OrbitalAmber,
                     modifier = Modifier.weight(1f)
                 )
                 MetricSummaryCard(
-                    title = "☢️ Nuclear",
+                    title = "Nuclear",
                     count = appLockConfig.nuclearCount,
-                    accentColor = earth.camelOchre,
+                    accentColor = OrbitalViolet,
                     modifier = Modifier.weight(1f)
                 )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Filter Tabs Row
+            // ====================================================================
+            // 3. FILTER TABS (FROSTED CHIPS)
+            // ====================================================================
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -264,12 +264,12 @@ fun AppLockScreen(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(if (isSelected) earth.forestGreen else earth.surfaceSoft)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(if (isSelected) Color.White else Color.White.copy(alpha = 0.50f))
                             .border(
                                 1.dp,
-                                if (isSelected) earth.forestGreen else earth.border,
-                                RoundedCornerShape(12.dp)
+                                if (isSelected) earth.textPrimary else earth.border,
+                                RoundedCornerShape(14.dp)
                             )
                             .clickable { selectedTab = index }
                             .padding(vertical = 8.dp),
@@ -277,8 +277,8 @@ fun AppLockScreen(
                     ) {
                         Text(
                             text = label,
-                            color = if (isSelected) Color.White else earth.textPrimary,
-                            fontSize = 11.5.sp,
+                            color = earth.textPrimary,
+                            fontSize = 11.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                         )
                     }
@@ -287,7 +287,9 @@ fun AppLockScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Search Bar
+            // ====================================================================
+            // 4. SEARCH BAR
+            // ====================================================================
             if (lockedList.isNotEmpty()) {
                 OutlinedTextField(
                     value = searchQuery,
@@ -314,11 +316,11 @@ fun AppLockScreen(
                         }
                     },
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = earth.surfaceSoft,
-                        unfocusedContainerColor = earth.surfaceSoft,
-                        focusedBorderColor = earth.forestGreen,
+                        focusedContainerColor = Color.White.copy(alpha = 0.90f),
+                        unfocusedContainerColor = Color.White.copy(alpha = 0.80f),
+                        focusedBorderColor = earth.textPrimary,
                         unfocusedBorderColor = earth.border,
                         focusedTextColor = earth.textPrimary,
                         unfocusedTextColor = earth.textPrimary
@@ -328,7 +330,9 @@ fun AppLockScreen(
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // Locked Apps List or Empty State
+            // ====================================================================
+            // 5. LOCKED APPS LIST OR EMPTY STATE
+            // ====================================================================
             if (lockedList.isEmpty()) {
                 Box(
                     modifier = Modifier
@@ -342,17 +346,17 @@ fun AppLockScreen(
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(72.dp)
+                                .size(68.dp)
                                 .clip(CircleShape)
-                                .background(earth.surfaceSoft)
+                                .background(Color.White.copy(alpha = 0.90f))
                                 .border(1.dp, earth.border, CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Lock,
                                 contentDescription = null,
-                                tint = earth.forestGreen,
-                                modifier = Modifier.size(36.dp)
+                                tint = OrbitalMint,
+                                modifier = Modifier.size(32.dp)
                             )
                         }
 
@@ -369,7 +373,7 @@ fun AppLockScreen(
                         Spacer(modifier = Modifier.height(6.dp))
 
                         Text(
-                            text = "Take back your time by locking addictive social media, games, or shopping apps permanently or strictly during Nuclear Mode sessions.",
+                            text = "Lock distracting social media, games, or video apps permanently or during Nuclear sessions.",
                             color = earth.textMuted,
                             fontSize = 12.5.sp,
                             textAlign = TextAlign.Center,
@@ -380,10 +384,11 @@ fun AppLockScreen(
 
                         Button(
                             onClick = onAddAppsClicked,
-                            colors = ButtonDefaults.buttonColors(containerColor = earth.forestGreen),
-                            shape = RoundedCornerShape(14.dp)
+                            colors = ButtonDefaults.buttonColors(containerColor = OrbitalMint),
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.height(44.dp)
                         ) {
-                            Text("+ Add Apps to Lock", fontWeight = FontWeight.Bold, fontSize = 13.5.sp)
+                            Text("+ Add Apps to Lock", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         }
                     }
                 }
@@ -431,16 +436,41 @@ fun AppLockScreen(
                     }
                 }
             }
+
+            // ====================================================================
+            // 6. BOTTOM ACTION BAR: + Lock More Apps
+            // ====================================================================
+            if (lockedList.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp, bottom = 6.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Button(
+                        onClick = onAddAppsClicked,
+                        colors = ButtonDefaults.buttonColors(containerColor = OrbitalCoral),
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier
+                            .fillMaxWidth(0.9f)
+                            .height(48.dp)
+                    ) {
+                        Icon(imageVector = Icons.Default.Add, contentDescription = "Add", modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Lock More Apps", fontWeight = FontWeight.Bold, fontSize = 13.5.sp)
+                    }
+                }
+            }
         }
 
-        // CONFIRMATION DIALOG FOR UNLOCKING AN APP
+        // Confirmation Dialog
         if (appToUnlock != null) {
             val rule = appToUnlock!!
             val isPermanent = rule.lockMode == AppLockMode.PERMANENT || rule.lockMode == AppLockMode.BOTH
             AlertDialog(
                 onDismissRequest = { appToUnlock = null },
-                containerColor = earth.surfaceSoft,
-                shape = RoundedCornerShape(20.dp),
+                containerColor = Color.White,
+                shape = RoundedCornerShape(22.dp),
                 title = {
                     Text(
                         text = "Unlock ${rule.appName}?",
@@ -455,7 +485,7 @@ fun AppLockScreen(
                         text = "Are you sure you want to remove protection for ${rule.appName}? " +
                                 if (isPermanent) "This app is currently locked continuously 24/7."
                                 else "This app is set to lock during Nuclear mode sessions.",
-                        color = earth.textPrimary,
+                        color = earth.textMuted,
                         fontSize = 13.sp,
                         lineHeight = 18.sp
                     )
@@ -467,8 +497,8 @@ fun AppLockScreen(
                             appToUnlock = null
                             onUnlockApp(pkg)
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
-                        shape = RoundedCornerShape(10.dp)
+                        colors = ButtonDefaults.buttonColors(containerColor = OrbitalCoral),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
                         Text("Remove Lock", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.5.sp)
                     }
@@ -476,7 +506,7 @@ fun AppLockScreen(
                 dismissButton = {
                     OutlinedButton(
                         onClick = { appToUnlock = null },
-                        shape = RoundedCornerShape(10.dp)
+                        shape = RoundedCornerShape(12.dp)
                     ) {
                         Text("Keep Locked", color = earth.textPrimary, fontSize = 12.5.sp)
                     }
@@ -495,9 +525,9 @@ private fun MetricSummaryCard(
 ) {
     val earth = EarthTheme.colors
     Card(
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
-        modifier = modifier.border(1.dp, earth.border, RoundedCornerShape(14.dp))
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.90f)),
+        modifier = modifier.border(1.dp, earth.border, RoundedCornerShape(18.dp))
     ) {
         Column(
             modifier = Modifier.padding(vertical = 12.dp, horizontal = 10.dp),
@@ -506,8 +536,9 @@ private fun MetricSummaryCard(
             Text(
                 text = count.toString(),
                 color = accentColor,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Black
+                fontSize = 22.sp,
+                fontFamily = FontFamily.Serif,
+                fontWeight = FontWeight.Bold
             )
             Text(
                 text = title,
@@ -529,14 +560,13 @@ private fun LockedAppCard(
     onUnlock: () -> Unit
 ) {
     val earth = EarthTheme.colors
-    val isLockedInNuclear = isNuclearActive
 
     Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.90f)),
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, earth.border, RoundedCornerShape(16.dp))
+            .border(1.dp, earth.border, RoundedCornerShape(18.dp))
     ) {
         Row(
             modifier = Modifier
@@ -544,7 +574,7 @@ private fun LockedAppCard(
                 .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AppIcon(packageName = rule.packageName, size = 44.dp)
+            AppIcon(packageName = rule.packageName, size = 42.dp)
 
             Spacer(modifier = Modifier.width(12.dp))
 
@@ -552,8 +582,8 @@ private fun LockedAppCard(
                 Text(
                     text = rule.appName,
                     color = earth.textPrimary,
-                    fontSize = 14.5.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -567,65 +597,39 @@ private fun LockedAppCard(
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                // Active Lock Mode Badge and Mode Switcher
-                val isPermanent = rule.lockMode == AppLockMode.PERMANENT || rule.lockMode == AppLockMode.BOTH
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Status Badge
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = if (isPermanent) Color(0xFFD97706).copy(alpha = 0.15f) else earth.camelOchre.copy(alpha = 0.15f),
-                        modifier = Modifier.border(
-                            width = 1.dp,
-                            color = if (isPermanent) Color(0xFFD97706) else earth.camelOchre,
-                            shape = RoundedCornerShape(8.dp)
-                        )
+                // Mode Selector Chip
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val isPermanent = rule.lockMode == AppLockMode.PERMANENT || rule.lockMode == AppLockMode.BOTH
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (isPermanent) OrbitalAmber.copy(alpha = 0.15f) else OrbitalViolet.copy(alpha = 0.15f))
+                            .clickable(enabled = !isNuclearActive) {
+                                val nextMode = if (isPermanent) AppLockMode.NUCLEAR_ONLY else AppLockMode.PERMANENT
+                                onUpdateMode(nextMode)
+                            }
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
                     ) {
                         Text(
                             text = if (isPermanent) "🔒 Permanent 24/7" else "☢️ Nuclear Only",
-                            color = if (isPermanent) Color(0xFFD97706) else earth.camelOchre,
+                            color = if (isPermanent) OrbitalAmber else OrbitalViolet,
                             fontSize = 10.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                        )
-                    }
-
-                    // Mode Switch Action
-                    if (!isLockedInNuclear) {
-                        Text(
-                            text = if (isPermanent) "⇄ Nuclear" else "⇄ Permanent",
-                            color = earth.forestGreen,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .clickable {
-                                    val nextMode = if (isPermanent) AppLockMode.NUCLEAR_ONLY else AppLockMode.PERMANENT
-                                    onUpdateMode(nextMode)
-                                }
-                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // Unlock / Remove Action
+            // Unlock / Trash Button
             IconButton(
                 onClick = onUnlock,
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(if (isLockedInNuclear) earth.surface else earth.surfaceSoft)
+                enabled = !isNuclearActive
             ) {
                 Icon(
-                    imageVector = if (isLockedInNuclear) Icons.Default.Lock else Icons.Default.Delete,
+                    imageVector = Icons.Outlined.DeleteOutline,
                     contentDescription = "Unlock",
-                    tint = if (isLockedInNuclear) earth.camelOchre else earth.textMuted,
-                    modifier = Modifier.size(18.dp)
+                    tint = if (isNuclearActive) earth.textMuted.copy(alpha = 0.5f) else OrbitalCoral,
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }

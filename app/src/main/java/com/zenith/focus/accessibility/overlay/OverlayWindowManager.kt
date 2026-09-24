@@ -17,12 +17,14 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
@@ -47,8 +49,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.zenith.focus.core.designsystem.ZenithDarkBg
-import com.zenith.focus.core.designsystem.ZenithPrimary
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.geometry.Offset
+import com.zenith.focus.core.designsystem.*
 import com.zenith.focus.core.mascot.ZenithMascot
 import com.zenith.focus.core.time.DateTimeUtils
 import com.zenith.focus.domain.model.ContentCategory
@@ -168,20 +172,42 @@ fun BlockOverlayContent(
     val isAdult = category == ContentCategory.ADULT_WEBSITE || category == ContentCategory.ADULT_KEYWORD
     val isAppLock = category == ContentCategory.APP_LOCK
 
+    // Warm Ivory Linen & Peach Mist Gradient Canvas
+    val canvasBrush = remember {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color(0xFFFAF7F2),
+                Color(0xFFFBF1E8),
+                Color(0xFFF6EFEB)
+            )
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF0F172A),
-                        Color(0xFF020617)
-                    )
-                )
-            )
+            .background(canvasBrush)
             .padding(24.dp),
         contentAlignment = Alignment.Center
     ) {
+        // Ambient soft lavender aura glow
+        Canvas(modifier = Modifier.size(300.dp)) {
+            val center = Offset(size.width / 2, size.height / 2)
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color(0xFFC084FC).copy(alpha = 0.35f),
+                        Color(0xFFDDD6FE).copy(alpha = 0.18f),
+                        Color.Transparent
+                    ),
+                    center = center,
+                    radius = size.minDimension / 2
+                ),
+                radius = size.minDimension / 2,
+                center = center
+            )
+        }
+
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -191,30 +217,45 @@ fun BlockOverlayContent(
                 painter = painterResource(id = R.drawable.ic_reel_narcotics_logo),
                 contentDescription = "Reel Narcotics Logo",
                 modifier = Modifier
-                    .size(110.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .border(2.dp, Color(0xFF1E293B), RoundedCornerShape(24.dp))
+                    .size(96.dp)
+                    .clip(RoundedCornerShape(26.dp))
+                    .border(1.5.dp, Color(0xFFEFE8DE), RoundedCornerShape(26.dp))
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            // Heading
+            // Sub-category pill
             Text(
                 text = when {
                     isAppLock -> "APPLICATION LOCKED"
-                    isAdult -> "EXPLICIT CONTENT INTERCEPTED"
-                    else -> "REEL NARCOTICS"
+                    isAdult -> "MINDFUL BOUNDARY"
+                    else -> "FOCUS DEFENDED"
                 },
-                color = Color.White,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Black,
-                textAlign = TextAlign.Center,
-                letterSpacing = 1.sp
+                color = OrbitalCoral,
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.5.sp
             )
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            // Motto & Explanation
+            // Editorial Heading
+            Text(
+                text = when {
+                    isAppLock -> "Step Away."
+                    isAdult -> "Boundary Held."
+                    else -> "Pause & Breathe."
+                },
+                color = Color(0xFF1E1A22),
+                fontSize = 32.sp,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Serif,
+                fontWeight = FontWeight.Normal,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Context message
             Text(
                 text = if (reason.isNotBlank()) {
                     reason
@@ -225,67 +266,89 @@ fun BlockOverlayContent(
                 } else {
                     "Break the scroll. Take back your attention.\nAddictive vertical feeds are terminated to preserve your dopamine baseline."
                 },
-                color = Color(0xFF94A3B8),
-                fontSize = 13.sp,
+                color = Color(0xFF8E889B),
+                fontSize = 13.5.sp,
                 textAlign = TextAlign.Center,
                 lineHeight = 19.sp,
-                modifier = Modifier.padding(horizontal = 16.dp)
+                modifier = Modifier.padding(horizontal = 20.dp)
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Timer / Enforcement Pill
             if (remaining > 0L) {
                 Box(
                     modifier = Modifier
-                        .background(Color(0xFF1E293B), shape = RoundedCornerShape(16.dp))
-                        .padding(horizontal = 20.dp, vertical = 10.dp),
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.White.copy(alpha = 0.90f))
+                        .border(1.dp, Color(0xFFEFE8DE), RoundedCornerShape(16.dp))
+                        .padding(horizontal = 18.dp, vertical = 10.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "${com.zenith.focus.core.time.DateTimeUtils.formatRemaining(remaining)} remaining",
-                        color = Color(0xFF10B981),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(OrbitalViolet)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "${com.zenith.focus.core.time.DateTimeUtils.formatRemaining(remaining)} remaining",
+                            color = Color(0xFF1E1A22),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
             } else if (isAppLock) {
                 Box(
                     modifier = Modifier
-                        .background(Color(0xFF1E293B), shape = RoundedCornerShape(16.dp))
-                        .border(1.dp, Color(0xFFD97706), RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.White.copy(alpha = 0.90f))
+                        .border(1.dp, Color(0xFFEFE8DE), RoundedCornerShape(16.dp))
                         .padding(horizontal = 18.dp, vertical = 10.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "🔒 PERMANENT 24/7 LOCK",
-                        color = Color(0xFFFBBF24),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(OrbitalAmber)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Permanent 24/7 Shield",
+                            color = Color(0xFF1E1A22),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Big Go Back Button
+            // Calm, Confident Return Button
             Button(
                 onClick = onGoBack,
                 modifier = Modifier
-                    .fillMaxWidth(0.8f)
-                    .height(54.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
-                shape = RoundedCornerShape(20.dp)
+                    .fillMaxWidth(0.82f)
+                    .height(52.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = OrbitalCoral),
+                shape = RoundedCornerShape(18.dp)
             ) {
                 Text(
-                    text = "GO BACK",
+                    text = "RETURN TO PRESENT",
                     color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
                 )
             }
         }
     }
 }
+
 

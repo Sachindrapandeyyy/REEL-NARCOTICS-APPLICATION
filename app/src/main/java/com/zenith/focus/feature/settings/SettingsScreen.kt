@@ -1,11 +1,6 @@
 package com.zenith.focus.feature.settings
 
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.provider.Settings
-import android.widget.Toast
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,70 +19,75 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AdminPanelSettings
+import androidx.compose.material.icons.outlined.Bedtime
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.Sync
+import androidx.compose.material.icons.outlined.SystemSecurityUpdateGood
+import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
-import com.zenith.focus.core.permission.OemNavigationManager
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.text.font.FontFamily
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import com.zenith.focus.R
 import com.zenith.focus.core.designsystem.*
-import com.zenith.focus.core.ui.RestrictedSettingsBanner
+import com.zenith.focus.core.permission.OemNavigationManager
 import com.zenith.focus.core.ui.RestrictedSettingsGuideDialog
-import com.zenith.focus.domain.model.FrictionType
-import com.zenith.focus.domain.model.ProtectionConfig
-import com.zenith.focus.receiver.ZenithDeviceAdminReceiver
-import kotlinx.coroutines.launch
-
-import androidx.compose.runtime.collectAsState
 import com.zenith.focus.core.update.UpdateManager
 import com.zenith.focus.core.update.UpdateState
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
-import com.zenith.focus.core.update.ui.UpdateDialog
+import com.zenith.focus.domain.model.FrictionType
 import com.zenith.focus.domain.model.HabitConfig
+import com.zenith.focus.domain.model.ProtectionConfig
+import com.zenith.focus.feature.protection.EtherealToggle
+import com.zenith.focus.receiver.ZenithDeviceAdminReceiver
 
 @Composable
 fun SettingsScreen(
     @Suppress("UNUSED_PARAMETER") config: ProtectionConfig,
     isServiceConnected: Boolean,
     isNuclearActive: Boolean = false,
-    currentTheme: String = "",
+    @Suppress("UNUSED_PARAMETER") currentTheme: String = "",
     updateManager: UpdateManager? = null,
     habitConfig: HabitConfig = HabitConfig(),
     onUpdateHabitConfig: (HabitConfig) -> Unit = {},
     todayTotalBlocks: Int = 0,
     focusStreakDays: Int = 1,
     onShowUpdateDialog: () -> Unit = {},
-    @Suppress("UNUSED_PARAMETER") onSelectFrictionType: (FrictionType) -> Unit = {},
+    onSelectFrictionType: (FrictionType) -> Unit = {},
     @Suppress("UNUSED_PARAMETER") onSetPin: suspend (String) -> Unit = {},
     @Suppress("UNUSED_PARAMETER") onClearPin: suspend () -> Unit = {},
-    onSetTheme: (String) -> Unit = {}
+    @Suppress("UNUSED_PARAMETER") onSetTheme: (String) -> Unit = {}
 ) {
     val earth = EarthTheme.colors
     val context = LocalContext.current
@@ -105,7 +105,6 @@ fun SettingsScreen(
         RestrictedSettingsGuideDialog(onDismiss = { showRestrictedDialog = false })
     }
 
-
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -118,839 +117,484 @@ fun SettingsScreen(
         }
     }
 
-    Column(
+    // Warm Ivory Linen & Peach Mist Gradient Canvas
+    val canvasBrush = remember {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color(0xFFFAF7F2),
+                Color(0xFFFBF1E8),
+                Color(0xFFF6EFEB)
+            )
+        )
+    }
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(earth.canvas)
-            .verticalScroll(scrollState)
-            .padding(horizontal = 20.dp, vertical = 24.dp)
+            .background(canvasBrush)
     ) {
-        Text(
-            text = "SECURITY & CONTROLS",
-            color = earth.forestGreen,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp
-        )
-        Text(
-            text = "Settings",
-            color = earth.textPrimary,
-            fontSize = 28.sp,
-            fontFamily = FontFamily.Serif,
-            fontWeight = FontWeight.Normal
-        )
-        Text(
-            text = "Manage system permissions, visual themes, and focus preferences.",
-            color = earth.textMuted,
-            fontSize = 12.5.sp,
-            modifier = Modifier.padding(top = 4.dp, bottom = 20.dp)
-        )
-
-        // NUCLEAR MODE ACTIVE BANNER (IF ACTIVE)
-        if (isNuclearActive) {
-            Card(
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.5.dp, earth.camelOchre, RoundedCornerShape(18.dp))
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(text = "☢️", fontSize = 20.sp)
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = "NUCLEAR MODE ACTIVE",
-                            color = earth.camelOchre,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp
-                        )
-                        Text(
-                            text = "Security and protection settings are locked until the session expires.",
-                            color = earth.textPrimary,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(top = 2.dp)
-                        )
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(18.dp))
-        }
-
-        // APPEARANCE & THEME
-        Text(
-            text = "APPEARANCE & THEME",
-            color = earth.forestGreen,
-            fontSize = 11.5.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp
-        )
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Card(
-            shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, earth.border, RoundedCornerShape(18.dp))
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(horizontal = 22.dp, vertical = 20.dp)
         ) {
-            Column(modifier = Modifier.padding(18.dp)) {
-                Text(
-                    text = "Color Palette & Night Mode",
-                    color = earth.textPrimary,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "Switch between warm natural canvas and midnight forest dark mode.",
-                    color = earth.textMuted,
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(top = 2.dp, bottom = 14.dp)
-                )
+            // ====================================================================
+            // 1. EDITORIAL HEADER
+            // ====================================================================
+            Text(
+                text = "SYSTEM & PREFERENCES",
+                color = OrbitalCoral,
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.2.sp
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Settings & Guard",
+                color = earth.textPrimary,
+                fontSize = 28.sp,
+                fontFamily = FontFamily.Serif,
+                fontWeight = FontWeight.Normal
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = "Configure hardware defenses, mindful routines, and device armor.",
+                color = earth.textMuted,
+                fontSize = 13.sp,
+                lineHeight = 18.sp
+            )
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    val themes = listOf(
-                        Triple("LIGHT", "☀️ Light", "Warm Linen"),
-                        Triple("DARK", "🌙 Night", "Obsidian"),
-                        Triple("SYSTEM", "⚙️ Auto", "System")
-                    )
-                    themes.forEach { (mode, label, desc) ->
-                        val isSelected = currentTheme == mode || (currentTheme.isEmpty() && mode == "SYSTEM")
-                        Surface(
-                            shape = RoundedCornerShape(14.dp),
-                            color = if (isSelected) earth.forestGreen else earth.surface,
-                            modifier = Modifier
-                                .weight(1f)
-                                .border(
-                                    width = if (isSelected) 1.5.dp else 1.dp,
-                                    color = if (isSelected) earth.camelOchre else earth.border,
-                                    shape = RoundedCornerShape(14.dp)
-                                )
-                                .clickable { onSetTheme(mode) }
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(vertical = 12.dp, horizontal = 6.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    text = label,
-                                    color = if (isSelected) Color.White else earth.textPrimary,
-                                    fontSize = 13.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                                )
-                                Spacer(modifier = Modifier.height(3.dp))
-                                Text(
-                                    text = desc,
-                                    color = if (isSelected) Color.White.copy(alpha = 0.85f) else earth.textMuted,
-                                    fontSize = 10.5.sp
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
+            Spacer(modifier = Modifier.height(20.dp))
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-
-        // DAILY FOCUS NOTIFICATIONS
-        Text(
-            text = "DAILY FOCUS NOTIFICATIONS",
-            color = earth.forestGreen,
-            fontSize = 11.5.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp
-        )
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Card(
-            shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, earth.border, RoundedCornerShape(18.dp))
-        ) {
-            Column(modifier = Modifier.padding(18.dp)) {
-                // Morning Focus Pledge
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("🌅", fontSize = 16.sp)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Morning Focus Pledge (8:00 AM)",
-                                color = earth.forestDark,
-                                fontSize = 14.5.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Text(
-                            text = "A daily reminder to choose long-term goals over short-form dopamine before morning scrolling begins.",
-                            color = earth.textMuted,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                    }
-
-                    Switch(
-                        checked = habitConfig.morningPledgeEnabled,
-                        onCheckedChange = { enabled ->
-                            onUpdateHabitConfig(habitConfig.copy(morningPledgeEnabled = enabled))
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = earth.forestGreen,
-                            uncheckedThumbColor = earth.textMuted,
-                            uncheckedTrackColor = earth.surface
-                        )
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-                Box(
+            // ====================================================================
+            // 2. NUCLEAR MODE STATUS (IF ACTIVE)
+            // ====================================================================
+            if (isNuclearActive) {
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.90f)),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(1.dp)
-                        .background(earth.border)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Evening Victory Digest
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("🔥", fontSize = 16.sp)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Evening Victory Digest (9:00 PM)",
-                                color = earth.forestDark,
-                                fontSize = 14.5.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Text(
-                            text = "Daily celebration of distractions blocked, reclaimed focus time, and your active streak.",
-                            color = earth.textMuted,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                    }
-
-                    Switch(
-                        checked = habitConfig.eveningSummaryEnabled,
-                        onCheckedChange = { enabled ->
-                            onUpdateHabitConfig(habitConfig.copy(eveningSummaryEnabled = enabled))
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = earth.forestGreen,
-                            uncheckedThumbColor = earth.textMuted,
-                            uncheckedTrackColor = earth.surface
-                        )
-                    )
-                }
-
-                // Live Preview Badge
-                val minutesSaved = (todayTotalBlocks * 1.5).toInt()
-                Spacer(modifier = Modifier.height(12.dp))
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = earth.surface,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(1.dp, earth.border, RoundedCornerShape(12.dp))
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("📊", fontSize = 14.sp)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = if (todayTotalBlocks > 0) {
-                                "Live preview: Reclaimed ~$minutesSaved mins today ($todayTotalBlocks reels blocked)! Streak: $focusStreakDays days."
-                            } else {
-                                "Live preview: Zero impulse distractions detected today! Streak: $focusStreakDays days."
-                            },
-                            color = earth.forestDark,
-                            fontSize = 11.5.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // SLEEP & BEDTIME FOCUS SHIELD
-        Text(
-            text = "SLEEP & BEDTIME SHIELD",
-            color = earth.forestGreen,
-            fontSize = 11.5.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp
-        )
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Card(
-            shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(
-                    width = if (habitConfig.bedtimeShieldEnabled && habitConfig.isBedtimeActive()) 1.5.dp else 1.dp,
-                    color = if (habitConfig.bedtimeShieldEnabled && habitConfig.isBedtimeActive()) earth.error else earth.border,
-                    shape = RoundedCornerShape(18.dp)
-                )
-        ) {
-            Column(modifier = Modifier.padding(18.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("🌙", fontSize = 18.sp)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Bedtime Sleep Shield",
-                                color = earth.forestDark,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Text(
-                            text = "Automatic overnight focus lock (11:00 PM – 06:30 AM). Prevents late-night doomscrolling in bed.",
-                            color = earth.textMuted,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                    }
-
-                    Switch(
-                        checked = habitConfig.bedtimeShieldEnabled,
-                        onCheckedChange = { enabled ->
-                            onUpdateHabitConfig(habitConfig.copy(bedtimeShieldEnabled = enabled))
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = earth.camelOchre,
-                            uncheckedThumbColor = earth.textMuted,
-                            uncheckedTrackColor = earth.surface
-                        )
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Schedule & Active Status Indicator
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = earth.surface,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(1.dp, earth.border, RoundedCornerShape(12.dp))
+                        .border(1.5.dp, OrbitalCoral.copy(alpha = 0.7f), RoundedCornerShape(20.dp))
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                            .padding(18.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("⏰", fontSize = 14.sp)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "11:00 PM ➔ 06:30 AM",
-                                color = earth.textPrimary,
-                                fontSize = 12.5.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-
-                        val isBedtimeActiveNow = habitConfig.bedtimeShieldEnabled && habitConfig.isBedtimeActive()
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = when {
-                                isBedtimeActiveNow -> earth.error.copy(alpha = 0.15f)
-                                habitConfig.bedtimeShieldEnabled -> earth.forestGreen.copy(alpha = 0.15f)
-                                else -> earth.surfaceSoft
-                            },
-                            modifier = Modifier.border(
-                                width = 1.dp,
-                                color = when {
-                                    isBedtimeActiveNow -> earth.error
-                                    habitConfig.bedtimeShieldEnabled -> earth.forestGreen
-                                    else -> earth.border
-                                },
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                        ) {
-                            Text(
-                                text = when {
-                                    isBedtimeActiveNow -> "🌙 ACTIVE NOW (Locked)"
-                                    habitConfig.bedtimeShieldEnabled -> "ARMED FOR 11:00 PM"
-                                    else -> "DISABLED"
-                                },
-                                color = when {
-                                    isBedtimeActiveNow -> earth.error
-                                    habitConfig.bedtimeShieldEnabled -> earth.forestGreen
-                                    else -> earth.textMuted
-                                },
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // SYSTEM STATUS
-        Text(
-            text = "SYSTEM STATUS",
-            color = earth.forestGreen,
-            fontSize = 11.5.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp
-        )
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // Accessibility Service Card
-        Card(
-            shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, earth.border, RoundedCornerShape(18.dp))
-        ) {
-            Column(modifier = Modifier.padding(18.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Accessibility Shield Service", color = earth.textPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                        Text(
-                            text = if (isServiceConnected) "Online: Instant zero-tolerance ejection active" else "Inactive: Required for short-form video blocking",
-                            color = if (isServiceConnected) earth.forestGreen else Color(0xFFB91C1C),
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(top = 2.dp)
-                        )
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .size(12.dp)
-                            .clip(CircleShape)
-                            .background(if (isServiceConnected) earth.forestGreen else Color(0xFFB91C1C))
-                    )
-                }
-
-                if (!isServiceConnected) {
-                    val guidance = remember { OemNavigationManager.getGuidance() }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "📱 Detected: ${guidance.brand.displayName} (${guidance.brand.osSkin})",
-                        color = earth.camelOchre,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Button(
-                        onClick = { OemNavigationManager.openAccessibilitySettings(context) },
-                        colors = ButtonDefaults.buttonColors(containerColor = earth.forestGreen),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("1. OPEN ACCESSIBILITY SETTINGS ➔", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Button(
-                        onClick = { OemNavigationManager.openAppInfo(context) },
-                        colors = ButtonDefaults.buttonColors(containerColor = earth.forestDark),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("2. TOUCH TO OPEN APP INFO (3-DOTS) ➔", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                    }
-                    if (guidance.step3ButtonLabel != null) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedButton(
-                            onClick = { OemNavigationManager.openOemAutostart(context) },
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(guidance.step3ButtonLabel, color = earth.camelOchre, fontWeight = FontWeight.Bold, fontSize = 11.5.sp)
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(10.dp))
-                    RestrictedSettingsBanner(
-                        onOpenDialog = { showRestrictedDialog = true }
-                    )
-                }
-            }
-        }
-
-        // Uninstall Protection (Device Administrator) Card
-        Spacer(modifier = Modifier.height(12.dp))
-        Card(
-            shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, earth.border, RoundedCornerShape(18.dp))
-        ) {
-            Column(modifier = Modifier.padding(18.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Uninstall Protection (Device Admin)", color = earth.textPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                        Text(
-                            text = if (isDeviceAdminActive) "Active: OS-level deletion block armed" else "Inactive: Grant Device Admin to prevent uninstallation",
-                            color = if (isDeviceAdminActive) earth.forestGreen else earth.camelOchre,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(top = 2.dp)
-                        )
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .size(12.dp)
-                            .clip(CircleShape)
-                            .background(if (isDeviceAdminActive) earth.forestGreen else earth.camelOchre)
-                    )
-                }
-
-                if (!isDeviceAdminActive) {
-                    val guidance = remember { OemNavigationManager.getGuidance() }
-                    Spacer(modifier = Modifier.height(14.dp))
-                    Button(
-                        onClick = {
-                            ZenithDeviceAdminReceiver.openDeviceAdminActivation(context)
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = earth.camelOchre),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("ACTIVATE UNINSTALL PROTECTION", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
-                    Text(
-                        text = guidance.deviceAdminHint ?: "💡 Tap 'Activate' on the system prompt",
-                        color = earth.camelOchre,
-                        fontSize = 11.sp,
-                        lineHeight = 15.sp,
-                        modifier = Modifier.padding(top = 6.dp)
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    RestrictedSettingsBanner(
-                        onOpenDialog = { showRestrictedDialog = true }
-                    )
-                } else if (isNuclearActive) {
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(
-                        text = "🔒 Locked by Nuclear Mode. Deactivation is forbidden until session expires.",
-                        color = earth.camelOchre,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-        }
-
-        // APP UPDATES & RELEASES
-        Text(
-            text = "APP UPDATES & RELEASES",
-            color = earth.forestGreen,
-            fontSize = 11.5.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp
-        )
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Card(
-            shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, earth.border, RoundedCornerShape(18.dp))
-        ) {
-            Column(modifier = Modifier.padding(18.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "🔄", fontSize = 20.sp)
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(text = "☢️", fontSize = 20.sp)
+                        Spacer(modifier = Modifier.width(14.dp))
                         Column {
                             Text(
-                                text = "Reel Narcotics Updates",
-                                color = earth.forestDark,
-                                fontSize = 14.5.sp,
+                                text = "NUCLEAR LOCK ACTIVE",
+                                color = OrbitalCoral,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.5.sp
+                            )
+                            Text(
+                                text = "Preferences & hardware uninstallation barriers are locked until session ends.",
+                                color = earth.textPrimary,
+                                fontSize = 12.sp,
+                                lineHeight = 16.sp
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(20.dp))
+            }
+
+            // ====================================================================
+            // 3. GROUP 1: SYSTEM HARDWARE ENFORCERS (UNIFIED FROSTED CONTAINER)
+            // ====================================================================
+            GroupHeader(title = "HARDWARE SHIELDS", subtitle = "Core system bindings")
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Card(
+                shape = RoundedCornerShape(22.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.90f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, earth.border, RoundedCornerShape(22.dp))
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 6.dp)) {
+                    // Item 1: Accessibility Shield
+                    SettingsActionRow(
+                        icon = Icons.Outlined.Shield,
+                        iconTint = if (isServiceConnected) OrbitalMint else OrbitalCoral,
+                        title = "Accessibility Shield",
+                        subtitle = if (isServiceConnected) "Active & protecting dopamine baseline" else "Disabled • Tap to grant permission",
+                        badge = if (isServiceConnected) "ACTIVE" else "REQUIRED",
+                        badgeColor = if (isServiceConnected) OrbitalMint else OrbitalCoral,
+                        onClick = {
+                            OemNavigationManager.openAccessibilitySettings(context)
+                        }
+                    )
+
+                    EtherealDivider()
+
+                    // Item 2: Anti-Uninstall Device Admin
+                    SettingsActionRow(
+                        icon = Icons.Outlined.AdminPanelSettings,
+                        iconTint = if (isDeviceAdminActive) OrbitalMint else OrbitalAmber,
+                        title = "Anti-Uninstall Armor",
+                        subtitle = if (isDeviceAdminActive) "Active • Prevents bypass uninstallation" else "Device Admin inactive",
+                        badge = if (isDeviceAdminActive) "PROTECTED" else "ENABLE",
+                        badgeColor = if (isDeviceAdminActive) OrbitalMint else OrbitalAmber,
+                        onClick = {
+                            ZenithDeviceAdminReceiver.openDeviceAdminActivation(context)
+                        }
+                    )
+
+                    EtherealDivider()
+
+                    // Item 3: Restricted Settings & Battery Guidance
+                    SettingsActionRow(
+                        icon = Icons.Outlined.VerifiedUser,
+                        iconTint = OrbitalSky,
+                        title = "OEM Background Guard",
+                        subtitle = "Prevent Android OS from putting protection service to sleep",
+                        badge = "GUIDE",
+                        badgeColor = OrbitalSky,
+                        onClick = {
+                            showRestrictedDialog = true
+                        }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // ====================================================================
+            // 4. GROUP 2: MINDFUL HABIT SCHEDULES (UNIFIED FROSTED CONTAINER)
+            // ====================================================================
+            GroupHeader(title = "ATTENTION ROUTINES", subtitle = "Automated habit prompts")
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Card(
+                shape = RoundedCornerShape(22.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.90f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, earth.border, RoundedCornerShape(22.dp))
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 6.dp)) {
+                    // Item 1: Morning Focus Pledge
+                    SettingsToggleRow(
+                        icon = Icons.Outlined.LightMode,
+                        iconTint = OrbitalAmber,
+                        title = "Morning Focus Pledge",
+                        subtitle = "8:00 AM daily intention setting before scrolling starts",
+                        isChecked = habitConfig.morningPledgeEnabled,
+                        onCheckedChange = { enabled ->
+                            onUpdateHabitConfig(habitConfig.copy(morningPledgeEnabled = enabled))
+                        }
+                    )
+
+                    EtherealDivider()
+
+                    // Item 2: Evening Victory Digest
+                    SettingsToggleRow(
+                        icon = Icons.Outlined.NotificationsActive,
+                        iconTint = OrbitalViolet,
+                        title = "Evening Summary Digest",
+                        subtitle = "9:00 PM summary of kicks deflected and focus streak",
+                        isChecked = habitConfig.eveningSummaryEnabled,
+                        onCheckedChange = { enabled ->
+                            onUpdateHabitConfig(habitConfig.copy(eveningSummaryEnabled = enabled))
+                        }
+                    )
+
+                    EtherealDivider()
+
+                    // Item 3: Bedtime Sleep Shield
+                    SettingsToggleRow(
+                        icon = Icons.Outlined.Bedtime,
+                        iconTint = OrbitalCoral,
+                        title = "Bedtime Sleep Shield",
+                        subtitle = "11:00 PM to 6:30 AM unconditional feed lockdown",
+                        isChecked = habitConfig.bedtimeShieldEnabled,
+                        onCheckedChange = { enabled ->
+                            onUpdateHabitConfig(habitConfig.copy(bedtimeShieldEnabled = enabled))
+                        }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // ====================================================================
+            // 5. GROUP 3: APPLICATION UPDATES & ENGINE (UNIFIED FROSTED CONTAINER)
+            // ====================================================================
+            GroupHeader(title = "ENGINE & UPDATES", subtitle = "Release channel")
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Card(
+                shape = RoundedCornerShape(22.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.90f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, earth.border, RoundedCornerShape(22.dp))
+            ) {
+                Column(modifier = Modifier.padding(18.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(
+                                text = "Reel Narcotics v2.5.0",
+                                color = earth.textPrimary,
+                                fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold
                             )
-                            val statusSubtitle = when (updateState) {
-                                is UpdateState.Checking -> "Checking release server..."
-                                is UpdateState.Available -> "New version v${updateState.manifest.versionName} ready"
-                                is UpdateState.Downloading -> "Downloading update (${updateState.progressPercent}%)..."
-                                is UpdateState.Verifying -> "Verifying security signatures..."
-                                is UpdateState.ReadyToInstall -> "Verified & ready to install"
-                                is UpdateState.UpToDate -> "✓ Up to date (v${updateState.currentVersionName})"
-                                is UpdateState.Failed -> "Update check failed"
-                                else -> "Current: v${updateManager?.currentVersionName ?: "2.5.0"}"
-                            }
                             Text(
-                                text = statusSubtitle,
-                                color = if (updateState is UpdateState.Available) earth.camelOchre else earth.textMuted,
+                                text = "Ethereal Aurora Edition",
+                                color = earth.textMuted,
                                 fontSize = 12.sp
                             )
                         }
-                    }
 
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = earth.surface,
-                        modifier = Modifier.border(1.dp, earth.border, RoundedCornerShape(8.dp))
+                        Button(
+                            onClick = onShowUpdateDialog,
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = earth.surfaceVariant),
+                            modifier = Modifier.height(38.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Sync,
+                                contentDescription = "Check for updates",
+                                tint = earth.textPrimary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Update",
+                                color = earth.textPrimary,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // ====================================================================
+            // 6. GROUP 4: PRIVACY & DATA GUARANTEE
+            // ====================================================================
+            Card(
+                shape = RoundedCornerShape(22.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.70f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, earth.border, RoundedCornerShape(22.dp))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(18.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(OrbitalMintSoft),
+                        contentAlignment = Alignment.Center
                     ) {
+                        Icon(
+                            imageVector = Icons.Outlined.CheckCircle,
+                            contentDescription = "Safe",
+                            tint = OrbitalMint,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Build ${updateManager?.currentVersionCode ?: 23}",
-                            color = earth.forestGreen,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            text = "100% Offline & Private",
+                            color = earth.textPrimary,
+                            fontSize = 13.5.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Zero remote tracking. All app usage, focus sessions, and statistics remain exclusively in your local on-device SQLite database.",
+                            color = earth.textMuted,
+                            fontSize = 11.5.sp,
+                            lineHeight = 15.sp
                         )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                Button(
-                    onClick = {
-                        when (updateState) {
-                            is UpdateState.Available, is UpdateState.Downloading, is UpdateState.Verifying, is UpdateState.ReadyToInstall, is UpdateState.Failed -> {
-                                onShowUpdateDialog()
-                            }
-                            else -> {
-                                updateManager?.checkForUpdates()
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    enabled = updateState !is UpdateState.Checking,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (updateState is UpdateState.Available || updateState is UpdateState.ReadyToInstall) earth.camelOchre else earth.forestDark,
-                        contentColor = Color.White
-                    )
-                ) {
-                    val btnText = when (updateState) {
-                        is UpdateState.Checking -> "Checking for updates..."
-                        is UpdateState.Available -> "View Update (v${updateState.manifest.versionName}) ➔"
-                        is UpdateState.ReadyToInstall -> "Install Update Now ➔"
-                        is UpdateState.Downloading -> "View Download Progress ➔"
-                        else -> "Check for Updates"
-                    }
-                    Text(btnText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                }
             }
+
+            Spacer(modifier = Modifier.height(100.dp))
         }
+    }
+}
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // DEVELOPER & SUPPORT
+@Composable
+private fun GroupHeader(title: String, subtitle: String) {
+    val earth = EarthTheme.colors
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Bottom
+    ) {
         Text(
-            text = "DEVELOPER & SUPPORT",
-            color = earth.forestGreen,
-            fontSize = 11.5.sp,
+            text = title,
+            color = earth.textPrimary,
+            fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.sp
         )
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Card(
-            shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, earth.border, RoundedCornerShape(18.dp))
-        ) {
-            Column(modifier = Modifier.padding(18.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(earth.surface)
-                            .border(1.5.dp, earth.camelOchre, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = "👨‍💻", fontSize = 20.sp)
-                    }
-                    Spacer(modifier = Modifier.width(14.dp))
-                    Column {
-                        Text(
-                            text = "Sachindra Shekhar Pandey",
-                            color = earth.forestDark,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.ExtraBold
-                        )
-                        Text(
-                            text = "Creator & Lead Android Engineer",
-                            color = earth.camelOchre,
-                            fontSize = 12.sp
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Email Support
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(earth.surface)
-                        .border(1.dp, earth.border, RoundedCornerShape(12.dp))
-                        .clickable {
-                            val intent = Intent(Intent.ACTION_SENDTO).apply {
-                                data = Uri.parse("mailto:Sachindrapandey328@gmail.com")
-                                putExtra(Intent.EXTRA_SUBJECT, "Reel Narcotics Support & Feedback")
-                            }
-                            context.startActivity(intent)
-                        }
-                        .padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(text = "✉️", fontSize = 16.sp)
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "Support Email", color = earth.textMuted, fontSize = 11.sp)
-                        Text(text = "Sachindrapandey328@gmail.com", color = earth.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                    }
-                    Text(text = "➔", color = earth.camelOchre, fontSize = 14.sp)
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // GitHub
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(earth.surface)
-                        .border(1.dp, earth.border, RoundedCornerShape(12.dp))
-                        .clickable {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Sachindrapandeyyy"))
-                            context.startActivity(intent)
-                        }
-                        .padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(text = "🐙", fontSize = 16.sp)
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "GitHub Repository & Profile", color = earth.textMuted, fontSize = 11.sp)
-                        Text(text = "github.com/Sachindrapandeyyy", color = earth.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                    }
-                    Text(text = "➔", color = earth.camelOchre, fontSize = 14.sp)
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // LinkedIn
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(earth.surface)
-                        .border(1.dp, earth.border, RoundedCornerShape(12.dp))
-                        .clickable {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.linkedin.com/in/sachindra-shekhar-pandey-73b45427b/"))
-                            context.startActivity(intent)
-                        }
-                        .padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(text = "💼", fontSize = 16.sp)
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "LinkedIn Profile", color = earth.textMuted, fontSize = 11.sp)
-                        Text(text = "Sachindra Shekhar Pandey", color = earth.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                    }
-                    Text(text = "➔", color = earth.camelOchre, fontSize = 14.sp)
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // ABOUT & PRIVACY GUARANTEE
-        Card(
-            shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, earth.border, RoundedCornerShape(18.dp))
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(18.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_reel_narcotics_logo),
-                    contentDescription = "Reel Narcotics Logo",
-                    modifier = Modifier
-                        .size(52.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .border(1.dp, earth.border, RoundedCornerShape(14.dp))
-                )
-                Spacer(modifier = Modifier.width(14.dp))
-                Column {
-                    Text("Reel Narcotics v${updateManager?.currentVersionName ?: "2.5.0"}", color = earth.textPrimary, fontSize = 15.sp, fontWeight = FontWeight.Black)
-                    Text("Break the scroll. Take back your attention.", color = earth.forestGreen, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "100% Local | Zero Telemetry | Zero Accounts\nBuilt for disciplined focus and mindful peace.",
-                        color = earth.textMuted,
-                        fontSize = 11.sp,
-                        lineHeight = 15.sp
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(110.dp))
+        Text(
+            text = subtitle,
+            color = earth.textMuted,
+            fontSize = 11.sp
+        )
     }
+}
+
+@Composable
+private fun SettingsActionRow(
+    icon: ImageVector,
+    iconTint: Color,
+    title: String,
+    subtitle: String,
+    badge: String,
+    badgeColor: Color,
+    onClick: () -> Unit
+) {
+    val earth = EarthTheme.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(
+            modifier = Modifier.weight(1f).padding(end = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(iconTint.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconTint,
+                    modifier = Modifier.size(19.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(13.dp))
+            Column {
+                Text(
+                    text = title,
+                    color = earth.textPrimary,
+                    fontSize = 14.5.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = subtitle,
+                    color = earth.textMuted,
+                    fontSize = 11.5.sp,
+                    lineHeight = 15.sp
+                )
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .background(badgeColor.copy(alpha = 0.15f))
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+        ) {
+            Text(
+                text = badge,
+                color = badgeColor,
+                fontSize = 10.5.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsToggleRow(
+    icon: ImageVector,
+    iconTint: Color,
+    title: String,
+    subtitle: String,
+    isChecked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    val earth = EarthTheme.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!isChecked) }
+            .padding(vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(
+            modifier = Modifier.weight(1f).padding(end = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(iconTint.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconTint,
+                    modifier = Modifier.size(19.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(13.dp))
+            Column {
+                Text(
+                    text = title,
+                    color = earth.textPrimary,
+                    fontSize = 14.5.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = subtitle,
+                    color = earth.textMuted,
+                    fontSize = 11.5.sp,
+                    lineHeight = 15.sp
+                )
+            }
+        }
+
+        EtherealToggle(
+            checked = isChecked,
+            onCheckedChange = onCheckedChange,
+            activeColor = OrbitalViolet
+        )
+    }
+}
+
+@Composable
+private fun EtherealDivider() {
+    Divider(
+        color = Color(0xFFF0EBE1),
+        thickness = 1.dp
+    )
 }

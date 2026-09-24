@@ -1,5 +1,8 @@
 package com.zenith.focus.feature.protection
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,19 +15,39 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Apps
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.MovieFilter
+import androidx.compose.material.icons.outlined.MusicNote
+import androidx.compose.material.icons.outlined.PlayCircleOutline
+import androidx.compose.material.icons.outlined.SearchOff
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.VideoLibrary
+import androidx.compose.material.icons.outlined.Videocam
+import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -56,314 +79,390 @@ fun ProtectionScreen(
         SimpleDateFormat("h:mm a (MMM d)", Locale.getDefault()).format(Date(nuclearSession.endTimeMillis))
     }
 
-    Column(
+    // Warm Ivory Linen & Peach Mist Gradient Canvas
+    val canvasBrush = remember {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color(0xFFFAF7F2),
+                Color(0xFFFBF1E8),
+                Color(0xFFF6EFEB)
+            )
+        )
+    }
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(earth.canvas)
-            .verticalScroll(scrollState)
-            .padding(horizontal = 20.dp, vertical = 20.dp)
+            .background(canvasBrush)
     ) {
-        Text(
-            text = "⚡ S++ HARD ENFORCEMENT",
-            color = earth.forestGreen,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.5.sp
-        )
-        Text(
-            text = "Content Shield",
-            color = earth.forestDark,
-            fontSize = 28.sp,
-            fontFamily = FontFamily.Serif,
-            fontWeight = FontWeight.Normal
-        )
-        Text(
-            text = "Zero tolerance for cheap dopamine. The moment a blocked surface is detected, you will be instantly ejected to the Home Screen.",
-            color = earth.textMuted,
-            fontSize = 12.5.sp,
-            modifier = Modifier.padding(top = 4.dp, bottom = 20.dp)
-        )
-
-        // NUCLEAR MODE STATUS CARD (IMMUTABLE COMMITMENT)
-        Card(
-            shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .border(
-                    width = if (isNuclearActive) 1.5.dp else 1.dp,
-                    color = if (isNuclearActive) earth.camelOchre else earth.border,
-                    shape = RoundedCornerShape(18.dp)
-                )
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(horizontal = 22.dp, vertical = 20.dp)
         ) {
-            Column(modifier = Modifier.padding(20.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = if (isNuclearActive) "☢️ NUCLEAR MODE: ACTIVE" else "☢️ NUCLEAR MODE COMMITMENT",
-                        color = if (isNuclearActive) earth.camelOchre else earth.forestGreen,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.8.sp
-                    )
+            // ====================================================================
+            // 1. EDITORIAL HEADER: Shields & Interventions
+            // ====================================================================
+            Text(
+                text = "SHIELDS & INTERVENTIONS",
+                color = OrbitalCoral,
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.2.sp
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Feed & Web Shields",
+                color = earth.textPrimary,
+                fontSize = 28.sp,
+                fontFamily = FontFamily.Serif,
+                fontWeight = FontWeight.Normal
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = "Instant hardware-level ejection when addictive feeds or explicit loops are opened.",
+                color = earth.textMuted,
+                fontSize = 13.sp,
+                lineHeight = 18.sp
+            )
 
-                    if (isNuclearActive) {
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // ====================================================================
+            // 2. NUCLEAR MODE STATUS (IF ACTIVE)
+            // ====================================================================
+            if (isNuclearActive) {
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.90f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.5.dp, OrbitalCoral.copy(alpha = 0.7f), RoundedCornerShape(20.dp))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(18.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Box(
                             modifier = Modifier
-                                .background(earth.camelOchre, shape = RoundedCornerShape(8.dp))
-                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(OrbitalCoralSoft),
+                            contentAlignment = Alignment.Center
                         ) {
+                            Text(text = "☢️", fontSize = 18.sp)
+                        }
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "LOCKED",
-                                color = Color.White,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Black
+                                text = "NUCLEAR LOCK ACTIVE",
+                                color = OrbitalCoral,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.5.sp
+                            )
+                            Text(
+                                text = "All feeds locked ON until $formattedNuclearEnd. Zero bypass allowed.",
+                                color = earth.textPrimary,
+                                fontSize = 12.sp,
+                                lineHeight = 16.sp
                             )
                         }
                     }
                 }
-
-                Text(
-                    text = if (isNuclearActive) {
-                        "Nuclear Mode is currently active until $formattedNuclearEnd. All protection feeds are locked ON. Settings cannot be disabled."
-                    } else {
-                        "Nuclear Mode can only be armed from the Home dashboard with a deliberate Hold-To-Activate gesture. Once active, all cheat paths and disable toggles are completely locked."
-                    },
-                    color = earth.textPrimary,
-                    fontSize = 12.sp,
-                    lineHeight = 17.sp,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
+                Spacer(modifier = Modifier.height(18.dp))
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // APP LOCK & BLOCKER SHIELD CARD (OPAL / APPBLOCK STYLE)
-        Card(
-            shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.5.dp, earth.forestGreen.copy(alpha = 0.6f), RoundedCornerShape(18.dp))
-                .clickable { onNavigateAppLock() }
-        ) {
-            Column(modifier = Modifier.padding(18.dp)) {
+            // ====================================================================
+            // 3. APP LOCK SHIELD BANNER (FROSTED SQUIRCLE)
+            // ====================================================================
+            Card(
+                shape = RoundedCornerShape(22.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.90f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, earth.border, RoundedCornerShape(22.dp))
+                    .clickable { onNavigateAppLock() }
+            ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(18.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "🛡️ APP LOCK SHIELD",
-                            color = earth.forestGreen,
-                            fontSize = 11.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
-                        )
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .background(
-                                if (appLockConfig.isAppLockEnabled) earth.forestGreen else earth.surface,
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
                     ) {
-                        Text(
-                            text = if (appLockConfig.isAppLockEnabled) "ACTIVE" else "OFF",
-                            color = if (appLockConfig.isAppLockEnabled) Color.White else earth.textMuted,
-                            fontSize = 9.5.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(OrbitalMintSoft),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Apps,
+                                contentDescription = "App Lock",
+                                tint = OrbitalMint,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "App Lock Shield",
+                                    color = earth.textPrimary,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(if (appLockConfig.isAppLockEnabled) OrbitalMintSoft else earth.surfaceVariant)
+                                        .padding(horizontal = 7.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = if (appLockConfig.isAppLockEnabled) "ACTIVE" else "OFF",
+                                        color = if (appLockConfig.isAppLockEnabled) OrbitalMint else earth.textMuted,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                            Text(
+                                text = if (appLockConfig.totalCount == 0) "Lock distracting apps & games" else "${appLockConfig.totalCount} apps locked",
+                                color = earth.textMuted,
+                                fontSize = 12.sp
+                            )
+                        }
                     }
-                }
 
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Text(
-                    text = "Installed Apps & Games Blocker",
-                    color = earth.forestDark,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Serif
-                )
-
-                Text(
-                    text = "Lock specific apps permanently (24/7) or isolate them during active Nuclear Mode sessions.",
-                    color = earth.textMuted,
-                    fontSize = 12.sp,
-                    lineHeight = 16.sp,
-                    modifier = Modifier.padding(top = 3.dp, bottom = 12.dp)
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = if (appLockConfig.totalCount == 0) {
-                            "0 apps locked"
-                        } else {
-                            "${appLockConfig.totalCount} locked (${appLockConfig.permanentCount} Perm • ${appLockConfig.nuclearCount} Nuclear)"
-                        },
-                        color = earth.textPrimary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-
-                    Text(
-                        text = "Manage Apps →",
-                        color = earth.forestGreen,
-                        fontSize = 12.5.sp,
-                        fontWeight = FontWeight.Bold
+                    Icon(
+                        imageVector = Icons.Outlined.ChevronRight,
+                        contentDescription = "Open App Lock",
+                        tint = earth.textMuted,
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // ====================================================================
+            // 4. GROUP 1: SHORT-FORM ADDICTIVE FEEDS (UNIFIED FROSTED CONTAINER)
+            // ====================================================================
+            GroupHeader(title = "SHORT-FORM FEEDS", subtitle = "Sub-16ms ejection")
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Card(
+                shape = RoundedCornerShape(22.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.90f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, earth.border, RoundedCornerShape(22.dp))
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 6.dp)) {
+                    // Item 1: YouTube Shorts
+                    ShieldToggleRow(
+                        icon = Icons.Outlined.PlayCircleOutline,
+                        iconTint = OrbitalCoral,
+                        title = "YouTube Shorts",
+                        subtitle = "Ejects upon opening Shorts shelf or reel tab",
+                        isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.YOUTUBE_SHORTS) else config.blockYouTubeShorts,
+                        enabled = !isNuclearActive,
+                        onCheckedChange = { onToggleCategory(ContentCategory.YOUTUBE_SHORTS, it) }
+                    )
+
+                    EtherealDivider()
+
+                    // Item 2: Instagram Reels
+                    ShieldToggleRow(
+                        icon = Icons.Outlined.MovieFilter,
+                        iconTint = OrbitalViolet,
+                        title = "Instagram Reels",
+                        subtitle = "Terminates reel player and infinite clip scroll",
+                        isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.INSTAGRAM_REELS) else config.blockInstagramReels,
+                        enabled = !isNuclearActive,
+                        onCheckedChange = { onToggleCategory(ContentCategory.INSTAGRAM_REELS, it) }
+                    )
+
+                    EtherealDivider()
+
+                    // Item 3: Facebook Reels
+                    ShieldToggleRow(
+                        icon = Icons.Outlined.VideoLibrary,
+                        iconTint = OrbitalSky,
+                        title = "Facebook Reels",
+                        subtitle = "Blocks video watch feed and short clip player",
+                        isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.FACEBOOK_REELS) else config.blockFacebookReels,
+                        enabled = !isNuclearActive,
+                        onCheckedChange = { onToggleCategory(ContentCategory.FACEBOOK_REELS, it) }
+                    )
+
+                    EtherealDivider()
+
+                    // Item 4: Snapchat Spotlight
+                    ShieldToggleRow(
+                        icon = Icons.Outlined.Videocam,
+                        iconTint = OrbitalAmber,
+                        title = "Snapchat Spotlight",
+                        subtitle = "Prevents vertical swipe spotlight trap",
+                        isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.SNAPCHAT_SPOTLIGHT) else config.blockSnapchatSpotlight,
+                        enabled = !isNuclearActive,
+                        onCheckedChange = { onToggleCategory(ContentCategory.SNAPCHAT_SPOTLIGHT, it) }
+                    )
+
+                    EtherealDivider()
+
+                    // Item 5: TikTok
+                    ShieldToggleRow(
+                        icon = Icons.Outlined.MusicNote,
+                        iconTint = earth.textPrimary,
+                        title = "TikTok",
+                        subtitle = "Blocks TikTok and TikTok Lite stream sessions",
+                        isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.TIKTOK) else config.blockTikTok,
+                        enabled = !isNuclearActive,
+                        onCheckedChange = { onToggleCategory(ContentCategory.TIKTOK, it) }
+                    )
+
+                    EtherealDivider()
+
+                    // Item 6: Other Short Videos
+                    ShieldToggleRow(
+                        icon = Icons.Outlined.WarningAmber,
+                        iconTint = OrbitalCoral,
+                        title = "Other Short Videos",
+                        subtitle = "Detects generic vertical swipe video containers",
+                        isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.OTHER_SHORT_VIDEO) else config.blockOtherShortVideo,
+                        enabled = !isNuclearActive,
+                        onCheckedChange = { onToggleCategory(ContentCategory.OTHER_SHORT_VIDEO, it) }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // ====================================================================
+            // 5. GROUP 2: EXPLICIT CONTENT BARRIER (UNIFIED FROSTED CONTAINER)
+            // ====================================================================
+            GroupHeader(title = "EXPLICIT CONTENT BARRIER", subtitle = "Zero-tolerance boundary protection")
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Card(
+                shape = RoundedCornerShape(22.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.90f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, earth.border, RoundedCornerShape(22.dp))
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 6.dp)) {
+                    // Item 1: Adult Websites
+                    ShieldToggleRow(
+                        icon = Icons.Outlined.Shield,
+                        iconTint = OrbitalCoral,
+                        title = "Adult Websites & Domains",
+                        subtitle = "Real-time browser URL check against comprehensive adult blacklist",
+                        isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.ADULT_WEBSITE) else config.blockAdultWebsites,
+                        enabled = !isNuclearActive,
+                        onCheckedChange = { onToggleCategory(ContentCategory.ADULT_WEBSITE, it) }
+                    )
+
+                    EtherealDivider()
+
+                    // Item 2: Keyword Shield
+                    ShieldToggleRow(
+                        icon = Icons.Outlined.SearchOff,
+                        iconTint = OrbitalViolet,
+                        title = "Adult Keyword Shield",
+                        subtitle = "Scans search queries and active web pages for explicit terminology",
+                        isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.ADULT_KEYWORD) else config.blockAdultKeywords,
+                        enabled = !isNuclearActive,
+                        onCheckedChange = { onToggleCategory(ContentCategory.ADULT_KEYWORD, it) }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // ====================================================================
+            // 6. GROUP 3: HARDWARE ENFORCEMENT DEPTH (UNIFIED FROSTED CONTAINER)
+            // ====================================================================
+            GroupHeader(title = "HARDWARE ENFORCEMENT DEPTH", subtitle = "Low-level anti-tamper heuristics")
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Card(
+                shape = RoundedCornerShape(22.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.90f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, earth.border, RoundedCornerShape(22.dp))
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 6.dp)) {
+                    // Item 1: Strict Enforcement
+                    ShieldToggleRow(
+                        icon = Icons.Outlined.Lock,
+                        iconTint = OrbitalCoral,
+                        title = "Strict Enforcement Mode",
+                        subtitle = "Aggressive foreground ejection to eliminate fast swipe bypasses",
+                        isChecked = if (isNuclearActive) true else config.strictMode,
+                        enabled = !isNuclearActive,
+                        onCheckedChange = onToggleStrictMode
+                    )
+
+                    EtherealDivider()
+
+                    // Item 2: Deep URL Inspection
+                    ShieldToggleRow(
+                        icon = Icons.Outlined.Language,
+                        iconTint = OrbitalSky,
+                        title = "Browser Deep URL Inspection",
+                        subtitle = "Inspects browser address bars to catch instant redirect hops",
+                        isChecked = if (isNuclearActive) true else config.browserProtectionEnabled,
+                        enabled = !isNuclearActive,
+                        onCheckedChange = onToggleBrowserProtection
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(100.dp))
         }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // SHORT-FORM VIDEO TARGETS SECTION
-        Text(
-            text = "SHORT-FORM ADDICTIVE FEEDS",
-            color = earth.forestGreen,
-            fontSize = 11.5.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp
-        )
-        Spacer(modifier = Modifier.height(10.dp))
-
-        ProtectionToggleCard(
-            title = "YouTube Shorts",
-            subtitle = "Instantly ejects to Home Screen if Shorts button or reel player is opened",
-            isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.YOUTUBE_SHORTS) else config.blockYouTubeShorts,
-            enabled = !isNuclearActive,
-            onCheckedChange = { onToggleCategory(ContentCategory.YOUTUBE_SHORTS, it) }
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        ProtectionToggleCard(
-            title = "Instagram Reels",
-            subtitle = "Instantly ejects to Home Screen if Reels tab or clips player is opened",
-            isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.INSTAGRAM_REELS) else config.blockInstagramReels,
-            enabled = !isNuclearActive,
-            onCheckedChange = { onToggleCategory(ContentCategory.INSTAGRAM_REELS, it) }
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        ProtectionToggleCard(
-            title = "Facebook Reels",
-            subtitle = "Instantly ejects if Facebook watch reels or video scroll feed is detected",
-            isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.FACEBOOK_REELS) else config.blockFacebookReels,
-            enabled = !isNuclearActive,
-            onCheckedChange = { onToggleCategory(ContentCategory.FACEBOOK_REELS, it) }
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        ProtectionToggleCard(
-            title = "Snapchat Spotlight",
-            subtitle = "Instantly ejects if Spotlight vertical swipe feed is opened",
-            isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.SNAPCHAT_SPOTLIGHT) else config.blockSnapchatSpotlight,
-            enabled = !isNuclearActive,
-            onCheckedChange = { onToggleCategory(ContentCategory.SNAPCHAT_SPOTLIGHT, it) }
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        ProtectionToggleCard(
-            title = "TikTok",
-            subtitle = "Instantly ejects when TikTok or TikTok Lite feeds are active",
-            isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.TIKTOK) else config.blockTikTok,
-            enabled = !isNuclearActive,
-            onCheckedChange = { onToggleCategory(ContentCategory.TIKTOK, it) }
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        ProtectionToggleCard(
-            title = "Other Short Videos",
-            subtitle = "Detects generic vertical swipe feeds and audio clips in other apps",
-            isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.OTHER_SHORT_VIDEO) else config.blockOtherShortVideo,
-            enabled = !isNuclearActive,
-            onCheckedChange = { onToggleCategory(ContentCategory.OTHER_SHORT_VIDEO, it) }
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // EXPLICIT CONTENT SECTION
-        Text(
-            text = "EXPLICIT CONTENT BARRIER",
-            color = earth.forestGreen,
-            fontSize = 11.5.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp
-        )
-        Spacer(modifier = Modifier.height(10.dp))
-
-        ProtectionToggleCard(
-            title = "Adult Websites & Domains",
-            subtitle = "Real-time browser URL check against comprehensive adult blacklist",
-            isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.ADULT_WEBSITE) else config.blockAdultWebsites,
-            enabled = !isNuclearActive,
-            onCheckedChange = { onToggleCategory(ContentCategory.ADULT_WEBSITE, it) }
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        ProtectionToggleCard(
-            title = "Adult Keyword Shield",
-            subtitle = "Scans search queries and active web pages for explicit terminology",
-            isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.ADULT_KEYWORD) else config.blockAdultKeywords,
-            enabled = !isNuclearActive,
-            onCheckedChange = { onToggleCategory(ContentCategory.ADULT_KEYWORD, it) }
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // ADVANCED ENFORCEMENT
-        Text(
-            text = "SYSTEM ENFORCEMENT DEPTH",
-            color = earth.forestGreen,
-            fontSize = 11.5.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp
-        )
-        Spacer(modifier = Modifier.height(10.dp))
-
-        ProtectionToggleCard(
-            title = "Strict Enforcement Mode",
-            subtitle = "Prevents fast swipe bypasses and aggressively terminates background tasks",
-            isChecked = if (isNuclearActive) true else config.strictMode,
-            enabled = !isNuclearActive,
-            onCheckedChange = onToggleStrictMode
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        ProtectionToggleCard(
-            title = "Browser Deep URL Inspection",
-            subtitle = "Reads real-time browser address bars to catch adult domain redirects",
-            isChecked = if (isNuclearActive) true else config.browserProtectionEnabled,
-            enabled = !isNuclearActive,
-            onCheckedChange = onToggleBrowserProtection
-        )
-
-        Spacer(modifier = Modifier.height(110.dp))
     }
 }
 
 @Composable
-fun ProtectionToggleCard(
+private fun GroupHeader(title: String, subtitle: String) {
+    val earth = EarthTheme.colors
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Bottom
+    ) {
+        Text(
+            text = title,
+            color = earth.textPrimary,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp
+        )
+        Text(
+            text = subtitle,
+            color = earth.textMuted,
+            fontSize = 11.sp
+        )
+    }
+}
+
+@Composable
+private fun ShieldToggleRow(
+    icon: ImageVector,
+    iconTint: Color,
     title: String,
     subtitle: String,
     isChecked: Boolean,
@@ -371,49 +470,103 @@ fun ProtectionToggleCard(
     onCheckedChange: (Boolean) -> Unit
 ) {
     val earth = EarthTheme.colors
-    Card(
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = earth.surfaceSoft),
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, earth.border, RoundedCornerShape(18.dp))
+            .clickable(enabled = enabled) { onCheckedChange(!isChecked) }
+            .padding(vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(18.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier.weight(1f).padding(end = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(iconTint.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconTint,
+                    modifier = Modifier.size(19.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(13.dp))
+            Column {
                 Text(
                     text = title,
                     color = earth.textPrimary,
                     fontSize = 14.5.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     text = subtitle,
                     color = earth.textMuted,
-                    fontSize = 12.sp,
-                    lineHeight = 16.sp,
-                    modifier = Modifier.padding(top = 3.dp)
+                    fontSize = 11.5.sp,
+                    lineHeight = 15.sp
                 )
             }
-
-            Switch(
-                checked = isChecked,
-                enabled = enabled,
-                onCheckedChange = onCheckedChange,
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = Color.White,
-                    checkedTrackColor = earth.forestGreen,
-                    uncheckedThumbColor = earth.textMuted,
-                    uncheckedTrackColor = earth.surface,
-                    disabledCheckedThumbColor = Color.White,
-                    disabledCheckedTrackColor = earth.camelOchre
-                )
-            )
         }
+
+        EtherealToggle(
+            checked = isChecked,
+            enabled = enabled,
+            onCheckedChange = onCheckedChange,
+            activeColor = OrbitalCoral
+        )
+    }
+}
+
+@Composable
+private fun EtherealDivider() {
+    Divider(
+        color = Color(0xFFF0EBE1),
+        thickness = 1.dp
+    )
+}
+
+@Composable
+fun EtherealToggle(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    enabled: Boolean = true,
+    activeColor: Color = OrbitalCoral
+) {
+    val thumbOffset by animateDpAsState(
+        targetValue = if (checked) 20.dp else 2.dp,
+        animationSpec = tween(durationMillis = 200),
+        label = "thumb"
+    )
+    val trackColor by animateColorAsState(
+        targetValue = when {
+            !enabled && checked -> activeColor.copy(alpha = 0.45f)
+            !enabled -> Color(0xFFEBE5DC)
+            checked -> activeColor
+            else -> Color(0xFFDDD6CC)
+        },
+        label = "track"
+    )
+
+    Box(
+        modifier = Modifier
+            .width(46.dp)
+            .height(26.dp)
+            .clip(RoundedCornerShape(13.dp))
+            .background(trackColor)
+            .clickable(enabled = enabled) { onCheckedChange(!checked) },
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(start = thumbOffset)
+                .size(22.dp)
+                .clip(CircleShape)
+                .background(Color.White)
+        )
     }
 }

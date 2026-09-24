@@ -24,6 +24,12 @@ class BlockScreenActivity : ComponentActivity() {
         val remainingMillis = intent.getLongExtra(EXTRA_REMAINING_MILLIS, 3600000L)
         val reason = intent.getStringExtra(EXTRA_REASON) ?: "Content locked"
 
+        window.statusBarColor = android.graphics.Color.parseColor("#FAF7F2")
+        window.navigationBarColor = android.graphics.Color.parseColor("#F6EFEB")
+        val insets = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
+        insets.isAppearanceLightStatusBars = true
+        insets.isAppearanceLightNavigationBars = true
+
         setContent {
             MaterialTheme {
                 BlockOverlayContent(
