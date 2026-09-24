@@ -64,7 +64,7 @@ class AppLockTest {
     }
 
     @Test
-    fun testAppLockConfigDisabledDisablesAllLocks() {
+    fun testAppLockConfigDisabledDisablesAllLocksWhenNuclearInactive() {
         val config = AppLockConfig(
             isAppLockEnabled = false,
             lockedApps = mapOf(
@@ -82,8 +82,10 @@ class AppLockTest {
         )
 
         assertFalse(config.isPackageLocked("com.supercell.clashofclans", isNuclearActive = false))
-        assertFalse(config.isPackageLocked("com.supercell.clashofclans", isNuclearActive = true))
-        assertFalse(config.isPackageLocked("com.netflix.mediaclient", isNuclearActive = true))
+        assertFalse(config.isPackageLocked("com.netflix.mediaclient", isNuclearActive = false))
+        // When Nuclear Mode is active, locks are strictly enforced with zero bypass
+        assertTrue(config.isPackageLocked("com.supercell.clashofclans", isNuclearActive = true))
+        assertTrue(config.isPackageLocked("com.netflix.mediaclient", isNuclearActive = true))
     }
 
     @Test

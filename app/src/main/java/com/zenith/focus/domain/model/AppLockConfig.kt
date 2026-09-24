@@ -8,12 +8,11 @@ data class AppLockConfig(
         packageName: String,
         isNuclearActive: Boolean
     ): Boolean {
-        if (!isAppLockEnabled) return false
         val rule = lockedApps[packageName.lowercase(java.util.Locale.US)] ?: return false
         return when (rule.lockMode) {
-            AppLockMode.PERMANENT -> true
+            AppLockMode.PERMANENT -> isAppLockEnabled || isNuclearActive
             AppLockMode.NUCLEAR_ONLY -> isNuclearActive
-            AppLockMode.BOTH -> true
+            AppLockMode.BOTH -> isNuclearActive || isAppLockEnabled
         }
     }
 

@@ -129,6 +129,55 @@ class ZenithAccessibilityService : AccessibilityService() {
 
         val now = System.currentTimeMillis()
 
+        // FAST-PATH APP LOCK SHIELD:
+        // If this package is locked in App Lock, instantly eject it to Home Screen without waiting for heavy hierarchy inspection!
+        val app = runCatching { ZenithApplication.instance }.getOrNull()
+        if (app != null) {
+            val nowTime = System.currentTimeMillis()
+            val elapsed = android.os.SystemClock.elapsedRealtime()
+            val nuclearRepo = app.container.nuclearModeRepository
+            val isNuclear = nuclearRepo.session.value.isCurrentlyActive(nowTime, elapsed)
+            val appLockConfig = app.container.appLockRepository.appLockConfig.value
+
+            if (appLockConfig.isPackageLocked(lowerPkg, isNuclear)) {
+                val rule = appLockConfig.getRule(lowerPkg)
+                val isPermanent = rule?.lockMode == com.zenith.focus.domain.model.AppLockMode.PERMANENT
+                val appTitle = rule?.appName ?: lowerPkg
+
+                // 1. Instant global eject to Home Screen
+                ejectToHomeScreen()
+
+                // 2. Physical haptic alert
+                triggerHapticAlert()
+
+                // 3. User toast & statistics with debounce
+                if (nowTime - lastEjectTime >= EJECT_COOLDOWN_MS) {
+                    lastEjectTime = nowTime
+                    serviceScope.launch(Dispatchers.Main) {
+                        val toastMsg = if (isPermanent) {
+                            "🔒 PERMANENT LOCK: $appTitle is locked 24/7."
+                        } else {
+                            "☢️ NUCLEAR LOCK: $appTitle is locked during your active Nuclear session!"
+                        }
+                        Toast.makeText(applicationContext, toastMsg, Toast.LENGTH_SHORT).show()
+                    }
+
+                    serviceScope.launch {
+                        app.container.statisticsRepository.recordBlockEvent(
+                            BlockEvent(
+                                timestamp = nowTime,
+                                packageName = lowerPkg,
+                                category = ContentCategory.APP_LOCK,
+                                confidence = 1.0f,
+                                ruleId = if (isPermanent) "app_lock_permanent" else "app_lock_nuclear"
+                            )
+                        )
+                    }
+                }
+                return
+            }
+        }
+
         // Debounce only extremely rapid duplicate events within 60ms
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
             if (pkg == lastPackageName && now - lastEventTime < FAST_DEBOUNCE_MS) {
@@ -239,22 +288,23 @@ class ZenithAccessibilityService : AccessibilityService() {
 
         if (appLockConfig.isPackageLocked(targetPkg, isNuclear)) {
             val rule = appLockConfig.getRule(targetPkg)
-            val isPermanent = rule?.lockMode == com.zenith.focus.domain.model.AppLockMode.PERMANENT || rule?.lockMode == com.zenith.focus.domain.model.AppLockMode.BOTH
+            val isPermanent = rule?.lockMode == com.zenith.focus.domain.model.AppLockMode.PERMANENT
             val appTitle = rule?.appName ?: targetPkg
+
+            // Instant home ejection and tactile feedback
+            ejectToHomeScreen()
+            triggerHapticAlert()
 
             if (now - lastEjectTime >= EJECT_COOLDOWN_MS) {
                 lastEjectTime = now
-                triggerHapticAlert()
 
                 withContext(Dispatchers.Main) {
-                    val reason = if (isPermanent) {
-                        "🔒 PERMANENT LOCK: $appTitle is permanently blocked to safeguard your attention."
+                    val toastMessage = if (isPermanent) {
+                        "🔒 PERMANENT LOCK: $appTitle is locked 24/7."
                     } else {
-                        "☢️ NUCLEAR LOCK: $appTitle is locked during your active Nuclear session."
+                        "☢️ NUCLEAR LOCK: $appTitle is locked during your active Nuclear session!"
                     }
-                    val remaining = if (isNuclear) nuclearSession.remainingMillis(now, elapsed) else 0L
-                    performGlobalAction(GLOBAL_ACTION_BACK)
-                    overlayWindowManager.showOverlay(ContentCategory.APP_LOCK, remaining, reason)
+                    Toast.makeText(applicationContext, toastMessage, Toast.LENGTH_SHORT).show()
                 }
 
                 statsRepo.recordBlockEvent(
@@ -272,7 +322,38 @@ class ZenithAccessibilityService : AccessibilityService() {
 
         val config = settingsRepo.protectionConfig.value
         val habitConfig = settingsRepo.habitConfig.value
-        val result = detectionEngine.evaluate(effectiveContext, config)
+
+        // When Nuclear Mode is active, enforce all active nuclear session categories in effective config
+        val effectiveProtectionConfig = if (isNuclear) {
+            val cats = if (nuclearSession.enabledCategories.isNotEmpty()) {
+                nuclearSession.enabledCategories
+            } else {
+                setOf(
+                    ContentCategory.YOUTUBE_SHORTS,
+                    ContentCategory.INSTAGRAM_REELS,
+                    ContentCategory.SNAPCHAT_SPOTLIGHT,
+                    ContentCategory.FACEBOOK_REELS,
+                    ContentCategory.TIKTOK,
+                    ContentCategory.OTHER_SHORT_VIDEO,
+                    ContentCategory.ADULT_WEBSITE,
+                    ContentCategory.ADULT_KEYWORD
+                )
+            }
+            config.copy(
+                blockYouTubeShorts = cats.contains(ContentCategory.YOUTUBE_SHORTS),
+                blockInstagramReels = cats.contains(ContentCategory.INSTAGRAM_REELS),
+                blockSnapchatSpotlight = cats.contains(ContentCategory.SNAPCHAT_SPOTLIGHT),
+                blockFacebookReels = cats.contains(ContentCategory.FACEBOOK_REELS),
+                blockTikTok = cats.contains(ContentCategory.TIKTOK),
+                blockOtherShortVideo = cats.contains(ContentCategory.OTHER_SHORT_VIDEO),
+                blockAdultWebsites = cats.contains(ContentCategory.ADULT_WEBSITE),
+                blockAdultKeywords = cats.contains(ContentCategory.ADULT_KEYWORD) || cats.contains(ContentCategory.ADULT_WEBSITE)
+            )
+        } else {
+            config
+        }
+
+        val result = detectionEngine.evaluate(effectiveContext, effectiveProtectionConfig)
 
         if (result.isBlocked) {
 
@@ -280,7 +361,7 @@ class ZenithAccessibilityService : AccessibilityService() {
                 result = result,
                 nuclearSession = nuclearSession,
                 lockState = lockState,
-                config = config,
+                config = effectiveProtectionConfig,
                 nowWallClock = now,
                 nowElapsedRealtime = elapsed,
                 habitConfig = habitConfig
@@ -315,11 +396,17 @@ class ZenithAccessibilityService : AccessibilityService() {
 
             // 2. SURGICAL SHORT CLOSE OR INSTANT HOME EJECTION
             withContext(Dispatchers.Main) {
-                if (result.category == ContentCategory.ADULT_WEBSITE || result.category == ContentCategory.ADULT_KEYWORD) {
+                if (result.category == ContentCategory.ADULT_WEBSITE || result.category == ContentCategory.ADULT_KEYWORD || isNuclear) {
+                    // Nuclear Mode or Explicit Content: INSTANT ZERO-TOLERANCE EJECTION TO HOME!
                     ejectToHomeScreen()
+                    val feedbackText = if (isNuclear) {
+                        "☢️ NUCLEAR LOCK: Reel/Short closed."
+                    } else {
+                        "🛡️ Explicit content blocked. Exiting to Home."
+                    }
                     Toast.makeText(
                         applicationContext,
-                        "🛡️ Explicit content blocked. Exiting to Home.",
+                        feedbackText,
                         Toast.LENGTH_SHORT
                     ).show()
                 } else {
@@ -333,7 +420,6 @@ class ZenithAccessibilityService : AccessibilityService() {
 
                     val isBedtime = habitConfig.bedtimeShieldEnabled && habitConfig.isBedtimeActive(now)
                     val feedbackText = when {
-                        isNuclear -> "☢️ NUCLEAR LOCK: Reel/Short closed."
                         lockState.isCurrentlyActive(now) -> "🔒 FOCUS LOCK: Reel/Short closed."
                         isBedtime -> "🌙 BEDTIME SHIELD: Sleep is your superpower. Put your phone down!"
                         else -> "🛡️ REEL BLOCKED: Reel/Short closed."
