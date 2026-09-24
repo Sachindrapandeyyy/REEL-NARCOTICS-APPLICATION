@@ -8,15 +8,11 @@ data class AppLockConfig(
         packageName: String,
         isNuclearActive: Boolean
     ): Boolean {
-        val rule = lockedApps[packageName.lowercase(java.util.Locale.US)] ?: return false
-        // During nuclear mode, ALL locked apps are strictly enforced with zero bypass
-        if (isNuclearActive) {
-            return true
-        }
         if (!isAppLockEnabled) return false
+        val rule = lockedApps[packageName.lowercase(java.util.Locale.US)] ?: return false
         return when (rule.lockMode) {
             AppLockMode.PERMANENT -> true
-            AppLockMode.NUCLEAR_ONLY -> false
+            AppLockMode.NUCLEAR_ONLY -> isNuclearActive
             AppLockMode.BOTH -> true
         }
     }
