@@ -78,13 +78,13 @@ fun SettingsScreen(
     isServiceConnected: Boolean,
     isNuclearActive: Boolean = false,
     @Suppress("UNUSED_PARAMETER") currentTheme: String = "",
-    updateManager: UpdateManager? = null,
+    @Suppress("UNUSED_PARAMETER") updateManager: UpdateManager? = null,
     habitConfig: HabitConfig = HabitConfig(),
     onUpdateHabitConfig: (HabitConfig) -> Unit = {},
-    todayTotalBlocks: Int = 0,
-    focusStreakDays: Int = 1,
+    @Suppress("UNUSED_PARAMETER") todayTotalBlocks: Int = 0,
+    @Suppress("UNUSED_PARAMETER") focusStreakDays: Int = 1,
     onShowUpdateDialog: () -> Unit = {},
-    onSelectFrictionType: (FrictionType) -> Unit = {},
+    @Suppress("UNUSED_PARAMETER") onSelectFrictionType: (FrictionType) -> Unit = {},
     @Suppress("UNUSED_PARAMETER") onSetPin: suspend (String) -> Unit = {},
     @Suppress("UNUSED_PARAMETER") onClearPin: suspend () -> Unit = {},
     @Suppress("UNUSED_PARAMETER") onSetTheme: (String) -> Unit = {}
@@ -93,8 +93,6 @@ fun SettingsScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val scrollState = rememberScrollState()
-
-    val updateState = updateManager?.state?.collectAsState()?.value ?: UpdateState.Idle
 
     var showRestrictedDialog by remember { mutableStateOf(false) }
     var isDeviceAdminActive by remember {
