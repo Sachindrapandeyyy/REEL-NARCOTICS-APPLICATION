@@ -27,7 +27,23 @@ class FacebookReelsDetector : ContentDetector {
         var confidence = 0.0f
         val reasons = mutableListOf<String>()
 
-        // Signal 1: Fullscreen Reels container or view hierarchy (excludes ambiguous 24h story viewers like reel_viewer)
+        // Signal 2: Content descriptions (Accessibility nodes)
+        val isReelsNavOrViewer = context.hasSelectedDesc("Reels") ||
+            context.hasSelectedText("Reels") ||
+            context.hasContentDescription("Reels, selected") ||
+            context.hasContentDescription("Reels tab, selected") ||
+            context.hasContentDescription("selected, Reels") ||
+            context.hasContentDescription("Reels video player")
+
+        // Excluded surface: Facebook Feed (Photos, text posts, groups, stories tray) without active fullscreen player or selected tab
+        val isFullscreenReelsPlayer = context.hasAnyViewId("reel_fullscreen_view", "fb_shorts_viewer", "reels_video_player")
+        val isFeed = context.hasAnyViewId("newsfeed_recycler", "feed_stream", "story_tray", "story_view", "composer_root") &&
+            !isFullscreenReelsPlayer && !isReelsNavOrViewer
+        if (isFeed) {
+            return DetectionResult.allowed(ContentCategory.FACEBOOK_REELS, "Clean Facebook feed surface")
+        }
+
+        // Signal 1: Fullscreen Reels container or view hierarchy
         if (context.hasAnyViewId(
                 "reel_fullscreen_view",
                 "fb_shorts_container",
@@ -42,13 +58,6 @@ class FacebookReelsDetector : ContentDetector {
             reasons.add("Facebook Reels container active")
         }
 
-        // Signal 2: Content descriptions (Accessibility nodes)
-        val isReelsNavOrViewer = context.hasSelectedDesc("Reels") ||
-            context.hasSelectedText("Reels") ||
-            context.hasContentDescription("Reels, selected") ||
-            context.hasContentDescription("Reels tab, selected") ||
-            context.hasContentDescription("selected, Reels") ||
-            context.hasContentDescription("Reels video player")
         if (isReelsNavOrViewer) {
             confidence = maxOf(confidence, 0.95f)
             reasons.add("Facebook Reels navigation/viewer node detected")

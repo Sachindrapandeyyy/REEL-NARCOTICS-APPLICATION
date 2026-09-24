@@ -327,7 +327,72 @@ class DetectorTestMatrix {
         assertEquals(1.0f, result.confidence, 0.01f)
     }
 
+    @Test
+    fun testInstagramHomeWithUnselectedReelsTabAllowed() {
+        val detector = InstagramReelsDetector()
+        val context = ScreenContext(
+            packageName = "com.instagram.android",
+            className = "com.instagram.mainactivity.MainActivity",
+            viewIds = setOf("com.instagram.android:id/feed_recycler", "com.instagram.android:id/action_bar_container"),
+            visibleTexts = listOf("Instagram", "Liked by friends"),
+            contentDescriptions = listOf("Home, tab 1 of 5, selected", "Search", "Create", "Reels, tab 4 of 5", "Profile"),
+            allNormalizedTokens = setOf("instagram", "reels", "home"),
+            selectedDescriptions = setOf("Home, tab 1 of 5, selected")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertFalse("Instagram Home feed with unselected Reels tab in bottom bar must be ALLOWED", result.isBlocked)
+    }
+
     // 3. Snapchat Spotlight Matrix
+    @Test
+    fun testSnapchatCameraWithBottomBarAllowed() {
+        val detector = SnapchatSpotlightDetector()
+        val context = ScreenContext(
+            packageName = "com.snapchat.android",
+            className = "com.snapchat.android.LandingPageActivity",
+            viewIds = setOf("camera_capture_button", "navigation_host"),
+            visibleTexts = listOf("Camera"),
+            contentDescriptions = listOf("Map", "Chat", "Camera, selected", "Stories", "Spotlight"),
+            allNormalizedTokens = setOf("camera", "spotlight"),
+            selectedDescriptions = setOf("Camera, selected")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertFalse("Snapchat camera with unselected Spotlight tab in bottom bar must be ALLOWED", result.isBlocked)
+    }
+
+    @Test
+    fun testSnapchatStoriesDiscoverFeedAllowed() {
+        val detector = SnapchatSpotlightDetector()
+        val context = ScreenContext(
+            packageName = "com.snapchat.android",
+            className = "com.snapchat.android.LandingPageActivity",
+            viewIds = setOf("discover_feed", "stories_carousel"),
+            visibleTexts = listOf("Friends", "Subscriptions", "Discover"),
+            contentDescriptions = listOf("Map", "Chat", "Camera", "Stories, selected", "Spotlight"),
+            allNormalizedTokens = setOf("stories", "discover", "spotlight"),
+            selectedDescriptions = setOf("Stories, selected")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertFalse("Snapchat Discover/Stories feed must be ALLOWED", result.isBlocked)
+    }
+
+    @Test
+    fun testSnapchatSpotlightTabSelectedBlocked() {
+        val detector = SnapchatSpotlightDetector()
+        val context = ScreenContext(
+            packageName = "com.snapchat.android",
+            className = "com.snapchat.android.LandingPageActivity",
+            viewIds = setOf("navigation_host"),
+            visibleTexts = listOf("Spotlight"),
+            contentDescriptions = listOf("Map", "Chat", "Camera", "Stories", "Spotlight, selected"),
+            allNormalizedTokens = setOf("spotlight"),
+            selectedDescriptions = setOf("Spotlight, selected")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertTrue("Snapchat Spotlight tab actively selected must be BLOCKED", result.isBlocked)
+        assertEquals(ContentCategory.SNAPCHAT_SPOTLIGHT, result.category)
+    }
+
     @Test
     fun testSnapchatChatAllowed() {
         val detector = SnapchatSpotlightDetector()
@@ -389,6 +454,22 @@ class DetectorTestMatrix {
         )
         val result = detector.evaluate(context, defaultConfig)
         assertFalse(result.isBlocked)
+    }
+
+    @Test
+    fun testFacebookFeedWithInlineReelsShelfAllowed() {
+        val detector = FacebookReelsDetector()
+        val context = ScreenContext(
+            packageName = "com.facebook.katana",
+            className = "com.facebook.katana.FBNewsFeedActivity",
+            viewIds = setOf("newsfeed_recycler", "story_tray", "fb_shorts_container"),
+            visibleTexts = listOf("News Feed", "Reels and short videos", "Watch more"),
+            contentDescriptions = listOf("News Feed tab, selected", "Reels"),
+            allNormalizedTokens = setOf("newsfeed", "story", "reels"),
+            selectedDescriptions = setOf("News Feed tab, selected")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertFalse("Facebook News Feed with inline Reels shelf must be ALLOWED", result.isBlocked)
     }
 
     @Test

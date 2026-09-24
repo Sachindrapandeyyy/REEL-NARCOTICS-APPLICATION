@@ -12,18 +12,12 @@ class SnapchatSpotlightDetector : ContentDetector {
         const val PACKAGE_SNAPCHAT = "com.snapchat.android"
 
         val SPOTLIGHT_VIEWER_IDS = listOf(
-            "spotlight_container",
             "spotlight_fullscreen",
             "spotlight_video_player",
-            "full_screen_player",
-            "spotlight_carousel",
-            "spotlight_feed",
             "spotlight_video",
-            "spotlight_tab",
             "ff_spotlight",
             "neon_spotlight",
-            "action_spotlight",
-            "discover_feed"
+            "spotlight_page_view"
         )
     }
 
@@ -36,21 +30,29 @@ class SnapchatSpotlightDetector : ContentDetector {
             return DetectionResult.allowed(ContentCategory.SNAPCHAT_SPOTLIGHT, "Spotlight blocking disabled")
         }
 
-        // 1. Check if Spotlight viewer or layout is active
+        // 1. Check if Spotlight viewer or layout is active (STRICT: Must be an actual video player container, NOT a navigation icon or tab button)
         val isSpotlightViewerActive = SPOTLIGHT_VIEWER_IDS.any { context.hasViewId(it) } ||
             context.viewIds.any { id ->
-                id.contains("spotlight", ignoreCase = true) ||
-                id.contains("discover_feed", ignoreCase = true)
+                val lower = id.lowercase(java.util.Locale.US)
+                lower.contains("spotlight") &&
+                !lower.contains("icon") &&
+                !lower.contains("tab") &&
+                !lower.contains("nav") &&
+                !lower.contains("button") &&
+                !lower.contains("feed_view") &&
+                (lower.contains("video") || lower.contains("player") || lower.contains("fullscreen"))
             }
 
-        // 2. Check navigation / tabs
+        // 2. Check navigation / tabs (STRICT: Must be explicitly selected)
         val isSpotlightTabActive = context.hasSelectedDesc("Spotlight") ||
             context.hasSelectedText("Spotlight") ||
             context.selectedDescriptions.any { it.contains("Spotlight", ignoreCase = true) } ||
             context.selectedTexts.any { it.contains("Spotlight", ignoreCase = true) } ||
+            context.hasContentDescription("Spotlight, selected") ||
+            context.hasContentDescription("Spotlight tab, selected") ||
+            context.hasContentDescription("selected, Spotlight") ||
             context.contentDescriptions.any { desc ->
-                desc.contains("Spotlight", ignoreCase = true) &&
-                (desc.contains("tab", ignoreCase = true) || desc.contains("selected", ignoreCase = true) || desc.contains("button", ignoreCase = true) || desc.trim().equals("Spotlight", ignoreCase = true))
+                desc.contains("Spotlight", ignoreCase = true) && desc.contains("selected", ignoreCase = true)
             }
 
         // 3. Check content description / text signals
@@ -64,11 +66,12 @@ class SnapchatSpotlightDetector : ContentDetector {
             text.contains("Spotlight", ignoreCase = true) && (text.contains("Sound", ignoreCase = true) || text.contains("Remix", ignoreCase = true) || text.contains("Subscribe", ignoreCase = true))
         }
 
-        // Excluded surfaces: 1-on-1 Chats, Friends list, and Camera preview (without active spotlight viewer or tab)
+        // Excluded surfaces: 1-on-1 Chats, Friends list, Camera preview, and Stories/Discover
         val isChatSurface = context.hasAnyViewId("chat_v3_container", "chat_input_text_field", "chat_message_input", "feed_view", "friends_feed")
-        val isCameraView = context.hasAnyViewId("camera_view", "camera_layout", "camera_capture_button") && !isSpotlightViewerActive && !isSpotlightTabActive
-        if ((isChatSurface || isCameraView) && !isSpotlightViewerActive && !isSpotlightTabActive && !hasSpotlightContent) {
-            return DetectionResult.allowed(ContentCategory.SNAPCHAT_SPOTLIGHT, "Snapchat chat/camera active")
+        val isCameraView = context.hasAnyViewId("camera_view", "camera_layout", "camera_capture_button", "camera_root", "capture_button")
+        val isStoryOrDiscover = context.hasAnyViewId("discover_feed", "story_viewer", "opera_page_view") && !isSpotlightViewerActive && !isSpotlightTabActive
+        if ((isChatSurface || isCameraView || isStoryOrDiscover) && !isSpotlightViewerActive && !isSpotlightTabActive && !hasSpotlightContent) {
+            return DetectionResult.allowed(ContentCategory.SNAPCHAT_SPOTLIGHT, "Snapchat clean camera/chat/stories surface")
         }
 
         var confidence = 0.0f

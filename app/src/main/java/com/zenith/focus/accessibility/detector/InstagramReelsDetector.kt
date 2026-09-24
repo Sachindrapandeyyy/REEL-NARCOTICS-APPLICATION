@@ -60,14 +60,16 @@ class InstagramReelsDetector : ContentDetector {
                 id.contains("reels_video_player", ignoreCase = true)
             }
 
-        // Signal 2: Reels bottom navigation tab selected or active
+        // Signal 2: Reels bottom navigation tab selected or active (STRICT: Must be explicitly selected)
         val isReelsTabSelected = context.hasSelectedDesc("Reels") ||
             context.hasSelectedText("Reels") ||
             context.selectedDescriptions.any { it.contains("Reels", ignoreCase = true) } ||
             context.selectedTexts.any { it.contains("Reels", ignoreCase = true) } ||
+            context.hasContentDescription("Reels, selected") ||
+            context.hasContentDescription("Reels tab, selected") ||
+            context.hasContentDescription("selected, Reels") ||
             context.contentDescriptions.any { desc ->
-                desc.contains("Reels", ignoreCase = true) &&
-                (desc.contains("selected", ignoreCase = true) || desc.contains("tab", ignoreCase = true) || desc.contains("4 of 5", ignoreCase = true) || desc.trim().equals("Reels", ignoreCase = true))
+                desc.contains("Reels", ignoreCase = true) && desc.contains("selected", ignoreCase = true)
             }
 
         // Signal 3: Specific Reels interactive metadata

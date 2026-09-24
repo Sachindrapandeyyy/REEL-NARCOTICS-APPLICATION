@@ -230,6 +230,7 @@ class ZenithAccessibilityService : AccessibilityService() {
         if (isNuclear || lockState.isCurrentlyActive(now)) {
             val tamperResult = TamperDetectionEngine.evaluate(effectiveContext)
             if (tamperResult.isTamperAttempt) {
+                android.util.Log.e("ZENITH_TAMPER", "Tamper triggered! reason=${tamperResult.reason}, pkg=$targetPkg")
                 // DO NOT DEBOUNCE TAMPER ATTEMPTS!
                 // Any attempt to uninstall or disable accessibility during nuclear/lock mode must be instantly ejected.
                 lastEjectTime = now
@@ -354,6 +355,7 @@ class ZenithAccessibilityService : AccessibilityService() {
         }
 
         val result = detectionEngine.evaluate(effectiveContext, effectiveProtectionConfig)
+        android.util.Log.e("ZENITH_EVAL", "pkg=$targetPkg, blocked=${result.isBlocked}, reason=${result.reason}")
 
         if (result.isBlocked) {
 
@@ -444,6 +446,9 @@ class ZenithAccessibilityService : AccessibilityService() {
                     ruleId = result.ruleId
                 )
             )
+        } else {
+            // Clean non-blocked screen: reset consecutive block counter immediately
+            consecutiveBlockCount = 0
         }
     }
 
