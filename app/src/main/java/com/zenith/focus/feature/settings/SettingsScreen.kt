@@ -440,10 +440,10 @@ fun SettingsScreen(
 @Composable
 private fun GroupHeader(title: String, subtitle: String) {
     val earth = EarthTheme.colors
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.Bottom
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 2.dp, vertical = 2.dp)
     ) {
         Text(
             text = title,
@@ -452,11 +452,15 @@ private fun GroupHeader(title: String, subtitle: String) {
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.sp
         )
-        Text(
-            text = subtitle,
-            color = earth.textMuted,
-            fontSize = 11.sp
-        )
+        if (subtitle.isNotBlank()) {
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = subtitle,
+                color = earth.textMuted,
+                fontSize = 11.5.sp,
+                lineHeight = 15.sp
+            )
+        }
     }
 }
 

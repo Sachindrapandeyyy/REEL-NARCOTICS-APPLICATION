@@ -121,7 +121,7 @@ fun ProtectionScreen(
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = "Instant hardware-level ejection when addictive feeds or explicit loops are opened.",
+                text = "Surgical interception & hardware-level dismissal when addictive feeds or explicit loops are opened.",
                 color = earth.textMuted,
                 fontSize = 13.sp,
                 lineHeight = 18.sp
@@ -258,7 +258,7 @@ fun ProtectionScreen(
             // ====================================================================
             // 4. GROUP 1: SHORT-FORM ADDICTIVE FEEDS (UNIFIED FROSTED CONTAINER)
             // ====================================================================
-            GroupHeader(title = "SHORT-FORM FEEDS", subtitle = "Sub-16ms ejection")
+            GroupHeader(title = "SHORT-FORM FEEDS", subtitle = "Sub-16ms surgical dismissal")
             Spacer(modifier = Modifier.height(10.dp))
 
             Card(
@@ -274,7 +274,7 @@ fun ProtectionScreen(
                         icon = Icons.Outlined.PlayCircleOutline,
                         iconTint = OrbitalCoral,
                         title = "YouTube Shorts",
-                        subtitle = "Ejects upon opening Shorts shelf or reel tab",
+                        subtitle = "Surgically closes Shorts player while keeping long videos open",
                         isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.YOUTUBE_SHORTS) else config.blockYouTubeShorts,
                         enabled = !isNuclearActive,
                         onCheckedChange = { onToggleCategory(ContentCategory.YOUTUBE_SHORTS, it) }
@@ -287,7 +287,7 @@ fun ProtectionScreen(
                         icon = Icons.Outlined.MovieFilter,
                         iconTint = OrbitalViolet,
                         title = "Instagram Reels",
-                        subtitle = "Terminates reel player and infinite clip scroll",
+                        subtitle = "Surgically closes reel player; DMs, feeds & profiles remain open",
                         isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.INSTAGRAM_REELS) else config.blockInstagramReels,
                         enabled = !isNuclearActive,
                         onCheckedChange = { onToggleCategory(ContentCategory.INSTAGRAM_REELS, it) }
@@ -313,7 +313,7 @@ fun ProtectionScreen(
                         icon = Icons.Outlined.Videocam,
                         iconTint = OrbitalAmber,
                         title = "Snapchat Spotlight",
-                        subtitle = "Prevents vertical swipe spotlight trap",
+                        subtitle = "Blocks Spotlight vertical feed; personal snaps & chats remain open",
                         isChecked = if (isNuclearActive) nuclearSession.enabledCategories.contains(ContentCategory.SNAPCHAT_SPOTLIGHT) else config.blockSnapchatSpotlight,
                         enabled = !isNuclearActive,
                         onCheckedChange = { onToggleCategory(ContentCategory.SNAPCHAT_SPOTLIGHT, it) }
@@ -439,10 +439,10 @@ fun ProtectionScreen(
 @Composable
 private fun GroupHeader(title: String, subtitle: String) {
     val earth = EarthTheme.colors
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.Bottom
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 2.dp, vertical = 2.dp)
     ) {
         Text(
             text = title,
@@ -451,11 +451,15 @@ private fun GroupHeader(title: String, subtitle: String) {
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.sp
         )
-        Text(
-            text = subtitle,
-            color = earth.textMuted,
-            fontSize = 11.sp
-        )
+        if (subtitle.isNotBlank()) {
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = subtitle,
+                color = earth.textMuted,
+                fontSize = 11.5.sp,
+                lineHeight = 15.sp
+            )
+        }
     }
 }
 
@@ -538,7 +542,7 @@ fun EtherealToggle(
     activeColor: Color = OrbitalCoral
 ) {
     val thumbOffset by animateDpAsState(
-        targetValue = if (checked) 20.dp else 2.dp,
+        targetValue = if (checked) 22.dp else 2.dp,
         animationSpec = tween(durationMillis = 200),
         label = "thumb"
     )
