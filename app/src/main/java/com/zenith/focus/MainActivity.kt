@@ -113,10 +113,10 @@ class MainActivity : ComponentActivity() {
                     androidx.compose.runtime.SideEffect {
                         val window = (view.context as android.app.Activity).window
                         window.statusBarColor = earthColors.canvas.toArgb()
-                        window.navigationBarColor = earthColors.surfaceSoft.toArgb()
+                        window.navigationBarColor = earthColors.canvas.toArgb()
                         val insets = androidx.core.view.WindowCompat.getInsetsController(window, view)
-                        insets.isAppearanceLightStatusBars = !earthColors.isDark
-                        insets.isAppearanceLightNavigationBars = !earthColors.isDark
+                        insets.isAppearanceLightStatusBars = true
+                        insets.isAppearanceLightNavigationBars = true
                     }
                 }
 
@@ -597,14 +597,14 @@ fun ZenithBottomNavigation(
             .padding(horizontal = 20.dp, vertical = 8.dp)
     ) {
         Surface(
-            color = if (earth.isDark) earth.surface.copy(alpha = 0.92f) else Color.White.copy(alpha = 0.92f),
+            color = Color.White.copy(alpha = 0.90f),
             shape = RoundedCornerShape(32.dp),
-            shadowElevation = 10.dp,
+            shadowElevation = 8.dp,
             modifier = Modifier
                 .fillMaxWidth()
                 .border(
                     width = 1.dp,
-                    color = if (earth.isDark) earth.border else Color.White.copy(alpha = 0.85f),
+                    color = earth.border,
                     shape = RoundedCornerShape(32.dp)
                 )
         ) {
@@ -679,7 +679,7 @@ private fun BottomNavItem(
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(20.dp))
-            .background(if (isSelected) earth.strawberryPink.copy(alpha = 0.12f) else Color.Transparent)
+            .background(if (isSelected) earth.surfaceVariant else Color.Transparent)
             .clickable { onClick() }
             .padding(horizontal = if (isSelected) 12.dp else 8.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.Center,
@@ -688,14 +688,14 @@ private fun BottomNavItem(
         Icon(
             imageVector = icon,
             contentDescription = label,
-            tint = if (isSelected) earth.strawberryPink else earth.textMuted,
+            tint = if (isSelected) earth.textPrimary else earth.textMuted,
             modifier = Modifier.size(22.dp)
         )
         if (isSelected) {
             Spacer(modifier = Modifier.width(6.dp))
             Text(
                 text = label,
-                color = earth.strawberryPink,
+                color = earth.textPrimary,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold
             )

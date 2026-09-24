@@ -1,7 +1,9 @@
 package com.zenith.focus.feature.home
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -23,23 +25,22 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AllInclusive
+import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.ArrowForward
-import androidx.compose.material.icons.outlined.AutoStories
-import androidx.compose.material.icons.outlined.Bedtime
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Checklist
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Emergency
+import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.HelpOutline
-import androidx.compose.material.icons.outlined.LocalDrink
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Menu
-import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material.icons.outlined.Spa
-import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material.icons.outlined.Medication
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,8 +52,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -70,10 +71,7 @@ import com.zenith.focus.domain.model.LockState
 import com.zenith.focus.domain.model.ProtectionConfig
 import com.zenith.focus.domain.nuclear.NuclearSession
 import kotlinx.coroutines.delay
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 
 @Composable
 fun HomeScreen(
@@ -113,356 +111,581 @@ fun HomeScreen(
 
     val isNuclearActive = nuclearSession.isCurrentlyActive(now)
     val isRegularLocked = lockState.isCurrentlyActive(now)
-
     val remainingNuclearMillis = nuclearSession.remainingMillis(now)
-    val nuclearProgress = nuclearSession.progressFraction(now)
-
     val remainingLockMillis = lockState.remainingMillis(now)
-    val lockProgress = lockState.progressFraction(now)
 
     val hour = remember { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
     val greeting = remember(hour) {
         when (hour) {
-            in 5..11 -> "Good Morning"
-            in 12..16 -> "Good Afternoon"
-            in 17..21 -> "Good Evening"
-            else -> "Peaceful Night"
+            in 5..11 -> "Good morning"
+            in 12..16 -> "Good afternoon"
+            in 17..21 -> "Good evening"
+            else -> "Peaceful night"
         }
     }
 
-    val mindfulAdvice = remember(hour, isNuclearActive, isRegularLocked) {
+    val insightSubtitle = remember(todayTotalBlocks, isNuclearActive, isRegularLocked) {
         when {
-            isNuclearActive -> "Nuclear Shield is holding. Enjoy the stillness."
-            isRegularLocked -> "Focus mode is active. Breathe and do deep work."
-            hour in 5..11 -> "We recommend a mindful 25-minute focus session."
-            hour in 12..16 -> "Keep your momentum steady without cheap dopamine."
-            hour in 17..21 -> "Unwind gracefully. Guard your attention before sleep."
-            else -> "Rest peacefully. Digital noise is blocked."
+            isNuclearActive -> "Zero-bypass nuclear shield active..."
+            isRegularLocked -> "Focus restrictions active. Staying present..."
+            todayTotalBlocks > 0 -> "Analysing your insights • $todayTotalBlocks kicks today..."
+            else -> "Analysing your insights..."
         }
     }
+
+    // Infinite breathing pulse for the Ethereal Aurora Focus Core
+    val infiniteTransition = rememberInfiniteTransition(label = "AuroraBreathing")
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 0.94f,
+        targetValue = 1.06f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 3600),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "PulseScale"
+    )
+    val pulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.38f,
+        targetValue = 0.62f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 3600),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "PulseAlpha"
+    )
 
     val scrollState = rememberScrollState()
 
-    // Ambient Pastel Glow Gradient Background
-    val ambientGradient = remember(isDarkTheme) {
-        if (isDarkTheme) {
-            Brush.verticalGradient(
-                colors = listOf(
-                    Color(0xFF13111C),
-                    Color(0xFF1A1528),
-                    Color(0xFF14111F)
-                )
+    // Warm Ivory Linen & Peach Mist Canvas Gradient (Exact match to reference mockup)
+    val etherealCanvasBrush = remember {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color(0xFFFAF7F2), // Warm ivory linen
+                Color(0xFFFBF1E8), // Soft peach blush
+                Color(0xFFF6EFEB)  // Ethereal warm canvas
             )
-        } else {
-            Brush.verticalGradient(
-                colors = listOf(
-                    Color(0xFFFFF2F4), // Soft peach blush
-                    Color(0xFFFBF8FD), // Serene lavender cream
-                    Color(0xFFF3EDFA)  // Soft lilac mist
-                )
-            )
-        }
+        )
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(ambientGradient)
+            .background(etherealCanvasBrush)
     ) {
-        // Subtle ambient glow orbs in background
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val glowColor1 = if (isDarkTheme) Color(0xFFFF6584).copy(alpha = 0.08f) else Color(0xFFFF8DA3).copy(alpha = 0.15f)
-            val glowColor2 = if (isDarkTheme) Color(0xFFA78BFA).copy(alpha = 0.09f) else Color(0xFFDDD6FE).copy(alpha = 0.22f)
-
-            // Top right soft blush orb
-            drawCircle(
-                color = glowColor1,
-                radius = size.width * 0.55f,
-                center = Offset(size.width * 0.95f, size.height * 0.12f)
-            )
-            // Center left soft violet orb
-            drawCircle(
-                color = glowColor2,
-                radius = size.width * 0.65f,
-                center = Offset(size.width * 0.05f, size.height * 0.50f)
-            )
-        }
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(horizontal = 22.dp, vertical = 18.dp)
+                .padding(horizontal = 22.dp, vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // TOP BAR: Navigation / Brand & Mindful Avatar + Theme Toggle
+            // ====================================================================
+            // 1. TOP NAVIGATION BAR: [Calendar] History  Overview [Infinity]
+            // ====================================================================
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(if (isDarkTheme) earth.surface else Color.White.copy(alpha = 0.9f))
-                            .border(1.dp, earth.border, CircleShape)
-                            .clickable { onOpenGuide() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Spa,
-                            contentDescription = "Mindful Focus",
-                            tint = earth.strawberryPink,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = "Zenith Focus",
-                        color = earth.textPrimary,
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = (-0.2).sp
+                // Left: Frosted squircle button with Calendar/Stats icon
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.White.copy(alpha = 0.90f))
+                        .border(1.dp, earth.border, RoundedCornerShape(16.dp))
+                        .clickable { onNavigateStats() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.CalendarMonth,
+                        contentDescription = "History",
+                        tint = earth.textPrimary,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Day / Night Toggle Pill
-                    Box(
+                // Center: History & Overview Tabs
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "History",
+                        color = earth.textMuted,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
                         modifier = Modifier
-                            .size(38.dp)
-                            .clip(CircleShape)
-                            .background(if (isDarkTheme) earth.surface else Color.White.copy(alpha = 0.9f))
-                            .border(1.dp, earth.border, CircleShape)
-                            .clickable { onToggleTheme() },
-                        contentAlignment = Alignment.Center
-                    ) {
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onNavigateStats() }
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "Overview",
+                        color = earth.textPrimary,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { }
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
+                }
+
+                // Right: Mindful Circular Zen/Infinity Button
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.90f))
+                        .border(1.dp, earth.border, CircleShape)
+                        .clickable { onOpenGuide() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.AllInclusive,
+                        contentDescription = "Zenith Guide",
+                        tint = earth.textPrimary,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(26.dp))
+
+            // ====================================================================
+            // 2. HERO: ETHEREAL AURORA FOCUS CORE (Soft Diffused Violet Gradient Orb)
+            // ====================================================================
+            Box(
+                modifier = Modifier
+                    .size(230.dp)
+                    .clickable {
+                        if (isRegularLocked) onUnlockClicked() else onStartLockClicked()
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                // Diffused Radial Aurora Glow Canvas
+                Canvas(
+                    modifier = Modifier
+                        .size(220.dp)
+                        .scale(pulseScale)
+                ) {
+                    val radius = size.minDimension / 2
+                    val center = Offset(size.width / 2, size.height / 2)
+
+                    // Multi-stop ethereal violet & blush diffusion
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                Color(0xFFC084FC).copy(alpha = pulseAlpha * 0.90f), // Soft lavender core
+                                Color(0xFFDDD6FE).copy(alpha = pulseAlpha * 0.55f),
+                                Color(0xFFFDE8E8).copy(alpha = pulseAlpha * 0.25f), // Soft peach edge
+                                Color.Transparent
+                            ),
+                            center = center,
+                            radius = radius
+                        ),
+                        radius = radius,
+                        center = center
+                    )
+                }
+
+                // Real-time Countdown or Serene Core Glyph
+                if (isNuclearActive) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = if (isDarkTheme) "☀️" else "🌙",
-                            fontSize = 15.sp
+                            text = DateTimeUtils.formatRemaining(remainingNuclearMillis),
+                            color = earth.textPrimary,
+                            fontSize = 32.sp,
+                            fontFamily = FontFamily.Serif,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "NUCLEAR LOCKED",
+                            color = earth.textPrimary.copy(alpha = 0.75f),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp
                         )
                     }
-
-                    Spacer(modifier = Modifier.width(10.dp))
-
-                    // Mindful Avatar Profile Chip
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .clip(CircleShape)
-                            .background(earth.strawberryPink.copy(alpha = 0.15f))
-                            .border(1.5.dp, earth.strawberryPink.copy(alpha = 0.5f), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
+                } else if (isRegularLocked) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = if (focusStreakDays > 0) "🔥" else "🧘",
-                            fontSize = 16.sp
+                            text = DateTimeUtils.formatRemaining(remainingLockMillis),
+                            color = earth.textPrimary,
+                            fontSize = 32.sp,
+                            fontFamily = FontFamily.Serif,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "FOCUS ACTIVE",
+                            color = earth.textPrimary.copy(alpha = 0.75f),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // MINDFUL EDITORIAL GREETING (Directly matching reference mockup)
-            Column {
-                Text(
-                    text = greeting,
-                    color = earth.textPrimary,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = (-0.5).sp
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = mindfulAdvice,
-                    color = earth.textMuted,
-                    fontSize = 13.5.sp,
-                    lineHeight = 18.sp,
-                    fontWeight = FontWeight.Normal
-                )
+            // ====================================================================
+            // 3. EDITORIAL GREETING: "Good evening, Olivia!" Style
+            // ====================================================================
+            Text(
+                text = "$greeting, Olivia!",
+                color = earth.textPrimary,
+                fontSize = 28.sp,
+                fontFamily = FontFamily.Serif,
+                fontWeight = FontWeight.Normal,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = insightSubtitle,
+                color = earth.textMuted,
+                fontSize = 13.5.sp,
+                fontWeight = FontWeight.Normal,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            // ====================================================================
+            // 4. HORIZONTAL ORBITAL STATUS PILL STRIP (Exact Match to Reference Mockup)
+            // ====================================================================
+            Card(
+                shape = RoundedCornerShape(28.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.85f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, earth.border, RoundedCornerShape(28.dp))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Chip 1: Amber Dot (YouTube Shorts)
+                    OrbitalSquircleChip(
+                        glowColor = OrbitalAmber,
+                        type = OrbitalChipType.AMBER_DOT,
+                        onClick = onNavigateProtection
+                    )
+
+                    // Chip 2: Sky Blue Dot (Instagram Reels)
+                    OrbitalSquircleChip(
+                        glowColor = OrbitalSky,
+                        type = OrbitalChipType.SKY_DOT,
+                        onClick = onNavigateProtection
+                    )
+
+                    // Chip 3: Mint Green Dot (App Lock)
+                    OrbitalSquircleChip(
+                        glowColor = OrbitalMint,
+                        type = OrbitalChipType.MINT_DOT,
+                        onClick = onNavigateAppLock
+                    )
+
+                    // Chip 4: Coral Red Ring (Nuclear Mode)
+                    OrbitalSquircleChip(
+                        glowColor = OrbitalCoral,
+                        type = OrbitalChipType.CORAL_RING,
+                        onClick = onArmNuclearClicked
+                    )
+
+                    // Chip 5: Violet Orbital Double Ring (Focus Streak)
+                    OrbitalSquircleChip(
+                        glowColor = OrbitalViolet,
+                        type = OrbitalChipType.VIOLET_ORBITAL,
+                        onClick = onNavigateStats
+                    )
+
+                    // Arrow Chevron '>'
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .clickable { onNavigateStats() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.ChevronRight,
+                            contentDescription = "View Details",
+                            tint = earth.textMuted,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // HERO CIRCULAR PROGRESS GAUGE CARD (Directly matching "715 / 6000 step" from mockup)
-            FrostedCircularGaugeCard(
-                todayTotalBlocks = todayTotalBlocks,
-                isNuclearActive = isNuclearActive,
-                nuclearProgress = nuclearProgress,
-                remainingNuclearMillis = remainingNuclearMillis,
-                endTimeMillis = nuclearSession.endTimeMillis,
-                isRegularLocked = isRegularLocked,
-                lockProgress = lockProgress,
-                remainingLockMillis = remainingLockMillis,
-                focusStreakDays = focusStreakDays,
-                onUnlockClicked = onUnlockClicked,
-                onStartLockClicked = onStartLockClicked
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // 2-COLUMN BENTO HABIT CARDS (Directly matching "Drink 8 cups" & "Sleep 8 hours")
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Card 1: Shields & Feeds Blocked (Drink style)
-                BentoHabitCard(
-                    modifier = Modifier.weight(1f),
-                    title = "Shields",
-                    icon = Icons.Outlined.Shield,
-                    iconTint = earth.strawberryPink,
-                    subtitle = "Feeds Blocked",
-                    progressFraction = (todayTotalBlocks / 50f).coerceIn(0.05f, 1f),
-                    progressColor = earth.strawberryPink,
-                    valueText = "$todayTotalBlocks",
-                    unitText = "kicks",
-                    onClick = onNavigateProtection
-                )
-
-                // Card 2: Focus Lock & Sleep/Rest Mode (Sleep style)
-                BentoHabitCard(
-                    modifier = Modifier.weight(1f),
-                    title = "Focus Lock",
-                    icon = Icons.Outlined.Bedtime,
-                    iconTint = earth.pastelViolet,
-                    subtitle = if (isNuclearActive || isRegularLocked) "Enforcing" else "Streak Goal",
-                    progressFraction = if (isNuclearActive) nuclearProgress else if (isRegularLocked) lockProgress else (focusStreakDays / 7f).coerceIn(0.1f, 1f),
-                    progressColor = earth.pastelViolet,
-                    valueText = if (isNuclearActive || isRegularLocked) "Active" else "$focusStreakDays",
-                    unitText = if (isNuclearActive || isRegularLocked) "locked" else "days",
-                    onClick = {
-                        if (isNuclearActive || isRegularLocked) onUnlockClicked() else onStartLockClicked()
-                    }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // WIDE BENTO CARD: Active Focus Time & Discipline (Matching "Active time 0 / 60 mnt | 1172 kkal")
-            WideActiveFocusCard(
-                todayTotalBlocks = todayTotalBlocks,
-                focusStreakDays = focusStreakDays,
-                onClick = onNavigateStats
-            )
-
-            Spacer(modifier = Modifier.height(22.dp))
-
-            // MINDFUL PILL ACTION BUTTONS (Matching "login ->" pill button design)
+            // ====================================================================
+            // 5. BENTO FEATURE GRID (3-Column Layout from Reference Mockup)
+            // ====================================================================
+            // Row 1: Medications / Reminders / Symptoms style
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                MindfulPillButton(
-                    text = if (isNuclearActive) "Nuclear Active ☢️" else if (isRegularLocked) "Unlock Focus 🔓" else "Start Focus →",
-                    isPrimary = true,
-                    modifier = Modifier.weight(1.3f),
+                // Bento 1: Reel Shields (Medications style)
+                BentoCardExact(
+                    modifier = Modifier.weight(1f),
+                    icon = Icons.Outlined.Medication,
+                    title = "Shields",
+                    subtitle = if (todayTotalBlocks > 0) "$todayTotalBlocks kicks" else "Active",
+                    onClick = onNavigateProtection
+                )
+
+                // Bento 2: Focus Lock (Reminders style)
+                BentoCardExact(
+                    modifier = Modifier.weight(1f),
+                    icon = Icons.Outlined.Checklist,
+                    title = "Focus Lock",
+                    subtitle = if (isRegularLocked) "Enforcing" else "Start 25m",
                     onClick = {
                         if (isRegularLocked) onUnlockClicked() else onStartLockClicked()
                     }
                 )
 
-                MindfulPillButton(
-                    text = if (isNuclearActive) "Extend ☢️" else "Nuclear ☢️",
-                    isPrimary = false,
+                // Bento 3: Nuclear Mode (Symptoms & Conditions style)
+                BentoCardExact(
                     modifier = Modifier.weight(1f),
+                    icon = Icons.Outlined.Emergency,
+                    title = "Nuclear",
+                    subtitle = if (isNuclearActive) "Armed ☢️" else "Zero-Bypass",
                     onClick = onArmNuclearClicked
                 )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Secondary Action Row: App Lock & Guide Pills
+            // Row 2: Medical / Document / Guide style
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                MindfulPillButton(
-                    text = if (lockedAppsCount > 0) "App Lock ($lockedAppsCount) 🛡️" else "App Blocker 🛡️",
-                    isPrimary = false,
+                // Bento 4: App Lock (Medical style)
+                BentoCardExact(
                     modifier = Modifier.weight(1f),
+                    icon = Icons.Outlined.Apps,
+                    title = "App Lock",
+                    subtitle = if (lockedAppsCount > 0) "$lockedAppsCount apps" else "0 apps",
                     onClick = onNavigateAppLock
                 )
 
-                MindfulPillButton(
-                    text = "Mindful Guide 📖",
-                    isPrimary = false,
+                // Bento 5: Insights & Stats (Report document style)
+                BentoCardExact(
                     modifier = Modifier.weight(1f),
+                    icon = Icons.Outlined.Description,
+                    title = "Insights",
+                    subtitle = "Analytics",
+                    onClick = onNavigateStats
+                )
+
+                // Bento 6: Guide & Philosophy (Help style)
+                BentoCardExact(
+                    modifier = Modifier.weight(1f),
+                    icon = Icons.Outlined.HelpOutline,
+                    title = "Guide",
+                    subtitle = "Philosophy",
                     onClick = onOpenGuide
                 )
             }
 
-            Spacer(modifier = Modifier.height(22.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            // SYSTEM SHIELD & OEM PERMISSION ASSISTANT
+            // ====================================================================
+            // 6. OEM ASSISTANT (ONLY IF PERMISSIONS MISSING)
+            // ====================================================================
             if (!isServiceConnected) {
-                OemGuidanceCard(
-                    onEnableAccessibility = onEnableAccessibility,
-                    context = context
-                )
+                val guidance = remember { OemNavigationManager.getGuidance() }
+                Card(
+                    shape = RoundedCornerShape(22.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.90f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, OrbitalCoral.copy(alpha = 0.5f), RoundedCornerShape(22.dp))
+                ) {
+                    Column(modifier = Modifier.padding(18.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "⚡ Accessibility Shield Required",
+                                color = earth.textPrimary,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "📱 ${guidance.brand.osSkin}",
+                                color = OrbitalCoral,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Text(
+                            text = "Detected ${guidance.brand.displayName}. To activate feed blocking, allow restricted settings, then toggle Accessibility ON.",
+                            color = earth.textMuted,
+                            fontSize = 11.5.sp,
+                            lineHeight = 16.sp
+                        )
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        Button(
+                            onClick = onEnableAccessibility,
+                            colors = ButtonDefaults.buttonColors(containerColor = OrbitalCoral),
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(42.dp)
+                        ) {
+                            Text(
+                                text = "1. OPEN ACCESSIBILITY SETTINGS ➔",
+                                color = Color.White,
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Button(
+                            onClick = { OemNavigationManager.openAppInfo(context) },
+                            colors = ButtonDefaults.buttonColors(containerColor = earth.surfaceVariant),
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(42.dp)
+                        ) {
+                            Text(
+                                text = "2. ALLOW RESTRICTED SETTINGS ➔",
+                                color = earth.textPrimary,
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
             if (!isDeviceAdminActive) {
-                DeviceAdminWarningCard(
-                    onEnableDeviceAdmin = onEnableDeviceAdmin
-                )
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.85f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, earth.border, RoundedCornerShape(20.dp))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                            Text(
+                                text = "🛡️ Anti-Uninstall Armor",
+                                color = earth.textPrimary,
+                                fontSize = 12.5.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Prevents deleting Reel Narcotics during active Nuclear sessions.",
+                                color = earth.textMuted,
+                                fontSize = 10.5.sp
+                            )
+                        }
+                        OutlinedButton(
+                            onClick = onEnableDeviceAdmin,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.height(34.dp)
+                        ) {
+                            Text("ENABLE", color = OrbitalCoral, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // TODAY'S PROTECTION BREAKDOWN CARD
-            Text(
-                text = "PROTECTED SURFACES",
-                color = earth.textMuted,
-                fontSize = 11.5.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.sp
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Card(
-                shape = RoundedCornerShape(26.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = if (earth.isDark) earth.surface.copy(alpha = 0.85f) else Color.White.copy(alpha = 0.85f)
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(
-                        1.dp,
-                        if (earth.isDark) earth.border else Color.White.copy(alpha = 0.8f),
-                        RoundedCornerShape(26.dp)
-                    )
+            // ====================================================================
+            // 7. BOTTOM QUICK FOCUS ACTION PILL (Exact Match to Mockup)
+            // ====================================================================
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    val isShortsEnforced = if (isNuclearActive) {
-                        nuclearSession.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.YOUTUBE_SHORTS)
-                    } else if (isRegularLocked) {
-                        config.blockYouTubeShorts && (lockState.enabledCategories.isEmpty() || lockState.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.YOUTUBE_SHORTS))
-                    } else config.blockYouTubeShorts
+                // 4-Dots Grid Menu Circular Button
+                Box(
+                    modifier = Modifier
+                        .size(50.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.90f))
+                        .border(1.dp, earth.border, CircleShape)
+                        .clickable { onNavigateAppLock() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.GridView,
+                        contentDescription = "App Lock Menu",
+                        tint = earth.textPrimary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
 
-                    val isReelsEnforced = if (isNuclearActive) {
-                        nuclearSession.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.INSTAGRAM_REELS)
-                    } else if (isRegularLocked) {
-                        config.blockInstagramReels && (lockState.enabledCategories.isEmpty() || lockState.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.INSTAGRAM_REELS))
-                    } else config.blockInstagramReels
+                Spacer(modifier = Modifier.width(10.dp))
 
-                    val isAdultEnforced = if (isNuclearActive) {
-                        nuclearSession.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.ADULT_WEBSITE) ||
-                        nuclearSession.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.ADULT_KEYWORD)
-                    } else if (isRegularLocked) {
-                        (config.blockAdultWebsites || config.blockAdultKeywords) && (lockState.enabledCategories.isEmpty() || lockState.enabledCategories.contains(com.zenith.focus.domain.model.ContentCategory.ADULT_WEBSITE))
-                    } else (config.blockAdultWebsites || config.blockAdultKeywords)
-
-                    PastelProtectionRow(name = "YouTube Shorts", count = todayShortsBlocks, isEnforced = isShortsEnforced)
-                    Spacer(modifier = Modifier.height(12.dp))
-                    PastelProtectionRow(name = "Instagram Reels", count = todayReelsBlocks, isEnforced = isReelsEnforced)
-                    Spacer(modifier = Modifier.height(12.dp))
-                    PastelProtectionRow(name = "Facebook Reels", count = 0, isEnforced = config.blockFacebookReels)
-                    Spacer(modifier = Modifier.height(12.dp))
-                    PastelProtectionRow(name = "Adult & Explicit Content", count = todayAdultBlocks, isEnforced = isAdultEnforced)
+                // Wide Floating Prompt Action Pill: "Ask me about your diet..." Style
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp)
+                        .clip(RoundedCornerShape(25.dp))
+                        .background(Color.White.copy(alpha = 0.90f))
+                        .border(1.dp, earth.border, RoundedCornerShape(25.dp))
+                        .clickable {
+                            if (isRegularLocked) onUnlockClicked() else onStartLockClicked()
+                        }
+                        .padding(horizontal = 18.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = when {
+                                isNuclearActive -> "☢️ Nuclear Lock Active..."
+                                isRegularLocked -> "🔒 Focus Lock Active • Tap to unlock..."
+                                else -> "Start a 25m Focus Lock session..."
+                            },
+                            color = earth.textMuted,
+                            fontSize = 13.5.sp,
+                            fontWeight = FontWeight.Normal
+                        )
+                        Icon(
+                            imageVector = Icons.Outlined.ArrowForward,
+                            contentDescription = "Start",
+                            tint = earth.textMuted,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
             }
 
@@ -471,612 +694,201 @@ fun HomeScreen(
     }
 }
 
-/**
- * Hero Circular Progress Gauge matching the "715 / 6000 step" circular ring dial from reference mockup.
- */
-@Composable
-private fun FrostedCircularGaugeCard(
-    todayTotalBlocks: Int,
-    isNuclearActive: Boolean,
-    nuclearProgress: Float,
-    remainingNuclearMillis: Long,
-    endTimeMillis: Long,
-    isRegularLocked: Boolean,
-    lockProgress: Float,
-    remainingLockMillis: Long,
-    focusStreakDays: Int,
-    onUnlockClicked: () -> Unit,
-    onStartLockClicked: () -> Unit
-) {
-    val earth = EarthTheme.colors
-
-    // Calculate target gauge fraction
-    val targetFraction = when {
-        isNuclearActive -> nuclearProgress.coerceIn(0.02f, 1f)
-        isRegularLocked -> lockProgress.coerceIn(0.02f, 1f)
-        else -> (todayTotalBlocks / 50f).coerceIn(0.12f, 1f)
-    }
-
-    val animatedSweep by animateFloatAsState(
-        targetValue = targetFraction * 360f,
-        animationSpec = tween(durationMillis = 900),
-        label = "GaugeSweep"
-    )
-
-    Card(
-        shape = RoundedCornerShape(32.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (earth.isDark) earth.surface.copy(alpha = 0.88f) else Color.White.copy(alpha = 0.88f)
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(
-                width = 1.dp,
-                color = if (earth.isDark) earth.border else Color.White.copy(alpha = 0.85f),
-                shape = RoundedCornerShape(32.dp)
-            )
-            .clickable {
-                if (isRegularLocked) onUnlockClicked() else onStartLockClicked()
-            }
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 28.dp, horizontal = 20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Circular Ring Dial
-            Box(
-                modifier = Modifier.size(190.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Canvas(modifier = Modifier.size(175.dp)) {
-                    val strokeWidth = 14.dp.toPx()
-                    val diameter = size.minDimension - strokeWidth
-                    val topLeft = Offset(strokeWidth / 2, strokeWidth / 2)
-                    val arcSize = Size(diameter, diameter)
-
-                    // Background track ring (soft muted lavender/grey)
-                    drawArc(
-                        color = earth.gaugeTrack,
-                        startAngle = 0f,
-                        sweepAngle = 360f,
-                        useCenter = false,
-                        topLeft = topLeft,
-                        size = arcSize,
-                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                    )
-
-                    // Active progress ring (Strawberry Pink #FF6584)
-                    drawArc(
-                        color = if (isNuclearActive) earth.strawberryPink else earth.forestGreen,
-                        startAngle = -90f,
-                        sweepAngle = animatedSweep,
-                        useCenter = false,
-                        topLeft = topLeft,
-                        size = arcSize,
-                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                    )
-                }
-
-                // Inner content of the circular gauge
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    when {
-                        isNuclearActive -> {
-                            Text(
-                                text = DateTimeUtils.formatRemaining(remainingNuclearMillis),
-                                color = earth.forestGreen,
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = (-0.5).sp
-                            )
-                            val endFormatted = remember(endTimeMillis) {
-                                SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(endTimeMillis))
-                            }
-                            Text(
-                                text = "Ends $endFormatted",
-                                color = earth.textMuted,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                        isRegularLocked -> {
-                            Text(
-                                text = DateTimeUtils.formatRemaining(remainingLockMillis),
-                                color = earth.forestGreen,
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = (-0.5).sp
-                            )
-                            Text(
-                                text = "Focus Locked",
-                                color = earth.textMuted,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                        else -> {
-                            Text(
-                                text = "$todayTotalBlocks",
-                                color = earth.textPrimary,
-                                fontSize = 42.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = (-1).sp
-                            )
-                            Text(
-                                text = "/50 daily goal",
-                                color = earth.textMuted,
-                                fontSize = 12.5.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            // Sub-gauge status tag
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(
-                        if (isNuclearActive) earth.strawberryPink.copy(alpha = 0.12f)
-                        else if (isRegularLocked) earth.pastelViolet.copy(alpha = 0.12f)
-                        else earth.surfaceSoft
-                    )
-                    .padding(horizontal = 14.dp, vertical = 6.dp)
-            ) {
-                Text(
-                    text = when {
-                        isNuclearActive -> "☢️ Strict Zero-Bypass Shield Active"
-                        isRegularLocked -> "🔒 Focus Restraints Engaged"
-                        focusStreakDays > 0 -> "🔥 ${focusStreakDays}-Day Mindful Streak"
-                        else -> "✨ Shields Active • Tap to Focus"
-                    },
-                    color = if (isNuclearActive) earth.strawberryPink
-                    else if (isRegularLocked) earth.pastelViolet
-                    else earth.textMuted,
-                    fontSize = 11.5.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        }
-    }
+enum class OrbitalChipType {
+    AMBER_DOT,
+    SKY_DOT,
+    MINT_DOT,
+    CORAL_RING,
+    VIOLET_ORBITAL
 }
 
 /**
- * 2-Column Bento Habit Card matching "Drink 8 cups" & "Sleep 8 hours" from reference mockup.
+ * Individual frosted squircle chip matching each orbital item in the reference mockup.
  */
 @Composable
-private fun BentoHabitCard(
-    modifier: Modifier = Modifier,
-    title: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    iconTint: Color,
-    subtitle: String,
-    progressFraction: Float,
-    progressColor: Color,
-    valueText: String,
-    unitText: String,
-    onClick: () -> Unit
-) {
-    val earth = EarthTheme.colors
-
-    Card(
-        shape = RoundedCornerShape(26.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (earth.isDark) earth.surface.copy(alpha = 0.88f) else Color.White.copy(alpha = 0.88f)
-        ),
-        modifier = modifier
-            .border(
-                width = 1.dp,
-                color = if (earth.isDark) earth.border else Color.White.copy(alpha = 0.8f),
-                shape = RoundedCornerShape(26.dp)
-            )
-            .clickable { onClick() }
-    ) {
-        Column(
-            modifier = Modifier.padding(18.dp)
-        ) {
-            // Header Row: Title & Mini Icon
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = title,
-                    color = earth.textPrimary,
-                    fontSize = 14.5.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Icon(
-                    imageVector = icon,
-                    contentDescription = title,
-                    tint = iconTint,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // Subtitle / Target label
-            Text(
-                text = subtitle,
-                color = earth.textMuted,
-                fontSize = 10.5.sp,
-                fontWeight = FontWeight.Medium
-            )
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // Mini progress indicator bar
-            LinearProgressIndicator(
-                progress = progressFraction,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(2.dp)),
-                color = progressColor,
-                trackColor = earth.gaugeTrack
-            )
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // Large Value Metric: "$valueText $unitText"
-            Row(
-                verticalAlignment = Alignment.Bottom
-            ) {
-                Text(
-                    text = valueText,
-                    color = earth.textPrimary,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = unitText,
-                    color = earth.textMuted,
-                    fontSize = 12.5.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(bottom = 2.dp)
-                )
-            }
-        }
-    }
-}
-
-/**
- * Wide Bento Card matching "Active time 0 / 60 mnt | 1172 kkal" from reference mockup.
- */
-@Composable
-private fun WideActiveFocusCard(
-    todayTotalBlocks: Int,
-    focusStreakDays: Int,
-    onClick: () -> Unit
-) {
-    val earth = EarthTheme.colors
-    val reclaimedMinutes = (todayTotalBlocks * 2.5).toInt()
-
-    Card(
-        shape = RoundedCornerShape(26.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (earth.isDark) earth.surface.copy(alpha = 0.88f) else Color.White.copy(alpha = 0.88f)
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(
-                width = 1.dp,
-                color = if (earth.isDark) earth.border else Color.White.copy(alpha = 0.8f),
-                shape = RoundedCornerShape(26.dp)
-            )
-            .clickable { onClick() }
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Active time",
-                    color = earth.textPrimary,
-                    fontSize = 14.5.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Icon(
-                    imageVector = Icons.Outlined.Schedule,
-                    contentDescription = "Active Time",
-                    tint = earth.textMuted,
-                    modifier = Modifier.size(15.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Text(
-                        text = "$reclaimedMinutes",
-                        color = earth.textPrimary,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = " / 60 mnt",
-                        color = earth.textMuted,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(bottom = 2.dp)
-                    )
-                }
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "🔥 ${focusStreakDays}d streak",
-                        color = earth.strawberryPink,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "• ${todayTotalBlocks} saved",
-                        color = earth.textMuted,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
- * Mindful Pill Button matching "login ->" style from reference mockup.
- */
-@Composable
-private fun MindfulPillButton(
-    text: String,
-    isPrimary: Boolean,
-    modifier: Modifier = Modifier,
+private fun OrbitalSquircleChip(
+    glowColor: Color,
+    type: OrbitalChipType,
     onClick: () -> Unit
 ) {
     val earth = EarthTheme.colors
 
     Box(
-        modifier = modifier
-            .height(52.dp)
-            .clip(RoundedCornerShape(26.dp))
-            .background(
-                if (isPrimary) {
-                    Brush.horizontalGradient(
-                        colors = listOf(
-                            earth.strawberryPink,
-                            earth.strawberryPink.copy(alpha = 0.9f)
-                        )
-                    )
-                } else {
-                    Brush.horizontalGradient(
-                        colors = listOf(
-                            if (earth.isDark) earth.surface else Color.White.copy(alpha = 0.90f),
-                            if (earth.isDark) earth.surfaceSoft else Color.White.copy(alpha = 0.85f)
-                        )
-                    )
-                }
-            )
-            .border(
-                width = 1.dp,
-                color = if (isPrimary) Color.Transparent else if (earth.isDark) earth.border else Color.White.copy(alpha = 0.85f),
-                shape = RoundedCornerShape(26.dp)
-            )
-            .clickable { onClick() }
-            .padding(horizontal = 18.dp),
+        modifier = Modifier
+            .size(48.dp)
+            .clip(RoundedCornerShape(15.dp))
+            .background(Color.White.copy(alpha = 0.75f))
+            .border(1.dp, earth.border, RoundedCornerShape(15.dp))
+            .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = text,
-                color = if (isPrimary) Color.White else earth.textPrimary,
-                fontSize = 13.5.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-    }
-}
+        Canvas(modifier = Modifier.size(32.dp)) {
+            val center = Offset(size.width / 2, size.height / 2)
 
-@Composable
-private fun PastelProtectionRow(
-    name: String,
-    count: Int,
-    isEnforced: Boolean
-) {
-    val earth = EarthTheme.colors
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Column {
-            Text(
-                text = name,
-                color = earth.textPrimary,
-                fontSize = 13.5.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-            if (count > 0) {
-                Text(
-                    text = "$count kicks recorded today",
-                    color = earth.textMuted,
-                    fontSize = 11.sp
-                )
-            }
-        }
-
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(12.dp))
-                .background(
-                    if (isEnforced) earth.strawberryPink.copy(alpha = 0.12f)
-                    else earth.surfaceSoft
-                )
-                .border(
-                    1.dp,
-                    if (isEnforced) earth.strawberryPink.copy(alpha = 0.35f) else earth.border,
-                    RoundedCornerShape(12.dp)
-                )
-                .padding(horizontal = 12.dp, vertical = 6.dp)
-        ) {
-            Text(
-                text = if (isEnforced) "BLOCKED 🔒" else "READY 🔓",
-                color = if (isEnforced) earth.strawberryPink else earth.textMuted,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 0.5.sp
-            )
-        }
-    }
-}
-
-@Composable
-private fun OemGuidanceCard(
-    onEnableAccessibility: () -> Unit,
-    context: android.content.Context
-) {
-    val earth = EarthTheme.colors
-    val guidance = remember { OemNavigationManager.getGuidance() }
-
-    Card(
-        shape = RoundedCornerShape(26.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (earth.isDark) earth.surface.copy(alpha = 0.9f) else Color.White.copy(alpha = 0.9f)
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.5.dp, earth.strawberryPink.copy(alpha = 0.6f), RoundedCornerShape(26.dp))
-    ) {
-        Column(modifier = Modifier.padding(18.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "⚡ Accessibility Shield Required",
-                    color = earth.textPrimary,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "📱 ${guidance.brand.osSkin}",
-                    color = earth.strawberryPink,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Text(
-                text = "Detected ${guidance.brand.displayName}. To activate real-time feed protection, allow restricted settings in App Info, then toggle Accessibility ON.",
-                color = earth.textMuted,
-                fontSize = 11.5.sp,
-                lineHeight = 16.sp
-            )
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            Button(
-                onClick = onEnableAccessibility,
-                colors = ButtonDefaults.buttonColors(containerColor = earth.strawberryPink),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(44.dp)
-            ) {
-                Text(
-                    text = "1. OPEN ACCESSIBILITY SETTINGS ➔",
-                    color = Color.White,
-                    fontSize = 11.5.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Button(
-                onClick = { OemNavigationManager.openAppInfo(context) },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (earth.isDark) earth.surfaceSoft else earth.surfaceVariant
-                ),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(44.dp)
-            ) {
-                Text(
-                    text = "2. ALLOW RESTRICTED SETTINGS ➔",
-                    color = earth.textPrimary,
-                    fontSize = 11.5.sp,
-                    fontWeight = FontWeight.Bold
-                )
+            when (type) {
+                OrbitalChipType.AMBER_DOT -> {
+                    // Amber glowing circle + top mini accent arc
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(glowColor, glowColor.copy(alpha = 0.3f), Color.Transparent),
+                            center = center,
+                            radius = 14.dp.toPx()
+                        ),
+                        radius = 14.dp.toPx(),
+                        center = center
+                    )
+                    drawCircle(
+                        color = glowColor,
+                        radius = 5.5.dp.toPx(),
+                        center = center
+                    )
+                    drawArc(
+                        color = glowColor.copy(alpha = 0.7f),
+                        startAngle = 210f,
+                        sweepAngle = 60f,
+                        useCenter = false,
+                        topLeft = Offset(center.x - 10.dp.toPx(), center.y - 13.dp.toPx()),
+                        size = androidx.compose.ui.geometry.Size(20.dp.toPx(), 20.dp.toPx()),
+                        style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
+                    )
+                }
+                OrbitalChipType.SKY_DOT -> {
+                    // Sky blue glowing dot + tiny coral accent dot at top right
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(glowColor, glowColor.copy(alpha = 0.25f), Color.Transparent),
+                            center = center,
+                            radius = 14.dp.toPx()
+                        ),
+                        radius = 14.dp.toPx(),
+                        center = center
+                    )
+                    drawCircle(
+                        color = glowColor,
+                        radius = 5.5.dp.toPx(),
+                        center = center
+                    )
+                    drawCircle(
+                        color = OrbitalCoral,
+                        radius = 2.5.dp.toPx(),
+                        center = Offset(center.x + 8.dp.toPx(), center.y - 8.dp.toPx())
+                    )
+                }
+                OrbitalChipType.MINT_DOT -> {
+                    // Mint green glowing dot + subtle top arc
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(glowColor, glowColor.copy(alpha = 0.25f), Color.Transparent),
+                            center = center,
+                            radius = 14.dp.toPx()
+                        ),
+                        radius = 14.dp.toPx(),
+                        center = center
+                    )
+                    drawCircle(
+                        color = glowColor,
+                        radius = 5.5.dp.toPx(),
+                        center = center
+                    )
+                    drawArc(
+                        color = glowColor.copy(alpha = 0.6f),
+                        startAngle = 230f,
+                        sweepAngle = 70f,
+                        useCenter = false,
+                        topLeft = Offset(center.x - 10.dp.toPx(), center.y - 12.dp.toPx()),
+                        size = androidx.compose.ui.geometry.Size(20.dp.toPx(), 20.dp.toPx()),
+                        style = Stroke(width = 1.8.dp.toPx(), cap = StrokeCap.Round)
+                    )
+                }
+                OrbitalChipType.CORAL_RING -> {
+                    // Coral red circular ring
+                    drawCircle(
+                        color = glowColor.copy(alpha = 0.15f),
+                        radius = 12.dp.toPx(),
+                        center = center
+                    )
+                    drawCircle(
+                        color = glowColor,
+                        radius = 10.5.dp.toPx(),
+                        center = center,
+                        style = Stroke(width = 2.4.dp.toPx(), cap = StrokeCap.Round)
+                    )
+                }
+                OrbitalChipType.VIOLET_ORBITAL -> {
+                    // Violet orbital double ring with inner core
+                    drawCircle(
+                        color = glowColor.copy(alpha = 0.20f),
+                        radius = 12.dp.toPx(),
+                        center = center
+                    )
+                    drawCircle(
+                        color = glowColor,
+                        radius = 11.dp.toPx(),
+                        center = center,
+                        style = Stroke(width = 2.dp.toPx())
+                    )
+                    drawCircle(
+                        color = glowColor,
+                        radius = 4.dp.toPx(),
+                        center = center
+                    )
+                }
             }
         }
     }
 }
 
+/**
+ * Bento card matching the exact cards from reference mockup (Medications, Reminders, Symptoms).
+ */
 @Composable
-private fun DeviceAdminWarningCard(
-    onEnableDeviceAdmin: () -> Unit
+private fun BentoCardExact(
+    modifier: Modifier = Modifier,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit
 ) {
     val earth = EarthTheme.colors
 
     Card(
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (earth.isDark) earth.surface.copy(alpha = 0.9f) else Color.White.copy(alpha = 0.9f)
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, earth.border, RoundedCornerShape(24.dp))
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFAF6F0).copy(alpha = 0.90f)),
+        modifier = modifier
+            .height(110.dp)
+            .border(1.dp, earth.border, RoundedCornerShape(18.dp))
+            .clickable { onClick() }
     ) {
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .fillMaxSize()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+            // Top-left line icon
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                tint = earth.textPrimary,
+                modifier = Modifier.size(22.dp)
+            )
+
+            // Bottom-left title and subtitle
+            Column {
                 Text(
-                    text = "🛡️ Anti-Uninstall Armor",
+                    text = title,
                     color = earth.textPrimary,
                     fontSize = 12.5.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    lineHeight = 15.sp
                 )
                 Text(
-                    text = "Recommended for Nuclear Mode to prevent uninstallation.",
+                    text = subtitle,
                     color = earth.textMuted,
-                    fontSize = 10.5.sp
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Normal,
+                    lineHeight = 13.sp
                 )
-            }
-            OutlinedButton(
-                onClick = onEnableDeviceAdmin,
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.height(34.dp)
-            ) {
-                Text("ENABLE", color = earth.strawberryPink, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
