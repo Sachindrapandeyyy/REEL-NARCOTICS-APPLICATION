@@ -1,4 +1,4 @@
-﻿# <p align="center"><img src="docs/assets/logo.png" width="110" height="110" alt="Reel Narcotics Logo" style="border-radius: 24px; box-shadow: 0 8px 24px rgba(16, 185, 129, 0.25);" /></p>
+# <p align="center"><img src="docs/assets/logo.png" width="110" height="110" alt="Reel Narcotics Logo" style="border-radius: 24px; box-shadow: 0 8px 24px rgba(16, 185, 129, 0.25);" /></p>
 
 <h1 align="center">REEL NARCOTICS ⚡</h1>
 
@@ -9,21 +9,21 @@
 
 <p align="center">
   <a href="https://reel-narcotics.vercel.app/"><img src="https://img.shields.io/badge/Live%20Website-Visit%20Site-10B981?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Live Site"></a>
-  <a href="https://reel-narcotics.vercel.app/assets/ReelNarcotics-v2.4.2-Release.apk"><img src="https://img.shields.io/badge/Download-APK%20(v2.4.2%20Build%2016)-059669?style=for-the-badge&logo=android&logoColor=white" alt="Download APK"></a>
+  <a href="https://reel-narcotics.vercel.app/assets/ReelNarcotics-v2.5.0-Release.apk"><img src="https://img.shields.io/badge/Download-APK%20(v2.5.0%20Build%2023)-059669?style=for-the-badge&logo=android&logoColor=white" alt="Download APK"></a>
   <img src="https://img.shields.io/badge/Android-8.0%20--%2015-141D32?style=for-the-badge&logo=android&logoColor=34D399" alt="Android Support">
   <img src="https://img.shields.io/badge/Privacy-100%25%20Offline-070A11?style=for-the-badge&logo=shield&logoColor=white" alt="100% Offline">
 </p>
 
 ---
 
-## 📱 Visual Showcase (v2.4.2 Production Build)
+## 📱 Visual Showcase (v2.5.0 Production Build)
 
 Captured live on device running Android 13 with active Focus Lock:
 
-| 1. Focus Command Center | 2. Content Shields | 3. SQLite Focus Ledger | 4. Settings & Habit Loop |
+| 1. Focus Command Center | 2. Content Shields | 3. App Lock Armor | 4. Settings & Habit Loop |
 | :---: | :---: | :---: | :---: |
-| <img src="docs/assets/screenshot_home.png" width="220" alt="Home Dashboard" /> | <img src="docs/assets/screenshot_shields.png" width="220" alt="Content Shield" /> | <img src="docs/assets/screenshot_stats.png" width="220" alt="Focus Intelligence" /> | <img src="docs/assets/screenshot_settings.png" width="220" alt="Settings & Notifications" /> |
-| **Active Lock & Timer**<br>Live session countdown, real-time status badge & one-tap challenges. | **Surgical Enforcement**<br>Granular platform toggles: Shorts, Reels, Spotlight, Adult Web. | **On-Device Metrics**<br>Audit trail, 7-day interception graphs, zero cloud tracking. | **Daily Habit Engine**<br>Morning Focus Pledge, Evening Victory Digest & Night theme. |
+| <img src="docs/assets/screenshot_home.png" width="220" alt="Home Dashboard" /> | <img src="docs/assets/screenshot_shields.png" width="220" alt="Content Shield" /> | <img src="docs/assets/screenshot_applock.png" width="220" alt="App Lock Armor" /> | <img src="docs/assets/screenshot_settings.png" width="220" alt="Settings & Notifications" /> |
+| **Active Lock & Timer**<br>Live session countdown, real-time status badge & one-tap challenges. | **Surgical Enforcement**<br>Granular platform toggles: Shorts, Reels, Spotlight, Adult Web. | **App Lock Armor**<br>Permanent 24/7 or Nuclear Session app locking with 0ms ejection. | **Daily Habit Engine**<br>Morning Focus Pledge, Evening Victory Digest & Night theme. |
 
 ---
 
