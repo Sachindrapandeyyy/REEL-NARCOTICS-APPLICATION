@@ -14,7 +14,7 @@ class BrowserUrlDetector(
     initialBlockedDomains: Set<String> = emptySet()
 ) : ContentDetector {
     override val name = "BrowserUrlDetector"
-    override val version = "1.3.1"
+    override val version = "1.4.0"
 
     private val blockedDomains = mutableSetOf<String>()
     private val blockedSuffixes = setOf(".porn", ".xxx", ".adult", ".cam", ".sex")
@@ -31,11 +31,31 @@ class BrowserUrlDetector(
             "com.microsoft.emmx",
             "com.brave.browser",
             "com.sec.android.app.sbrowser",
+            "com.sec.android.app.sbrowser.beta",
             "com.opera.browser",
             "com.opera.mini.native",
             "com.opera.gx",
+            "com.opera.touch",
             "com.duckduckgo.mobile.android",
-            "com.vivaldi.browser"
+            "com.vivaldi.browser",
+            // OEM and Global popular browsers
+            "com.transsion.phoenix", // Phoenix Browser
+            "com.shalltry.browser",
+            "com.UCMobile.intl", // UC Browser
+            "com.uc.browser.en",
+            "com.uc.browser.hd",
+            "com.mi.globalbrowser", // Mi Browser
+            "com.mi.globalbrowser.mini", // Mint Browser
+            "com.coloros.browser", // Oppo Browser
+            "com.heytap.browser", // Realme / HeyTap Browser
+            "com.vivo.browser", // Vivo Browser
+            "com.huawei.browser", // Huawei Browser
+            "com.kiwibrowser.browser", // Kiwi Browser
+            "com.jio.web", // JioPages
+            "mark.via.gp", // Via Browser
+            "org.torproject.torbrowser", // Tor Browser
+            "com.yandex.browser", // Yandex Browser
+            "com.aloha.browser" // Aloha Browser
         )
 
         private val URL_BAR_VIEW_IDS = arrayOf(
@@ -48,6 +68,44 @@ class BrowserUrlDetector(
             "addressbar",
             "omnibox"
         )
+
+        val KNOWN_ADULT_ROOTS = setOf(
+            "pornhub", "xvideos", "xnxx", "redtube", "youporn", "xhamster",
+            "brazzers", "chaturbate", "stripchat", "eporner", "beeg", "spankbang",
+            "rule34", "nhentai", "doujins", "hanime", "cam4", "bongacams",
+            "myfreecams", "camsoda", "faphouse", "jerkmate", "txxx", "tube8",
+            "spankwire", "drtuber", "bangbros", "naughtyamerica", "realitykings",
+            "twistys", "mofos", "blacked", "tushy", "deeper", "adultwork",
+            "manyvids", "shemalez", "livejasmin", "flirt4free", "streamate",
+            "imlive", "fansly", "missav", "jable", "thumbzilla", "motherless",
+            "heavy-r", "hardcoresex", "milfporn", "deepthroat", "cumshot",
+            "creampie", "desiporn", "bhabhisex", "chudai"
+        )
+
+        private val EXPLICIT_WORD_REGEX = Regex("\\b(porn|porno|pornography|xxx|hentai|blowjob|dildo)\\b", RegexOption.IGNORE_CASE)
+
+        fun isBrowserPackage(packageName: String): Boolean {
+            if (packageName.isBlank()) return false
+            val pkg = packageName.lowercase(Locale.US)
+            if (BROWSER_PACKAGES.contains(pkg)) return true
+            return pkg.contains(".browser") ||
+                   pkg.endsWith(".browser") ||
+                   pkg.contains("phoenix") ||
+                   pkg.contains("ucmobile")
+        }
+
+        fun hasExplicitAdultContent(text: String): Boolean {
+            if (text.isBlank()) return false
+            val lower = text.lowercase(Locale.US)
+            for (root in KNOWN_ADULT_ROOTS) {
+                if (lower.contains(root)) return true
+            }
+            if (EXPLICIT_WORD_REGEX.containsMatchIn(lower)) return true
+            for (suffix in setOf(".porn", ".xxx", ".adult", ".cam", ".sex")) {
+                if (lower.contains(suffix)) return true
+            }
+            return false
+        }
     }
 
     init {
@@ -71,7 +129,7 @@ class BrowserUrlDetector(
     }
 
     override fun canHandle(packageName: String): Boolean {
-        return BROWSER_PACKAGES.contains(packageName.lowercase(Locale.US))
+        return isBrowserPackage(packageName)
     }
 
     override fun evaluate(context: ScreenContext, config: ProtectionConfig): DetectionResult {
@@ -79,8 +137,26 @@ class BrowserUrlDetector(
             return DetectionResult.allowed(ContentCategory.ADULT_WEBSITE, "Browser adult protection disabled")
         }
 
-        // Find URL text from address bar node or visible texts
-        val extractedUrl = findUrlText(context)
+        val addressBarText = findAddressBarText(context)
+
+        // 1. If address bar contains raw search terms (not a full URL), inspect for adult keywords/roots immediately
+        if (addressBarText.isNotBlank() && !isUrlLike(addressBarText) && hasExplicitAdultContent(addressBarText)) {
+            return DetectionResult(
+                isBlocked = true,
+                confidence = 1.0f,
+                category = ContentCategory.ADULT_WEBSITE,
+                ruleId = "ADULT_ADDRESS_BAR_MATCH",
+                reason = "Explicit adult query detected in address bar: $addressBarText"
+            )
+        }
+
+        // 2. Find URL text from address bar node or visible texts
+        val extractedUrl = if (addressBarText.isNotBlank() && isUrlLike(addressBarText)) {
+            addressBarText
+        } else {
+            findUrlText(context)
+        }
+
         if (extractedUrl.isBlank()) {
             return DetectionResult.allowed(ContentCategory.ADULT_WEBSITE, "No URL detected in browser surface")
         }
@@ -90,7 +166,7 @@ class BrowserUrlDetector(
             return DetectionResult.allowed(ContentCategory.ADULT_WEBSITE, "Unable to extract domain from: $extractedUrl")
         }
 
-        // 1. Check blocked domain suffixes (.xxx, .porn, etc.)
+        // 3. Check blocked domain suffixes (.xxx, .porn, etc.)
         for (suffix in blockedSuffixes) {
             if (domain.endsWith(suffix)) {
                 return DetectionResult(
@@ -103,7 +179,7 @@ class BrowserUrlDetector(
             }
         }
 
-        // 2. Check exact or subdomain match against offline blocklist
+        // 4. Check exact or subdomain match against offline blocklist
         if (isDomainBlocked(domain)) {
             return DetectionResult(
                 isBlocked = true,
@@ -114,7 +190,30 @@ class BrowserUrlDetector(
             )
         }
 
+        // 5. Inspect full URL (query parameters, search paths) for adult keywords
+        if (hasExplicitAdultContent(extractedUrl)) {
+            return DetectionResult(
+                isBlocked = true,
+                confidence = 1.0f,
+                category = ContentCategory.ADULT_WEBSITE,
+                ruleId = "ADULT_URL_CONTENT_MATCH",
+                reason = "Explicit adult query or path detected in URL: $extractedUrl"
+            )
+        }
+
         return DetectionResult.allowed(ContentCategory.ADULT_WEBSITE, "Safe domain: $domain")
+    }
+
+    private fun findAddressBarText(context: ScreenContext): String {
+        for (urlId in URL_BAR_VIEW_IDS) {
+            val addressText = context.nodeTextMap.entries.firstOrNull { (id, text) ->
+                id.contains(urlId, ignoreCase = true) && text.isNotBlank()
+            }?.value
+            if (!addressText.isNullOrBlank()) {
+                return addressText.trim()
+            }
+        }
+        return ""
     }
 
     private fun findUrlText(context: ScreenContext): String {

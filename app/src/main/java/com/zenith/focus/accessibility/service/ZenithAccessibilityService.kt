@@ -178,6 +178,49 @@ class ZenithAccessibilityService : AccessibilityService() {
             }
         }
 
+        // FAST-PATH BROWSER ADULT SHIELD:
+        // If an explicit adult search or domain is present directly in the event text or description for a browser,
+        // instantly eject to Home Screen without waiting for DOM hierarchy traversal!
+        if (com.zenith.focus.accessibility.detector.BrowserUrlDetector.isBrowserPackage(lowerPkg)) {
+            val appInstance = runCatching { ZenithApplication.instance }.getOrNull()
+            if (appInstance != null) {
+                val protectionConfig = appInstance.container.settingsRepository.protectionConfig.value
+                val isAdultProtectionEnabled = protectionConfig.blockAdultWebsites || protectionConfig.blockAdultKeywords
+                if (isAdultProtectionEnabled) {
+                    val eventHasAdultText = run {
+                        val texts = mutableListOf<String>()
+                        event.text.forEach { t -> if (!t.isNullOrBlank()) texts.add(t.toString()) }
+                        event.contentDescription?.let { d -> if (d.isNotBlank()) texts.add(d.toString()) }
+                        texts.any { t -> com.zenith.focus.accessibility.detector.BrowserUrlDetector.hasExplicitAdultContent(t) }
+                    }
+
+                    if (eventHasAdultText) {
+                        ejectToHomeScreen()
+                        triggerHapticAlert()
+                        val nowTime = System.currentTimeMillis()
+                        if (nowTime - lastEjectTime >= 500L) {
+                            lastEjectTime = nowTime
+                            serviceScope.launch(Dispatchers.Main) {
+                                Toast.makeText(applicationContext, "🛡️ Explicit content blocked. Exiting to Home.", Toast.LENGTH_SHORT).show()
+                            }
+                            serviceScope.launch {
+                                appInstance.container.statisticsRepository.recordBlockEvent(
+                                    BlockEvent(
+                                        timestamp = nowTime,
+                                        packageName = lowerPkg,
+                                        category = ContentCategory.ADULT_WEBSITE,
+                                        confidence = 1.0f,
+                                        ruleId = "adult_fast_event_match"
+                                    )
+                                )
+                            }
+                        }
+                        return
+                    }
+                }
+            }
+        }
+
         // Debounce only extremely rapid duplicate events within 60ms
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
             if (pkg == lastPackageName && now - lastEventTime < FAST_DEBOUNCE_MS) {
@@ -373,7 +416,11 @@ class ZenithAccessibilityService : AccessibilityService() {
                 return
             }
 
-            if (now - lastEjectTime < EJECT_COOLDOWN_MS) {
+            val isAdultCategory = result.category == ContentCategory.ADULT_WEBSITE || 
+                                  result.category == ContentCategory.ADULT_KEYWORD
+
+            // Adult content blocks must never be delayed or dropped by the surgical reel cooldown
+            if (!isAdultCategory && now - lastEjectTime < EJECT_COOLDOWN_MS) {
                 return
             }
             lastEjectTime = now

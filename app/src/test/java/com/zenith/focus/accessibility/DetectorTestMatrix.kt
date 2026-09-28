@@ -576,6 +576,73 @@ class DetectorTestMatrix {
     }
 
     @Test
+    fun testAdultContentDetectedWhenPageHasTermsOfServiceAndReportFooter() {
+        val adultDetector = AdultContentDetector()
+        // Page containing explicit porn tokens along with standard web footer words (Terms of Service, Report abuse)
+        val context = ScreenContext(
+            packageName = "com.android.chrome",
+            className = "org.chromium.chrome.browser.ChromeTabbedActivity",
+            viewIds = setOf("url_bar", "content"),
+            visibleTexts = listOf("Watch free pornhub video online", "Terms of Service", "Report abuse", "Privacy policy"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("watch", "free", "pornhub", "video", "online", "terms", "service", "report", "abuse", "privacy", "policy")
+        )
+        val result = adultDetector.evaluate(context, defaultConfig)
+        assertTrue("Tier 1 adult keywords must NOT be suppressed by web footers like service or report", result.isBlocked)
+        assertEquals(ContentCategory.ADULT_KEYWORD, result.category)
+        assertEquals("ADULT_TIER1_MATCH", result.ruleId)
+    }
+
+    @Test
+    fun testBrowserUrlDetectorAddressBarAdultRootBlocked() {
+        val detector = BrowserUrlDetector()
+        val context = ScreenContext(
+            packageName = "com.android.chrome",
+            className = "org.chromium.chrome.browser.ChromeTabbedActivity",
+            viewIds = setOf("url_bar"),
+            visibleTexts = listOf("pornhub.com"),
+            nodeTextMap = mapOf("url_bar" to "pornhub.com")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertTrue("Adult root in address bar must trigger instant block", result.isBlocked)
+        assertEquals(ContentCategory.ADULT_WEBSITE, result.category)
+    }
+
+    @Test
+    fun testBrowserUrlDetectorSearchQueryAdultRootBlocked() {
+        val detector = BrowserUrlDetector()
+        val context = ScreenContext(
+            packageName = "com.android.chrome",
+            className = "org.chromium.chrome.browser.ChromeTabbedActivity",
+            viewIds = setOf("url_bar"),
+            visibleTexts = listOf("https://www.google.com/search?q=xvideos+free"),
+            nodeTextMap = mapOf("url_bar" to "https://www.google.com/search?q=xvideos+free")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertTrue("Adult search query in address bar must trigger block", result.isBlocked)
+        assertEquals(ContentCategory.ADULT_WEBSITE, result.category)
+    }
+
+    @Test
+    fun testBrowserUrlDetectorOEMBrowsersSupported() {
+        val detector = BrowserUrlDetector()
+        val adultDetector = AdultContentDetector()
+
+        val oemBrowsers = listOf(
+            "com.transsion.phoenix", // Phoenix Browser
+            "com.UCMobile.intl",     // UC Browser
+            "com.mi.globalbrowser",  // Mi Browser
+            "com.coloros.browser",   // Oppo Browser
+            "com.vivo.browser"       // Vivo Browser
+        )
+
+        for (pkg in oemBrowsers) {
+            assertTrue("BrowserUrlDetector must handle OEM browser $pkg", detector.canHandle(pkg))
+            assertTrue("AdultContentDetector must handle OEM browser $pkg", adultDetector.canHandle(pkg))
+        }
+    }
+
+    @Test
     fun testEssentialAppExclusionFromGenericShortFormDetector() {
         val genericDetector = com.zenith.focus.accessibility.detector.GenericShortFormDetector()
         val essentialApps = listOf(

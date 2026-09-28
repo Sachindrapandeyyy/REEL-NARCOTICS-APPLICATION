@@ -31,15 +31,20 @@ class DetectionEngine(context: Context) {
     fun evaluate(screenContext: ScreenContext, config: ProtectionConfig): DetectionResult {
         val pkg = screenContext.packageName
 
+        var handledBySpecialized = false
         // Check app-specific specialized detectors first (Specialized Authority Model)
         for (detector in detectors) {
             if (detector !is GenericShortFormDetector && detector.canHandle(pkg)) {
-                return detector.evaluate(screenContext, config)
+                handledBySpecialized = true
+                val result = detector.evaluate(screenContext, config)
+                if (result.isBlocked) {
+                    return result
+                }
             }
         }
 
         // Only fallback to generic detector if no specialized detector handled this app
-        if (genericShortFormDetector.canHandle(pkg)) {
+        if (!handledBySpecialized && genericShortFormDetector.canHandle(pkg)) {
             return genericShortFormDetector.evaluate(screenContext, config)
         }
 
