@@ -9,10 +9,14 @@
 
 <p align="center">
   <a href="https://reel-narcotics.vercel.app/"><img src="https://img.shields.io/badge/Live%20Website-Visit%20Site-10B981?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Live Site"></a>
-  <a href="https://reel-narcotics.vercel.app/assets/ReelNarcotics-v2.5.0-Release.apk"><img src="https://img.shields.io/badge/Download-APK%20(v2.5.0%20Build%2024)-059669?style=for-the-badge&logo=android&logoColor=white" alt="Download APK"></a>
+  <a href="https://reel-narcotics.vercel.app/assets/ReelNarcotics-v2.5.3-Release.apk"><img src="https://img.shields.io/badge/Download-APK%20(v2.5.3%20Build%2027)-059669?style=for-the-badge&logo=android&logoColor=white" alt="Download APK"></a>
+  <a href="PROJECT_GUIDE_HINGLISH.md"><img src="https://img.shields.io/badge/Project%20Guide-Hinglish%20Docs-8B5CF6?style=for-the-badge&logo=markdown&logoColor=white" alt="Hinglish Project Guide"></a>
   <img src="https://img.shields.io/badge/Android-8.0%20--%2015-141D32?style=for-the-badge&logo=android&logoColor=34D399" alt="Android Support">
   <img src="https://img.shields.io/badge/Privacy-100%25%20Offline-070A11?style=for-the-badge&logo=shield&logoColor=white" alt="100% Offline">
 </p>
+
+> 💡 **Hinglish Documentation Available:**  
+> Complete project explanation, live demo presentation flow, tech stack, and in-depth feature breakdown in Hinglish is available at [**PROJECT_GUIDE_HINGLISH.md**](PROJECT_GUIDE_HINGLISH.md).
 
 ---
 
