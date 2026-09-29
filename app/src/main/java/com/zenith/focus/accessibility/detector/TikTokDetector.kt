@@ -6,12 +6,24 @@ import com.zenith.focus.domain.model.ProtectionConfig
 
 class TikTokDetector : ContentDetector {
     override val name = "TikTokDetector"
-    override val version = "1.0.0"
+    override val version = "1.1.0"
+
+    companion object {
+        val TIKTOK_PACKAGES = setOf(
+            "com.zhiliaoapp.musically",
+            "com.ss.android.ugc.trill",
+            "com.zhiliaoapp.musically.go",
+            "com.ss.android.ugc.tiktok.lite",
+            "com.ss.android.ugc.aweme",
+            "com.ss.android.ugc.aweme.lite"
+        )
+    }
 
     override fun canHandle(packageName: String): Boolean {
-        return packageName.equals("com.zhiliaoapp.musically", ignoreCase = true) ||
-               packageName.equals("com.ss.android.ugc.trill", ignoreCase = true) ||
-               packageName.equals("com.zhiliaoapp.musically.go", ignoreCase = true)
+        val lower = packageName.lowercase(java.util.Locale.US)
+        return TIKTOK_PACKAGES.contains(lower) ||
+               lower.contains("musically") ||
+               lower.contains("tiktok")
     }
 
     override fun evaluate(context: ScreenContext, config: ProtectionConfig): DetectionResult {

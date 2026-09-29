@@ -87,23 +87,49 @@ class InstagramReelsDetector : ContentDetector {
             (text.contains("Original audio", ignoreCase = true))
         }
 
-        // Signal 4: Instagram Lite dedicated clips surface
-        val isInstagramLite = context.packageName.equals(PACKAGE_INSTAGRAM_LITE, ignoreCase = true)
-        val isLiteClipsViewer = isInstagramLite && (
+        // Signal 4: Instagram Lite dedicated clips surface (handles Meta Litho viewless architecture)
+        val isInstagramLite = context.packageName.equals(PACKAGE_INSTAGRAM_LITE, ignoreCase = true) ||
+                              context.packageName.contains("instagram.lite", ignoreCase = true)
+
+        val hasLiteReelsSignals = isInstagramLite && (
             isReelsTabSelected ||
             context.hasViewId("reels_tab") ||
             context.hasViewId("reels_tab_container") ||
-            context.viewIds.any { id ->
-                id.contains("reels_tab", ignoreCase = true) ||
-                id.contains("clips_viewer", ignoreCase = true) ||
-                id.contains("reels_page", ignoreCase = true) ||
-                id.contains("reel_player", ignoreCase = true)
-            } ||
-            (hasReelsMetadata && (context.hasViewId("video_player") || context.hasViewId("video_container") || context.hasViewId("clips_container")))
+            context.hasText("Reels") ||
+            context.hasContentDescription("Reels") ||
+            context.visibleTexts.any { it.equals("Reels", ignoreCase = true) } ||
+            context.contentDescriptions.any { it.equals("Reels", ignoreCase = true) || it.contains("Reel by", ignoreCase = true) || it.contains("Watch Reels", ignoreCase = true) } ||
+            context.hasText("Original audio") ||
+            context.hasText("Original Audio") ||
+            context.hasText("Remix with") ||
+            context.hasText("Remix this reel") ||
+            (context.allNormalizedTokens.contains("reels") && (
+                context.hasText("audio") ||
+                context.hasText("remix") ||
+                context.allNormalizedTokens.contains("audio") ||
+                context.allNormalizedTokens.contains("remix")
+            ))
         )
 
+        val isLiteDirectChat = isInstagramLite && (
+            isDirectChat ||
+            context.visibleTexts.any { it.equals("Direct", ignoreCase = true) || it.equals("Chats", ignoreCase = true) || it.startsWith("Message", ignoreCase = true) }
+        )
+
+        val isLiteProfile = isInstagramLite && (
+            context.hasAnyViewId("profile_tab", "profile_pager", "user_profile_header", "profile_header") ||
+            context.visibleTexts.any { it.equals("Edit profile", ignoreCase = true) || it.equals("Followers", ignoreCase = true) }
+        )
+
+        val hasInstagramBrandHeader = isInstagramLite && (
+            context.visibleTexts.any { it.equals("Instagram", ignoreCase = true) } ||
+            context.contentDescriptions.any { it.equals("Instagram", ignoreCase = true) }
+        ) && !context.hasText("Original audio") && !context.hasText("Remix")
+
+        val isLiteClipsViewer = isInstagramLite && hasLiteReelsSignals && !isLiteDirectChat && !isLiteProfile && !hasInstagramBrandHeader
+
         // Exclusions 1: Direct Messages (Always immune when not inside dedicated fullscreen viewer)
-        if (isDirectChat && !isDedicatedClipsViewer && !isReelsTabSelected) {
+        if (isDirectChat && !isDedicatedClipsViewer && !isReelsTabSelected && !isLiteClipsViewer) {
             return DetectionResult.allowed(ContentCategory.INSTAGRAM_REELS, "Direct messages active")
         }
 
@@ -116,8 +142,8 @@ class InstagramReelsDetector : ContentDetector {
         }
 
         // Exclusions 3: User Profiles & Account settings
-        val isUserProfile = (context.hasAnyViewId("profile_tab", "profile_pager", "user_profile_header", "profile_header")) &&
-            !isDedicatedClipsViewer && !isReelsTabSelected
+        val isUserProfile = (context.hasAnyViewId("profile_tab", "profile_pager", "user_profile_header", "profile_header") || isLiteProfile) &&
+            !isDedicatedClipsViewer && !isReelsTabSelected && !isLiteClipsViewer
         if (isUserProfile) {
             return DetectionResult.allowed(ContentCategory.INSTAGRAM_REELS, "Instagram user profile active")
         }
@@ -156,7 +182,7 @@ class InstagramReelsDetector : ContentDetector {
 
         if (isLiteClipsViewer) {
             confidence = 1.0f
-            reasons.add("Instagram Lite Reels surface active")
+            reasons.add("Instagram Lite Reels surface active (tab actively selected)")
         }
 
         val threshold = if (config.strictMode) 0.50f else 0.70f

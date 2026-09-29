@@ -6,10 +6,19 @@ import com.zenith.focus.domain.model.ProtectionConfig
 
 class YouTubeShortsDetector : ContentDetector {
     override val name = "YouTubeShortsDetector"
-    override val version = "2.2.0-SURGICAL"
+    override val version = "2.3.0-COMPREHENSIVE"
 
     companion object {
         const val PACKAGE_YOUTUBE = "com.google.android.youtube"
+        const val PACKAGE_YOUTUBE_GO = "com.google.android.apps.youtube.mango"
+
+        val YOUTUBE_PACKAGES = setOf(
+            PACKAGE_YOUTUBE,
+            PACKAGE_YOUTUBE_GO,
+            "app.revanced.android.youtube",
+            "com.vanced.android.youtube",
+            "app.rvx.android.youtube"
+        )
 
         // Full-screen dedicated player containers that only exist when a Short is actively open & playing
         val ACTIVE_SHORTS_PLAYER_IDS = listOf(
@@ -46,7 +55,12 @@ class YouTubeShortsDetector : ContentDetector {
     }
 
     override fun canHandle(packageName: String): Boolean {
-        return packageName.equals(PACKAGE_YOUTUBE, ignoreCase = true)
+        val lower = packageName.lowercase(java.util.Locale.US)
+        return lower == PACKAGE_YOUTUBE ||
+               lower == PACKAGE_YOUTUBE_GO ||
+               YOUTUBE_PACKAGES.contains(lower) ||
+               lower.endsWith(".youtube") ||
+               (lower.contains("youtube") && !lower.contains("music") && !lower.contains("creator") && !lower.contains("studio"))
     }
 
     override fun evaluate(context: ScreenContext, config: ProtectionConfig): DetectionResult {

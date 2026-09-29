@@ -982,4 +982,170 @@ class DetectorTestMatrix {
         val result = detector.evaluate(context, defaultConfig)
         assertFalse("Instagram Home Feed video posts must NEVER be blocked!", result.isBlocked)
     }
+
+    // --- LITE & VARIANT MATRIX TESTS ---
+
+    @Test
+    fun testInstagramLiteFeedAllowed() {
+        val detector = InstagramReelsDetector()
+        assertTrue(detector.canHandle("com.instagram.lite"))
+
+        val context = ScreenContext(
+            packageName = "com.instagram.lite",
+            className = "com.facebook.lite.MainActivity",
+            viewIds = emptySet(),
+            visibleTexts = listOf("Instagram", "Search", "Your Story", "Liked by user123"),
+            contentDescriptions = listOf("Instagram", "Activity Feed"),
+            allNormalizedTokens = setOf("instagram", "search", "story")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertFalse("Instagram Lite home feed must be allowed!", result.isBlocked)
+    }
+
+    @Test
+    fun testInstagramLiteDirectChatAllowed() {
+        val detector = InstagramReelsDetector()
+        val context = ScreenContext(
+            packageName = "com.instagram.lite",
+            className = "com.facebook.lite.MainActivity",
+            viewIds = emptySet(),
+            visibleTexts = listOf("Direct", "Chats", "Hey bro are you studying?", "Send"),
+            contentDescriptions = listOf("Back", "New message"),
+            allNormalizedTokens = setOf("direct", "chats", "send")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertFalse("Instagram Lite 1-on-1 direct chat must be allowed!", result.isBlocked)
+    }
+
+    @Test
+    fun testInstagramLiteProfileAllowed() {
+        val detector = InstagramReelsDetector()
+        val context = ScreenContext(
+            packageName = "com.instagram.lite",
+            className = "com.facebook.lite.MainActivity",
+            viewIds = emptySet(),
+            visibleTexts = listOf("Edit profile", "Followers", "Posts", "120"),
+            contentDescriptions = listOf("Profile tab"),
+            allNormalizedTokens = setOf("edit", "profile", "followers", "posts")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertFalse("Instagram Lite profile must be allowed!", result.isBlocked)
+    }
+
+    @Test
+    fun testInstagramLiteReelsViewerBlocked() {
+        val detector = InstagramReelsDetector()
+        val context = ScreenContext(
+            packageName = "com.instagram.lite",
+            className = "com.facebook.lite.MainActivity",
+            viewIds = emptySet(),
+            visibleTexts = listOf("Reels", "Original audio - viral_beat", "Remix with this reel", "Share"),
+            contentDescriptions = listOf("Reel by creator99", "Audio by viral_beat"),
+            allNormalizedTokens = setOf("reels", "original", "audio", "remix", "share")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertTrue("Instagram Lite Reels viewer must be blocked!", result.isBlocked)
+        assertEquals(ContentCategory.INSTAGRAM_REELS, result.category)
+    }
+
+    @Test
+    fun testFacebookLiteFeedAllowed() {
+        val detector = FacebookReelsDetector()
+        assertTrue(detector.canHandle("com.facebook.lite"))
+
+        val context = ScreenContext(
+            packageName = "com.facebook.lite",
+            className = "com.facebook.lite.MainActivity",
+            viewIds = emptySet(),
+            visibleTexts = listOf("Facebook", "What's on your mind?", "Stories", "Like", "Comment"),
+            contentDescriptions = listOf("Facebook", "News feed"),
+            allNormalizedTokens = setOf("facebook", "mind", "stories", "like")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertFalse("Facebook Lite home feed must be allowed!", result.isBlocked)
+    }
+
+    @Test
+    fun testFacebookLiteReelsViewerBlocked() {
+        val detector = FacebookReelsDetector()
+        val context = ScreenContext(
+            packageName = "com.facebook.lite",
+            className = "com.facebook.lite.MainActivity",
+            viewIds = emptySet(),
+            visibleTexts = listOf("Reels", "Original audio - viral_sound", "Share reel", "Remix this reel"),
+            contentDescriptions = listOf("Reel by John Doe", "Like this reel"),
+            allNormalizedTokens = setOf("reels", "original", "audio", "share", "remix")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertTrue("Facebook Lite Reels player must be blocked!", result.isBlocked)
+        assertEquals(ContentCategory.FACEBOOK_REELS, result.category)
+    }
+
+    @Test
+    fun testYouTubeVariantsHandledAndBlocked() {
+        val detector = YouTubeShortsDetector()
+        assertTrue(detector.canHandle("com.google.android.apps.youtube.mango"))
+        assertTrue(detector.canHandle("app.revanced.android.youtube"))
+        assertTrue(detector.canHandle("com.vanced.android.youtube"))
+
+        val context = ScreenContext(
+            packageName = "app.revanced.android.youtube",
+            className = "com.google.android.apps.youtube.app.watchwhile.WatchWhileActivity",
+            viewIds = setOf("app.revanced.android.youtube:id/reel_watch_fragment_root"),
+            visibleTexts = listOf("Crazy physics experiment #shorts"),
+            contentDescriptions = listOf("Dislike this short"),
+            allNormalizedTokens = setOf("crazy", "physics", "shorts")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertTrue("YouTube ReVanced Shorts player must be blocked!", result.isBlocked)
+        assertEquals(ContentCategory.YOUTUBE_SHORTS, result.category)
+    }
+
+    @Test
+    fun testSnapchatBetaHandledAndBlocked() {
+        val detector = SnapchatSpotlightDetector()
+        assertTrue(detector.canHandle("com.snapchat.android.beta"))
+
+        val context = ScreenContext(
+            packageName = "com.snapchat.android.beta",
+            className = "com.snapchat.android.LandingPageActivity",
+            viewIds = setOf("com.snapchat.android.beta:id/spotlight_video_player"),
+            visibleTexts = listOf("Spotlight", "Trending Sound"),
+            contentDescriptions = listOf("Spotlight by creator"),
+            allNormalizedTokens = setOf("spotlight", "trending", "sound")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertTrue("Snapchat Beta Spotlight player must be blocked!", result.isBlocked)
+        assertEquals(ContentCategory.SNAPCHAT_SPOTLIGHT, result.category)
+    }
+
+    @Test
+    fun testTikTokLiteHandledAndBlocked() {
+        val detector = TikTokDetector()
+        assertTrue(detector.canHandle("com.zhiliaoapp.musically.go"))
+        assertTrue(detector.canHandle("com.ss.android.ugc.tiktok.lite"))
+
+        val context = ScreenContext(
+            packageName = "com.zhiliaoapp.musically.go",
+            className = "com.ss.android.ugc.aweme.splash.SplashActivity",
+            viewIds = emptySet(),
+            visibleTexts = listOf("Follow", "For You"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("follow", "for", "you")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertTrue("TikTok Lite must be blocked!", result.isBlocked)
+        assertEquals(ContentCategory.TIKTOK, result.category)
+    }
+
+    @Test
+    fun testGenericShortFormExcludesAllVariants() {
+        val generic = GenericShortFormDetector()
+        assertFalse(generic.canHandle("com.instagram.lite"))
+        assertFalse(generic.canHandle("com.facebook.lite"))
+        assertFalse(generic.canHandle("com.google.android.apps.youtube.mango"))
+        assertFalse(generic.canHandle("app.revanced.android.youtube"))
+        assertFalse(generic.canHandle("com.snapchat.android.beta"))
+        assertFalse(generic.canHandle("com.zhiliaoapp.musically.go"))
+    }
 }

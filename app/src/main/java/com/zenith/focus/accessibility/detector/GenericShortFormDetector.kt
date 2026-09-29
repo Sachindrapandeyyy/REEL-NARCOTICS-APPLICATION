@@ -11,16 +11,25 @@ class GenericShortFormDetector : ContentDetector {
     companion object {
         private val SPECIALIZED_PACKAGES = setOf(
             "com.google.android.youtube",
+            "com.google.android.apps.youtube.mango",
+            "app.revanced.android.youtube",
+            "com.vanced.android.youtube",
+            "app.rvx.android.youtube",
             "com.instagram.android",
             "com.instagram.lite",
             "com.instagram.barcelona",
             "com.facebook.katana",
             "com.facebook.lite",
+            "com.facebook.wakizashi",
             "com.facebook.orca",
             "com.snapchat.android",
+            "com.snapchat.android.beta",
             "com.zhiliaoapp.musically",
             "com.ss.android.ugc.trill",
-            "com.zhiliaoapp.musically.go"
+            "com.zhiliaoapp.musically.go",
+            "com.ss.android.ugc.tiktok.lite",
+            "com.ss.android.ugc.aweme",
+            "com.ss.android.ugc.aweme.lite"
         )
 
         private val EXCLUDED_PACKAGE_PREFIXES = listOf(
@@ -48,7 +57,14 @@ class GenericShortFormDetector : ContentDetector {
         val pkg = packageName.lowercase(java.util.Locale.US)
 
         // Never inspect packages that have dedicated specialized detectors
-        if (SPECIALIZED_PACKAGES.contains(pkg)) {
+        if (SPECIALIZED_PACKAGES.contains(pkg) ||
+            pkg.startsWith("com.instagram.") ||
+            pkg.startsWith("com.facebook.") ||
+            pkg.startsWith("com.snapchat.") ||
+            pkg.contains("musically") ||
+            pkg.contains("tiktok") ||
+            (pkg.contains("youtube") && !pkg.contains("music") && !pkg.contains("creator") && !pkg.contains("studio"))
+        ) {
             return false
         }
         

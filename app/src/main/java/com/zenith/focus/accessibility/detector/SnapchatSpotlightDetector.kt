@@ -6,10 +6,14 @@ import com.zenith.focus.domain.model.ProtectionConfig
 
 class SnapchatSpotlightDetector : ContentDetector {
     override val name = "SnapchatSpotlightDetector"
-    override val version = "2.0.0-COMPREHENSIVE"
+    override val version = "2.1.0-COMPREHENSIVE"
 
     companion object {
         const val PACKAGE_SNAPCHAT = "com.snapchat.android"
+        val SNAPCHAT_PACKAGES = setOf(
+            PACKAGE_SNAPCHAT,
+            "com.snapchat.android.beta"
+        )
 
         val SPOTLIGHT_VIEWER_IDS = listOf(
             "spotlight_container",
@@ -23,7 +27,11 @@ class SnapchatSpotlightDetector : ContentDetector {
     }
 
     override fun canHandle(packageName: String): Boolean {
-        return packageName.equals(PACKAGE_SNAPCHAT, ignoreCase = true)
+        val lower = packageName.lowercase(java.util.Locale.US)
+        return lower == PACKAGE_SNAPCHAT ||
+               SNAPCHAT_PACKAGES.contains(lower) ||
+               lower.startsWith("com.snapchat.") ||
+               lower.contains("snapchat")
     }
 
     override fun evaluate(context: ScreenContext, config: ProtectionConfig): DetectionResult {
