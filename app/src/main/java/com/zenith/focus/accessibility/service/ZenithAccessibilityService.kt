@@ -306,9 +306,9 @@ class ZenithAccessibilityService : AccessibilityService() {
                         startActivity(homeIntent)
                     }
                     val toastMessage = if (isNuclear) {
-                        "🔒 NUCLEAR FOCUS IS ON: Reel Narcotics cannot be modified or turned off until your session expires!"
+                        "🔒 NUCLEAR FOCUS IS ON: Reel Narcotics cannot be frozen, modified, or turned off until your session expires!"
                     } else {
-                        "🔒 FOCUS LOCK ACTIVE: Reel Narcotics settings and removal are locked during focus session."
+                        "🔒 FOCUS LOCK ACTIVE: Reel Narcotics cannot be frozen, modified, or removed during your focus session."
                     }
                     Toast.makeText(applicationContext, toastMessage, Toast.LENGTH_LONG).show()
                 }

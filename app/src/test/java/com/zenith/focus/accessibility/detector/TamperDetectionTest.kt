@@ -223,4 +223,125 @@ class TamperDetectionTest {
         val result = TamperDetectionEngine.evaluate(context)
         assertFalse(result.isTamperAttempt)
     }
+
+    // --- OEM & THIRD-PARTY FREEZER / DEEP SLEEP TESTS ---
+
+    @Test
+    fun testInfinixFreezerTamperIntercepted() {
+        val context = ScreenContext(
+            packageName = "com.transsion.phonemaster",
+            className = "com.transsion.phonemaster.freezer.FreezerActivity",
+            viewIds = setOf("freezer_add_btn", "app_title"),
+            visibleTexts = listOf("Freezer", "Add to Freezer", "Reel Narcotics", "Freeze", "Cancel"),
+            contentDescriptions = listOf("Freezer header"),
+            allNormalizedTokens = setOf("freezer", "add", "to", "reel", "narcotics", "freeze", "cancel"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertTrue("Infinix/Tecno Freezer targeting Reel Narcotics must be intercepted!", result.isTamperAttempt)
+    }
+
+    @Test
+    fun testInfinixFreezerOtherAppAllowed() {
+        val context = ScreenContext(
+            packageName = "com.transsion.phonemaster",
+            className = "com.transsion.phonemaster.freezer.FreezerActivity",
+            viewIds = setOf("freezer_add_btn", "app_title"),
+            visibleTexts = listOf("Freezer", "Add to Freezer", "PUBG Mobile", "Freeze", "Cancel"),
+            contentDescriptions = listOf("Freezer header"),
+            allNormalizedTokens = setOf("freezer", "add", "to", "pubg", "mobile", "freeze", "cancel"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertFalse("Freezing another app in Infinix Freezer must be allowed!", result.isTamperAttempt)
+    }
+
+    @Test
+    fun testSamsungDeepSleepTamperIntercepted() {
+        val context = ScreenContext(
+            packageName = "com.samsung.android.lool",
+            className = "com.samsung.android.sm.battery.ui.DeepSleepingAppsActivity",
+            viewIds = setOf("add_btn", "app_name"),
+            visibleTexts = listOf("Deep sleeping apps", "Add apps", "Reel Narcotics", "Add"),
+            contentDescriptions = listOf("Deep sleep list"),
+            allNormalizedTokens = setOf("deep", "sleeping", "apps", "add", "reel", "narcotics"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertTrue("Samsung Deep Sleeping apps targeting Reel Narcotics must be intercepted!", result.isTamperAttempt)
+    }
+
+    @Test
+    fun testXiaomiRestrictBackgroundTamperIntercepted() {
+        val context = ScreenContext(
+            packageName = "com.miui.powerkeeper",
+            className = "com.miui.powerkeeper.ui.AppPowerCenterActivity",
+            viewIds = setOf("restrict_background_btn"),
+            visibleTexts = listOf("Reel Narcotics", "Battery saver", "Restrict background activity", "Close apps to save power"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("reel", "narcotics", "battery", "saver", "restrict", "background", "activity"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertTrue("Xiaomi MIUI background restrict targeting Reel Narcotics must be intercepted!", result.isTamperAttempt)
+    }
+
+    @Test
+    fun testColorOSAppFreezerTamperIntercepted() {
+        val context = ScreenContext(
+            packageName = "com.oplus.battery",
+            className = "com.oplus.battery.freezer.AppFreezerActivity",
+            viewIds = setOf("freezer_switch"),
+            visibleTexts = listOf("App Quick Freeze", "Auto freeze inactive apps", "Reel Narcotics", "Frozen"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("app", "quick", "freeze", "auto", "inactive", "reel", "narcotics", "frozen"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertTrue("Oppo/OnePlus ColorOS App Quick Freeze targeting Reel Narcotics must be intercepted!", result.isTamperAttempt)
+    }
+
+    @Test
+    fun testIceBoxThirdPartyFreezerIntercepted() {
+        val context = ScreenContext(
+            packageName = "com.catchingnow.icebox",
+            className = "com.catchingnow.icebox.MainActivity",
+            viewIds = setOf("freeze_action"),
+            visibleTexts = listOf("Ice Box", "Freeze apps", "Reel Narcotics", "Freeze now"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("ice", "box", "freeze", "apps", "reel", "narcotics"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertTrue("Third-party Ice Box freezer targeting Reel Narcotics must be intercepted!", result.isTamperAttempt)
+    }
+
+    @Test
+    fun testAndroidSettingsBatteryRestrictedIntercepted() {
+        val context = ScreenContext(
+            packageName = "com.android.settings",
+            className = "com.android.settings.fuelgauge.AppBatteryUsageActivity",
+            viewIds = setOf("restricted_radio_button"),
+            visibleTexts = listOf("App battery usage", "Reel Narcotics", "Restricted", "Restrict battery usage while in background"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("app", "battery", "usage", "reel", "narcotics", "restricted", "restrict", "background"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertTrue("Android Settings battery restriction targeting Reel Narcotics must be intercepted!", result.isTamperAttempt)
+    }
 }

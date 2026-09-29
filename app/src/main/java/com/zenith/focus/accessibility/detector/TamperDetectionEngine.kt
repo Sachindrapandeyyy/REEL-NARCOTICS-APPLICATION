@@ -19,6 +19,70 @@ object TamperDetectionEngine {
         "android"
     )
 
+    private val OEM_FREEZER_AND_POWER_PACKAGES = setOf(
+        // Transsion (Infinix, Tecno, itel)
+        "com.transsion.phonemaster",
+        "com.transsion.xoslauncher",
+        "com.transsion.hilauncher",
+        "com.transsion.neofreezer",
+        "com.transsion.freezer",
+        "com.infinix.freezer",
+        "com.tecno.freezer",
+        // Samsung
+        "com.samsung.android.lool",
+        "com.samsung.android.sm",
+        "com.samsung.android.sm_cn",
+        // Xiaomi / POCO / Redmi
+        "com.miui.powerkeeper",
+        "com.miui.securitycenter",
+        // Oppo / OnePlus / Realme
+        "com.oplus.battery",
+        "com.coloros.safecenter",
+        "com.oplus.safecenter",
+        "com.coloros.oppoguardelf",
+        "com.oplus.appfreezer",
+        // Vivo / iQOO
+        "com.iqoo.secure",
+        "com.vivo.permissionmanager",
+        "com.vivo.abe",
+        // Huawei / Honor
+        "com.huawei.systemmanager",
+        // Third-party app freezers & isolation utilities
+        "com.catchingnow.icebox",
+        "com.aistra.hail",
+        "com.real.clearprocesses",
+        "com.sunnychung.applicationfreezer",
+        "catch_.me_.if_.you_.can_",
+        "com.iamnotnd.freeze",
+        "moe.shizuku.privileged.api"
+    )
+
+    private val FREEZE_SUSPEND_KEYWORDS = setOf(
+        "freezer",
+        "freeze",
+        "frozen",
+        "deep sleep",
+        "deep sleeping apps",
+        "sleeping apps",
+        "put to sleep",
+        "never sleeping apps",
+        "auto freeze",
+        "quick freeze",
+        "hibernate",
+        "restrict background",
+        "restrict background activity",
+        "restricted",
+        "pause app activity",
+        "pause app activity if unused",
+        "background usage limits",
+        "background restriction",
+        "app clone",
+        "private space",
+        "second space",
+        "ice box",
+        "freeze apps"
+    )
+
     private val TARGET_APP_IDENTIFIERS = setOf(
         "zenith",
         "reel narcotics",
@@ -28,6 +92,7 @@ object TamperDetectionEngine {
 
     private fun isPotentialTamperPackage(pkg: String): Boolean {
         return pkg in BASE_TAMPER_PACKAGES ||
+                pkg in OEM_FREEZER_AND_POWER_PACKAGES ||
                 pkg.contains("packageinstaller") ||
                 pkg.contains("securitycenter") ||
                 pkg.contains("safecenter") ||
@@ -35,8 +100,13 @@ object TamperDetectionEngine {
                 pkg.contains("phonemaster") ||
                 pkg.contains("iqoo.secure") ||
                 pkg.contains("cleanmaster") ||
+                pkg.contains("freezer") ||
+                pkg.contains("powerkeeper") ||
+                pkg.contains("icebox") ||
+                pkg.contains("appfreezer") ||
                 pkg.contains("settings") ||
                 pkg.contains("accessibility") ||
+                pkg.contains("launcher") ||
                 pkg == "com.android.vending" ||
                 pkg == "android"
     }
@@ -207,6 +277,68 @@ object TamperDetectionEngine {
                         targetPackage = pkg
                     )
                 }
+            }
+        }
+
+        // Case 4: OEM & Third-Party App Freezer, Deep Sleep, or Background Restrict Interception
+        val isFreezerOrPowerPackage = pkg in OEM_FREEZER_AND_POWER_PACKAGES ||
+                pkg.contains("freezer") ||
+                pkg.contains("powerkeeper") ||
+                pkg.contains("icebox") ||
+                pkg.contains("appfreezer") ||
+                pkg.contains("phonemaster") ||
+                pkg.contains("launcher")
+
+        val hasFreezerKeyword = allTexts.any { text ->
+            FREEZE_SUSPEND_KEYWORDS.any { keyword -> text.contains(keyword) }
+        } || allTokens.any { token ->
+            token in setOf("freezer", "freeze", "frozen", "deepsleep", "hibernate")
+        } || context.contentDescriptions.any { desc ->
+            val lower = desc.lowercase()
+            FREEZE_SUSPEND_KEYWORDS.any { keyword -> lower.contains(keyword) }
+        }
+
+        if (mentionsTargetApp && (isFreezerOrPowerPackage || hasFreezerKeyword)) {
+            val isFreezerScreen = hasFreezerKeyword ||
+                    context.className.contains("Freezer", ignoreCase = true) ||
+                    context.className.contains("Sleep", ignoreCase = true) ||
+                    context.className.contains("PowerSaver", ignoreCase = true) ||
+                    context.className.contains("Restrict", ignoreCase = true) ||
+                    context.className.contains("Hibernate", ignoreCase = true) ||
+                    pkg.contains("freezer") ||
+                    pkg.contains("icebox")
+
+            if (isFreezerScreen) {
+                return TamperDetectionResult(
+                    isTamperAttempt = true,
+                    reason = "OEM/System App Freezer or Deep Sleep tamper attempt intercepted ($pkg)",
+                    targetPackage = pkg
+                )
+            }
+        }
+
+        // Case 5: Android Settings Battery Optimization / "Restricted" Background Interception
+        if (pkg.contains("settings") && mentionsTargetApp) {
+            val isBatteryScreen = allTexts.any {
+                it.contains("app battery usage") ||
+                it.contains("battery optimization") ||
+                it.contains("background restriction") ||
+                it.contains("manage battery usage") ||
+                it.contains("optimize battery usage")
+            } || context.className.contains("Battery", ignoreCase = true)
+
+            val hasRestrictAction = allTexts.any {
+                it.contains("restricted") ||
+                it.contains("restrict background") ||
+                it.contains("pause app activity if unused")
+            } || allTokens.contains("restricted")
+
+            if (isBatteryScreen && hasRestrictAction) {
+                return TamperDetectionResult(
+                    isTamperAttempt = true,
+                    reason = "Settings background battery restriction tamper attempt intercepted",
+                    targetPackage = pkg
+                )
             }
         }
 
