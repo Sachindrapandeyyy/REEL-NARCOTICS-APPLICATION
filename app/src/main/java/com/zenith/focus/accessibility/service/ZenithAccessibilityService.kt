@@ -36,6 +36,7 @@ class ZenithAccessibilityService : AccessibilityService() {
     private var lastBlockedPkg = ""
     private var consecutiveBlockCount = 0
     private var lastBlockTimestamp = 0L
+    private var lastTargetAppLongPressTime = 0L
 
     companion object {
         private const val FAST_DEBOUNCE_MS = 60L
@@ -88,8 +89,7 @@ class ZenithAccessibilityService : AccessibilityService() {
             // Transsion / Infinix / Tecno
             "com.transsion.calculator",
             "com.transsion.deskclock",
-            "com.sh.smart.caller",
-            "com.transsion.phonemaster"
+            "com.sh.smart.caller"
         )
 
         fun isEssentialUtility(pkg: String): Boolean {
@@ -120,14 +120,52 @@ class ZenithAccessibilityService : AccessibilityService() {
 
         val pkg = event.packageName?.toString() ?: return
         val lowerPkg = pkg.lowercase(java.util.Locale.US)
-        if (lowerPkg.isBlank() || lowerPkg == packageName.lowercase(java.util.Locale.US) ||
-            lowerPkg.contains("launcher") || lowerPkg.contains("systemui") ||
-            isEssentialUtility(lowerPkg)
-        ) {
+        if (lowerPkg.isBlank() || lowerPkg == packageName.lowercase(java.util.Locale.US) || lowerPkg.contains("systemui")) {
             return
         }
 
         val now = System.currentTimeMillis()
+
+        val eventText = run {
+            val sb = StringBuilder()
+            event.text.forEach { t -> if (!t.isNullOrBlank()) sb.append(t).append(" ") }
+            event.contentDescription?.let { d -> if (d.isNotBlank()) sb.append(d).append(" ") }
+            sb.toString().lowercase(java.util.Locale.US)
+        }
+
+        // Track target app long-press on launcher / desktop
+        if (event.eventType == AccessibilityEvent.TYPE_VIEW_LONG_CLICKED) {
+            if (TamperDetectionEngine.mentionsTargetApp(eventText)) {
+                lastTargetAppLongPressTime = now
+            }
+        }
+
+        // FAST-PATH ANTI-FREEZER & TAMPER SHIELD:
+        // If user clicks on Reel Narcotics inside a Freezer app, or clicks "Freeze" / "To Freezer" in a menu,
+        // instantly eject to Home Screen in sub-5ms!
+        if (TamperDetectionEngine.isDirectFreezerTamper(lowerPkg, event, eventText, lastTargetAppLongPressTime, now)) {
+            ejectToHomeScreen()
+            triggerHapticAlert()
+            if (now - lastEjectTime >= 500L) {
+                lastEjectTime = now
+                serviceScope.launch(Dispatchers.Main) {
+                    Toast.makeText(applicationContext, "🔒 Reel Narcotics cannot be added to Freezer or frozen.", Toast.LENGTH_SHORT).show()
+                }
+                serviceScope.launch {
+                    val app = runCatching { ZenithApplication.instance }.getOrNull()
+                    app?.container?.statisticsRepository?.recordBlockEvent(
+                        BlockEvent(
+                            timestamp = now,
+                            packageName = lowerPkg,
+                            category = ContentCategory.SYSTEM_TAMPER,
+                            confidence = 1.0f,
+                            ruleId = "fast_path_freezer_tamper"
+                        )
+                    )
+                }
+            }
+            return
+        }
 
         // FAST-PATH APP LOCK SHIELD:
         // If this package is locked in App Lock, instantly eject it to Home Screen without waiting for heavy hierarchy inspection!
@@ -221,6 +259,24 @@ class ZenithAccessibilityService : AccessibilityService() {
             }
         }
 
+        // Launcher & Essential Utility performance guard:
+        // Launchers and essential utilities (calculators/clocks) only need heavy hierarchy inspection
+        // if a target app was recently long-pressed or the event indicates a freezer/tamper UI.
+        val isLauncherPkg = lowerPkg.contains("launcher")
+        val isEssential = isEssentialUtility(lowerPkg)
+        if (isLauncherPkg || isEssential) {
+            val recentLongPress = (now - lastTargetAppLongPressTime) < 10000L
+            val className = event.className?.toString()?.lowercase(java.util.Locale.US) ?: ""
+            val isFreezerCandidate = TamperDetectionEngine.isFreezerPackage(lowerPkg) ||
+                    TamperDetectionEngine.hasFreezerKeyword(eventText) ||
+                    className.contains("freezer") || className.contains("shortcut") ||
+                    className.contains("menu") || className.contains("popup")
+
+            if (!recentLongPress && !isFreezerCandidate) {
+                return
+            }
+        }
+
         // Debounce only extremely rapid duplicate events within 60ms
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
             if (pkg == lastPackageName && now - lastEventTime < FAST_DEBOUNCE_MS) {
@@ -254,10 +310,7 @@ class ZenithAccessibilityService : AccessibilityService() {
         val statsRepo = app.container.statisticsRepository
 
         val targetPkg = if (screenContext.packageName.isNotBlank()) screenContext.packageName.lowercase(java.util.Locale.US) else pkg.lowercase(java.util.Locale.US)
-        if (targetPkg.isBlank() || targetPkg == packageName.lowercase(java.util.Locale.US) ||
-            targetPkg.contains("launcher") || targetPkg.contains("systemui") ||
-            isEssentialUtility(targetPkg)
-        ) {
+        if (targetPkg.isBlank() || targetPkg == packageName.lowercase(java.util.Locale.US) || targetPkg.contains("systemui")) {
             return
         }
 
@@ -268,62 +321,78 @@ class ZenithAccessibilityService : AccessibilityService() {
         val now = System.currentTimeMillis()
         val elapsed = android.os.SystemClock.elapsedRealtime()
         val isNuclear = nuclearSession.isCurrentlyActive(now, elapsed)
+        val isLockActive = lockState.isCurrentlyActive(now)
 
         // --- ANTI-UNINSTALL & ANTI-TAMPER SHIELD ---
-        if (isNuclear || lockState.isCurrentlyActive(now)) {
-            val tamperResult = TamperDetectionEngine.evaluate(effectiveContext)
-            if (tamperResult.isTamperAttempt) {
-                android.util.Log.e("ZENITH_TAMPER", "Tamper triggered! reason=${tamperResult.reason}, pkg=$targetPkg")
-                // DO NOT DEBOUNCE TAMPER ATTEMPTS!
-                // Any attempt to uninstall or disable accessibility during nuclear/lock mode must be instantly ejected.
-                lastEjectTime = now
+        // Freezer & Deep Sleep protection is ALWAYS active (freezing cuts off accessibility and suspends all protection).
+        // Settings uninstall/force stop is guarded during active nuclear or focus sessions.
+        val tamperResult = TamperDetectionEngine.evaluate(effectiveContext)
+        val isFreezerAttempt = tamperResult.isTamperAttempt && (
+            tamperResult.reason.contains("Freezer", ignoreCase = true) ||
+            tamperResult.reason.contains("Freeze", ignoreCase = true) ||
+            tamperResult.reason.contains("Sleep", ignoreCase = true) ||
+            tamperResult.reason.contains("Restrict", ignoreCase = true)
+        )
+        val shouldBlockTamper = tamperResult.isTamperAttempt && (isFreezerAttempt || isNuclear || isLockActive)
 
-                // 1. Instant global dismiss & back to home actions
-                performGlobalAction(GLOBAL_ACTION_BACK)
-                performGlobalAction(GLOBAL_ACTION_HOME)
+        if (shouldBlockTamper) {
+            android.util.Log.e("ZENITH_TAMPER", "Tamper triggered! reason=${tamperResult.reason}, pkg=$targetPkg")
+            // DO NOT DEBOUNCE TAMPER ATTEMPTS!
+            lastEjectTime = now
 
-                // 2. Instant physical haptic shock
-                triggerHapticAlert()
+            // 1. Instant global dismiss & back to home actions
+            performGlobalAction(GLOBAL_ACTION_BACK)
+            performGlobalAction(GLOBAL_ACTION_HOME)
 
-                // 3. If Nuclear Mode is active, IMMEDIATELY lock the screen via Device Admin.
-                // This shuts the screen off instantaneously, eliminating any touch window for the user.
-                if (isNuclear) {
-                    runCatching {
-                        val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager
-                        if (ZenithDeviceAdminReceiver.isAdminActive(this@ZenithAccessibilityService)) {
-                            dpm?.lockNow()
-                        }
+            // 2. Instant physical haptic shock
+            triggerHapticAlert()
+
+            // 3. If Nuclear Mode is active, IMMEDIATELY lock the screen via Device Admin.
+            // This shuts the screen off instantaneously, eliminating any touch window for the user.
+            if (isNuclear) {
+                runCatching {
+                    val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager
+                    if (ZenithDeviceAdminReceiver.isAdminActive(this@ZenithAccessibilityService)) {
+                        dpm?.lockNow()
                     }
                 }
-
-                // 4. Force home intent and show alert toast on main thread
-                withContext(Dispatchers.Main) {
-                    runCatching {
-                        val homeIntent = Intent(Intent.ACTION_MAIN).apply {
-                            addCategory(Intent.CATEGORY_HOME)
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                        }
-                        startActivity(homeIntent)
-                    }
-                    val toastMessage = if (isNuclear) {
-                        "🔒 NUCLEAR FOCUS IS ON: Reel Narcotics cannot be frozen, modified, or turned off until your session expires!"
-                    } else {
-                        "🔒 FOCUS LOCK ACTIVE: Reel Narcotics cannot be frozen, modified, or removed during your focus session."
-                    }
-                    Toast.makeText(applicationContext, toastMessage, Toast.LENGTH_LONG).show()
-                }
-
-                statsRepo.recordBlockEvent(
-                    BlockEvent(
-                        timestamp = now,
-                        packageName = targetPkg,
-                        category = ContentCategory.SYSTEM_TAMPER,
-                        confidence = 1.0f,
-                        ruleId = "tamper_protection"
-                    )
-                )
-                return
             }
+
+            // 4. Force home intent and show alert toast on main thread
+            withContext(Dispatchers.Main) {
+                runCatching {
+                    val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+                        addCategory(Intent.CATEGORY_HOME)
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    }
+                    startActivity(homeIntent)
+                }
+                val toastMessage = if (isFreezerAttempt) {
+                    "🔒 Reel Narcotics cannot be added to Freezer or put to sleep."
+                } else if (isNuclear) {
+                    "🔒 NUCLEAR FOCUS IS ON: Reel Narcotics cannot be frozen, modified, or turned off until your session expires!"
+                } else {
+                    "🔒 FOCUS LOCK ACTIVE: Reel Narcotics cannot be frozen, modified, or removed during your focus session."
+                }
+                Toast.makeText(applicationContext, toastMessage, Toast.LENGTH_LONG).show()
+            }
+
+            statsRepo.recordBlockEvent(
+                BlockEvent(
+                    timestamp = now,
+                    packageName = targetPkg,
+                    category = ContentCategory.SYSTEM_TAMPER,
+                    confidence = 1.0f,
+                    ruleId = if (isFreezerAttempt) "tamper_freezer_intercepted" else "tamper_protection"
+                )
+            )
+            return
+        }
+
+        // Launchers and essential utilities (calculators/clocks) don't have reels, shorts, or adult websites.
+        // Once tamper/freezer check has passed, safely skip further processing.
+        if (targetPkg.contains("launcher") || isEssentialUtility(targetPkg)) {
+            return
         }
 
         // --- APP LOCK & BLOCKER SHIELD ENFORCEMENT ---

@@ -344,4 +344,92 @@ class TamperDetectionTest {
         val result = TamperDetectionEngine.evaluate(context)
         assertTrue("Android Settings battery restriction targeting Reel Narcotics must be intercepted!", result.isTamperAttempt)
     }
+
+    @Test
+    fun testInfinixLauncherDesktopWorkspaceAllowed() {
+        // When user is on home screen and both Reel Narcotics icon and Freezer folder icon exist,
+        // it must NOT trigger a false positive ejection!
+        val context = ScreenContext(
+            packageName = "com.transsion.xoslauncher",
+            className = "com.transsion.launcher.Launcher",
+            viewIds = setOf("workspace", "icon"),
+            visibleTexts = listOf("Freezer", "Reel Narcotics", "Camera", "WhatsApp", "Phone Master"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("freezer", "reel", "narcotics", "camera", "whatsapp", "phone", "master"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertFalse("Normal launcher desktop workspace with Reel Narcotics and Freezer folder must be allowed!", result.isTamperAttempt)
+    }
+
+    @Test
+    fun testInfinixLauncherLongPressFreezeIntercepted() {
+        // When user long-presses Reel Narcotics on Infinix launcher and popup menu has 'Freeze',
+        // it must be intercepted!
+        val context = ScreenContext(
+            packageName = "com.transsion.xoslauncher",
+            className = "com.transsion.launcher.popup.ShortcutView",
+            viewIds = setOf("popup_menu", "action_freeze"),
+            visibleTexts = listOf("Reel Narcotics", "Freeze", "App info", "Share"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("reel", "narcotics", "freeze", "app", "info", "share"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertTrue("Launcher context menu with Freeze targeting Reel Narcotics must be intercepted!", result.isTamperAttempt)
+    }
+
+    @Test
+    fun testInfinixLauncherFreezerFolderAddScreenIntercepted() {
+        // When user opens Freezer screen hosted inside XOSLauncher targeting Reel Narcotics
+        val context = ScreenContext(
+            packageName = "com.transsion.xoslauncher",
+            className = "com.transsion.xoslauncher.freezer.FreezerActivity",
+            viewIds = setOf("freezer_app_list"),
+            visibleTexts = listOf("Add to Freezer", "Reel Narcotics", "OK"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("add", "to", "freezer", "reel", "narcotics", "ok"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertTrue("Launcher FreezerActivity targeting Reel Narcotics must be intercepted!", result.isTamperAttempt)
+    }
+
+    @Test
+    fun testIsFreezeActionText() {
+        assertTrue(TamperDetectionEngine.isFreezeActionText("Freeze"))
+        assertTrue(TamperDetectionEngine.isFreezeActionText("To Freezer"))
+        assertTrue(TamperDetectionEngine.isFreezeActionText("Send to Freezer"))
+        assertTrue(TamperDetectionEngine.isFreezeActionText("Add to Freezer"))
+        assertTrue(TamperDetectionEngine.isFreezeActionText("फ्रीज"))
+        assertFalse(TamperDetectionEngine.isFreezeActionText("Camera"))
+        assertFalse(TamperDetectionEngine.isFreezeActionText("Open"))
+    }
+
+    @Test
+    fun testMentionsTargetApp() {
+        assertTrue(TamperDetectionEngine.mentionsTargetApp("Reel Narcotics"))
+        assertTrue(TamperDetectionEngine.mentionsTargetApp("Zenith Focus"))
+        assertTrue(TamperDetectionEngine.mentionsTargetApp("reelnarcotics"))
+        assertTrue(TamperDetectionEngine.mentionsTargetApp("com.zenith.focus"))
+        assertFalse(TamperDetectionEngine.mentionsTargetApp("WhatsApp"))
+        assertFalse(TamperDetectionEngine.mentionsTargetApp("Instagram"))
+    }
+
+    @Test
+    fun testIsFreezerPackage() {
+        assertTrue(TamperDetectionEngine.isFreezerPackage("com.transsion.phonemaster"))
+        assertTrue(TamperDetectionEngine.isFreezerPackage("com.transsion.xoslauncher"))
+        assertTrue(TamperDetectionEngine.isFreezerPackage("com.infinix.freezer"))
+        assertTrue(TamperDetectionEngine.isFreezerPackage("com.catchingnow.icebox"))
+        assertTrue(TamperDetectionEngine.isFreezerPackage("com.oplus.battery"))
+        assertFalse(TamperDetectionEngine.isFreezerPackage("com.google.android.calculator"))
+        assertFalse(TamperDetectionEngine.isFreezerPackage("com.whatsapp"))
+    }
 }

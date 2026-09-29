@@ -1,6 +1,8 @@
 package com.zenith.focus.accessibility.detector
 
+import android.view.accessibility.AccessibilityEvent
 import com.zenith.focus.accessibility.analyzer.ScreenContext
+import java.util.Locale
 
 data class TamperDetectionResult(
     val isTamperAttempt: Boolean,
@@ -28,25 +30,36 @@ object TamperDetectionEngine {
         "com.transsion.freezer",
         "com.infinix.freezer",
         "com.tecno.freezer",
+        "com.transsion.magicholder",
+        "com.transsion.appfreeze",
+        "com.transsion.desktop",
         // Samsung
         "com.samsung.android.lool",
         "com.samsung.android.sm",
         "com.samsung.android.sm_cn",
+        "com.sec.android.app.launcher",
         // Xiaomi / POCO / Redmi
         "com.miui.powerkeeper",
         "com.miui.securitycenter",
+        "com.miui.cleanmaster",
+        "com.miui.home",
         // Oppo / OnePlus / Realme
         "com.oplus.battery",
         "com.coloros.safecenter",
         "com.oplus.safecenter",
         "com.coloros.oppoguardelf",
         "com.oplus.appfreezer",
+        "com.coloros.battery",
+        "com.oplus.deepthinker",
         // Vivo / iQOO
         "com.iqoo.secure",
         "com.vivo.permissionmanager",
         "com.vivo.abe",
+        "com.vivo.hybrid",
+        "com.bbk.launcher2",
         // Huawei / Honor
         "com.huawei.systemmanager",
+        "com.hihonor.systemmanager",
         // Third-party app freezers & isolation utilities
         "com.catchingnow.icebox",
         "com.aistra.hail",
@@ -54,7 +67,9 @@ object TamperDetectionEngine {
         "com.sunnychung.applicationfreezer",
         "catch_.me_.if_.you_.can_",
         "com.iamnotnd.freeze",
-        "moe.shizuku.privileged.api"
+        "moe.shizuku.privileged.api",
+        "com.rosan.dhizuku",
+        "com.draco.island"
     )
 
     private val FREEZE_SUSPEND_KEYWORDS = setOf(
@@ -80,15 +95,96 @@ object TamperDetectionEngine {
         "private space",
         "second space",
         "ice box",
-        "freeze apps"
+        "freeze apps",
+        "to freezer",
+        "send to freezer",
+        "add to freezer",
+        "फ्रीजर",
+        "फ्रीज"
     )
 
     private val TARGET_APP_IDENTIFIERS = setOf(
         "zenith",
         "reel narcotics",
         "narcotics",
+        "reelnarcotics",
         "com.zenith.focus"
     )
+
+    fun isFreezerPackage(pkg: String): Boolean {
+        val lower = pkg.lowercase(Locale.US)
+        return lower in OEM_FREEZER_AND_POWER_PACKAGES ||
+                lower.contains("freezer") ||
+                lower.contains("icebox") ||
+                lower.contains("appfreezer") ||
+                lower.contains("powerkeeper") ||
+                lower.contains("hail") ||
+                lower.contains("phonemaster")
+    }
+
+    fun hasFreezerKeyword(text: String): Boolean {
+        val lower = text.lowercase(Locale.US)
+        return FREEZE_SUSPEND_KEYWORDS.any { lower.contains(it) }
+    }
+
+    fun hasFreezerKeyword(texts: List<String>): Boolean {
+        return texts.any { hasFreezerKeyword(it) }
+    }
+
+    fun isFreezeActionText(text: String): Boolean {
+        val lower = text.lowercase(Locale.US).trim()
+        return lower == "freeze" || lower == "freezer" || lower == "to freezer" ||
+                lower == "send to freezer" || lower == "add to freezer" || lower == "freeze apps" ||
+                lower == "deep sleep" || lower == "put to sleep" || lower == "quick freeze" ||
+                lower == "hibernate" || lower == "restrict" || lower.contains("फ्रीज")
+    }
+
+    fun isUninstallActionText(text: String): Boolean {
+        val lower = text.lowercase(Locale.US).trim()
+        return lower == "uninstall" || lower == "delete" || lower == "remove" ||
+                lower == "disable" || lower == "force stop" || lower == "clear data"
+    }
+
+    fun mentionsTargetApp(text: String): Boolean {
+        val lower = text.lowercase(Locale.US)
+        return TARGET_APP_IDENTIFIERS.any { id -> lower.contains(id) }
+    }
+
+    fun isDirectFreezerTamper(
+        lowerPkg: String,
+        event: AccessibilityEvent,
+        eventText: String,
+        lastTargetAppLongPressTime: Long,
+        now: Long
+    ): Boolean {
+        if (event.eventType != AccessibilityEvent.TYPE_VIEW_CLICKED &&
+            event.eventType != AccessibilityEvent.TYPE_VIEW_LONG_CLICKED
+        ) {
+            return false
+        }
+
+        val isTargetMentioned = mentionsTargetApp(eventText)
+        val isFreezerPkg = isFreezerPackage(lowerPkg)
+
+        // 1. User clicked directly on Reel Narcotics inside a Freezer / PhoneMaster / IceBox picker/list
+        if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED &&
+            isFreezerPkg && isTargetMentioned
+        ) {
+            return true
+        }
+
+        // 2. User clicked "Freeze", "To Freezer", "Send to Freezer", or "Add to Freezer"
+        if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED &&
+            isFreezeActionText(eventText)
+        ) {
+            // Either the click text itself mentions Reel Narcotics, OR Reel Narcotics was recently long-pressed
+            if (isTargetMentioned || (now - lastTargetAppLongPressTime < 10000L)) {
+                return true
+            }
+        }
+
+        return false
+    }
 
     private fun isPotentialTamperPackage(pkg: String): Boolean {
         return pkg in BASE_TAMPER_PACKAGES ||
@@ -112,18 +208,19 @@ object TamperDetectionEngine {
     }
 
     fun evaluate(context: ScreenContext): TamperDetectionResult {
-        val pkg = context.packageName.lowercase()
+        val pkg = context.packageName.lowercase(Locale.US)
         if (!isPotentialTamperPackage(pkg)) {
             return TamperDetectionResult(isTamperAttempt = false)
         }
 
-        val allTexts = context.visibleTexts.map { it.lowercase() }
+        val allTexts = context.visibleTexts.map { it.lowercase(Locale.US) }
         val allTokens = context.allNormalizedTokens
 
         val mentionsTargetApp = TARGET_APP_IDENTIFIERS.any { id ->
             allTexts.any { it.contains(id) } ||
             allTokens.contains(id) ||
-            context.viewIds.any { it.contains(id, ignoreCase = true) }
+            context.viewIds.any { it.contains(id, ignoreCase = true) } ||
+            context.contentDescriptions.any { it.contains(id, ignoreCase = true) }
         }
 
         // Case 1: Package installer attempting to delete/uninstall Reel Narcotics / Zenith
@@ -281,22 +378,11 @@ object TamperDetectionEngine {
         }
 
         // Case 4: OEM & Third-Party App Freezer, Deep Sleep, or Background Restrict Interception
-        val isFreezerOrPowerPackage = pkg in OEM_FREEZER_AND_POWER_PACKAGES ||
-                pkg.contains("freezer") ||
-                pkg.contains("powerkeeper") ||
-                pkg.contains("icebox") ||
-                pkg.contains("appfreezer") ||
-                pkg.contains("phonemaster") ||
-                pkg.contains("launcher")
+        val isFreezerOrPowerPackage = isFreezerPackage(pkg) || pkg.contains("launcher")
 
-        val hasFreezerKeyword = allTexts.any { text ->
-            FREEZE_SUSPEND_KEYWORDS.any { keyword -> text.contains(keyword) }
-        } || allTokens.any { token ->
-            token in setOf("freezer", "freeze", "frozen", "deepsleep", "hibernate")
-        } || context.contentDescriptions.any { desc ->
-            val lower = desc.lowercase()
-            FREEZE_SUSPEND_KEYWORDS.any { keyword -> lower.contains(keyword) }
-        }
+        val hasFreezerKeyword = hasFreezerKeyword(allTexts) ||
+                allTokens.any { it in setOf("freezer", "freeze", "frozen", "deepsleep", "hibernate") } ||
+                context.contentDescriptions.any { desc -> hasFreezerKeyword(desc.lowercase(Locale.US)) }
 
         if (mentionsTargetApp && (isFreezerOrPowerPackage || hasFreezerKeyword)) {
             val isFreezerScreen = hasFreezerKeyword ||
@@ -306,14 +392,37 @@ object TamperDetectionEngine {
                     context.className.contains("Restrict", ignoreCase = true) ||
                     context.className.contains("Hibernate", ignoreCase = true) ||
                     pkg.contains("freezer") ||
-                    pkg.contains("icebox")
+                    pkg.contains("icebox") ||
+                    pkg.contains("phonemaster")
 
             if (isFreezerScreen) {
-                return TamperDetectionResult(
-                    isTamperAttempt = true,
-                    reason = "OEM/System App Freezer or Deep Sleep tamper attempt intercepted ($pkg)",
-                    targetPackage = pkg
-                )
+                // If in launcher, distinguish between regular desktop workspace and actual freezer screen/dialog/popup
+                if (pkg.contains("launcher")) {
+                    val isLauncherDesktop = context.className.contains("launcher", ignoreCase = true) ||
+                            context.className.contains("workspace", ignoreCase = true)
+                    val isActionOrMenu = allTexts.any {
+                        val t = it.trim().lowercase(Locale.US)
+                        t == "freeze" || t == "to freezer" || t == "send to freezer" ||
+                        t == "add to freezer" || t == "freeze apps" || t.contains("फ्रीज")
+                    } || context.className.contains("freezer", ignoreCase = true) ||
+                         context.className.contains("shortcut", ignoreCase = true) ||
+                         context.className.contains("menu", ignoreCase = true) ||
+                         context.className.contains("popup", ignoreCase = true)
+
+                    if (!isLauncherDesktop || isActionOrMenu) {
+                        return TamperDetectionResult(
+                            isTamperAttempt = true,
+                            reason = "Launcher Freezer tamper attempt intercepted ($pkg)",
+                            targetPackage = pkg
+                        )
+                    }
+                } else {
+                    return TamperDetectionResult(
+                        isTamperAttempt = true,
+                        reason = "OEM/System App Freezer or Deep Sleep tamper attempt intercepted ($pkg)",
+                        targetPackage = pkg
+                    )
+                }
             }
         }
 
@@ -345,4 +454,3 @@ object TamperDetectionEngine {
         return TamperDetectionResult(isTamperAttempt = false)
     }
 }
-

@@ -41,7 +41,8 @@ object HierarchyTraverser {
             val (node, depth) = queue.poll() ?: break
             visitedCount++
 
-            val isSelected = runCatching { node.isSelected }.getOrDefault(false)
+            val isChecked = runCatching { node.isChecked }.getOrDefault(false)
+            val isSelected = runCatching { node.isSelected }.getOrDefault(false) || isChecked
 
             // Extract View ID
             val viewId = node.viewIdResourceName
