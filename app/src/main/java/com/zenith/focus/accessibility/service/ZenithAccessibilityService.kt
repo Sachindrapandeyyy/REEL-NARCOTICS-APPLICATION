@@ -240,8 +240,6 @@ class ZenithAccessibilityService : AccessibilityService() {
         // FAST-PATH APP LOCK SHIELD:
         // If this package is locked in App Lock, instantly eject it to Home Screen without waiting for heavy hierarchy inspection!
         if (app != null) {
-            val nuclearRepo = app.container.nuclearModeRepository
-            val isNuclear = nuclearRepo.session.value.isCurrentlyActive(nowTime, elapsed)
             val appLockConfig = app.container.appLockRepository.appLockConfig.value
 
             if (appLockConfig.isPackageLocked(lowerPkg, isNuclear)) {
@@ -302,16 +300,16 @@ class ZenithAccessibilityService : AccessibilityService() {
                     if (eventHasAdultText) {
                         ejectToHomeScreen()
                         triggerHapticAlert()
-                        val nowTime = System.currentTimeMillis()
-                        if (nowTime - lastEjectTime >= 500L) {
-                            lastEjectTime = nowTime
+                        val currentMs = System.currentTimeMillis()
+                        if (currentMs - lastEjectTime >= 500L) {
+                            lastEjectTime = currentMs
                             serviceScope.launch(Dispatchers.Main) {
                                 Toast.makeText(applicationContext, "🛡️ Explicit content blocked. Exiting to Home.", Toast.LENGTH_SHORT).show()
                             }
                             serviceScope.launch {
                                 appInstance.container.statisticsRepository.recordBlockEvent(
                                     BlockEvent(
-                                        timestamp = nowTime,
+                                        timestamp = currentMs,
                                         packageName = lowerPkg,
                                         category = ContentCategory.ADULT_WEBSITE,
                                         confidence = 1.0f,
@@ -330,7 +328,7 @@ class ZenithAccessibilityService : AccessibilityService() {
         // Launchers and essential utilities (calculators/clocks) only need heavy hierarchy inspection
         // if a target app was recently long-pressed or the event indicates a freezer/tamper UI.
         // NOTE: During active Nuclear Mode or Focus Lock, we NEVER skip inspection!
-        val isLauncherPkg = lowerPkg.contains("launcher")
+        val isLauncherPkg = TamperDetectionEngine.isLauncherPackage(lowerPkg)
         val isEssential = isEssentialUtility(lowerPkg)
         if ((isLauncherPkg || isEssential) && !isNuclear && !isLockActive) {
             val recentLongPress = (now - lastTargetAppLongPressTime) < 10000L
@@ -453,7 +451,7 @@ class ZenithAccessibilityService : AccessibilityService() {
 
         // Launchers and essential utilities (calculators/clocks) don't have reels, shorts, or adult websites.
         // Once tamper/freezer check has passed, safely skip further processing.
-        if (targetPkg.contains("launcher") || isEssentialUtility(targetPkg)) {
+        if (TamperDetectionEngine.isLauncherPackage(targetPkg) || isEssentialUtility(targetPkg)) {
             return
         }
 

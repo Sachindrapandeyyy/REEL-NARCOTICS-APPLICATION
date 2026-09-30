@@ -21,46 +21,17 @@ object TamperDetectionEngine {
         "android"
     )
 
-    private val OEM_FREEZER_AND_POWER_PACKAGES = setOf(
-        // Transsion (Infinix, Tecno, itel)
-        "com.transsion.phonemaster",
-        "com.transsion.xoslauncher",
-        "com.transsion.hilauncher",
+    val DEDICATED_FREEZER_PACKAGES = setOf(
+        // Transsion (Infinix, Tecno, itel) standalone freezer components
         "com.transsion.neofreezer",
         "com.transsion.freezer",
         "com.infinix.freezer",
         "com.tecno.freezer",
         "com.transsion.magicholder",
         "com.transsion.appfreeze",
-        "com.transsion.desktop",
-        // Samsung
-        "com.samsung.android.lool",
-        "com.samsung.android.sm",
-        "com.samsung.android.sm_cn",
-        "com.sec.android.app.launcher",
-        // Xiaomi / POCO / Redmi
-        "com.miui.powerkeeper",
-        "com.miui.securitycenter",
-        "com.miui.cleanmaster",
-        "com.miui.home",
-        // Oppo / OnePlus / Realme
-        "com.oplus.battery",
-        "com.coloros.safecenter",
-        "com.oplus.safecenter",
-        "com.coloros.oppoguardelf",
+        // Oppo / OnePlus / Realme dedicated app freezer
         "com.oplus.appfreezer",
-        "com.coloros.battery",
-        "com.oplus.deepthinker",
-        // Vivo / iQOO
-        "com.iqoo.secure",
-        "com.vivo.permissionmanager",
-        "com.vivo.abe",
-        "com.vivo.hybrid",
-        "com.bbk.launcher2",
-        // Huawei / Honor
-        "com.huawei.systemmanager",
-        "com.hihonor.systemmanager",
-        // Third-party app freezers & isolation utilities
+        // Third-party dedicated app freezers & isolation utilities
         "com.catchingnow.icebox",
         "com.aistra.hail",
         "com.real.clearprocesses",
@@ -71,6 +42,52 @@ object TamperDetectionEngine {
         "com.rosan.dhizuku",
         "com.draco.island"
     )
+
+    val OEM_DEVICE_CARE_AND_POWER_PACKAGES = setOf(
+        // Transsion PhoneMaster (contains Cleaner, Antivirus, Toolbox, and Freezer tab)
+        "com.transsion.phonemaster",
+        // Samsung Device Care
+        "com.samsung.android.lool",
+        "com.samsung.android.sm",
+        "com.samsung.android.sm_cn",
+        // Xiaomi / POCO / Redmi Security Center & Powerkeeper
+        "com.miui.powerkeeper",
+        "com.miui.securitycenter",
+        "com.miui.cleanmaster",
+        // Oppo / OnePlus / Realme SafeCenter & Battery
+        "com.oplus.battery",
+        "com.coloros.safecenter",
+        "com.oplus.safecenter",
+        "com.coloros.oppoguardelf",
+        "com.coloros.battery",
+        "com.oplus.deepthinker",
+        // Vivo / iQOO Security & Permission Manager
+        "com.iqoo.secure",
+        "com.vivo.permissionmanager",
+        "com.vivo.abe",
+        "com.vivo.hybrid",
+        // Huawei / Honor System Manager
+        "com.huawei.systemmanager",
+        "com.hihonor.systemmanager"
+    )
+
+    fun isLauncherPackage(pkg: String): Boolean {
+        if (pkg.isBlank()) return false
+        val lower = pkg.lowercase(Locale.US)
+        return lower.contains("launcher") ||
+                lower == "com.miui.home" ||
+                lower == "com.mi.android.globallauncher" ||
+                lower == "com.coloros.home" ||
+                lower == "com.oppo.launcher" ||
+                lower == "com.oneplus.launcher" ||
+                lower == "net.oneplus.launcher" ||
+                lower == "com.vivo.home" ||
+                lower == "com.vivo.upslide" ||
+                lower == "com.transsion.desktop" ||
+                lower == "org.lineageos.trebuchet" ||
+                lower.contains("quickstep") ||
+                lower.contains("trebuchet")
+    }
 
     private val FREEZE_SUSPEND_KEYWORDS = setOf(
         "freezer",
@@ -111,14 +128,21 @@ object TamperDetectionEngine {
         "com.zenith.focus"
     )
 
-    fun isFreezerPackage(pkg: String): Boolean {
+    fun isDedicatedFreezerPackage(pkg: String): Boolean {
         val lower = pkg.lowercase(Locale.US)
-        return lower in OEM_FREEZER_AND_POWER_PACKAGES ||
-                lower.contains("freezer") ||
+        return lower in DEDICATED_FREEZER_PACKAGES ||
+                lower.contains("neofreezer") ||
                 lower.contains("icebox") ||
                 lower.contains("appfreezer") ||
-                lower.contains("powerkeeper") ||
                 lower.contains("hail") ||
+                (lower.contains("freezer") && !isLauncherPackage(lower) && !lower.contains("phonemaster"))
+    }
+
+    fun isFreezerPackage(pkg: String): Boolean {
+        val lower = pkg.lowercase(Locale.US)
+        return isDedicatedFreezerPackage(lower) ||
+                lower in OEM_DEVICE_CARE_AND_POWER_PACKAGES ||
+                lower.contains("powerkeeper") ||
                 lower.contains("phonemaster")
     }
 
@@ -170,7 +194,7 @@ object TamperDetectionEngine {
         // 1. User clicked directly on Reel Narcotics inside a Freezer / PhoneMaster / IceBox picker/list
         // (Never trigger on launcher desktop where clicking Reel Narcotics launches the app)
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED &&
-            isFreezerPkg && !lowerPkg.contains("launcher") && isTargetMentioned
+            isFreezerPkg && !isLauncherPackage(lowerPkg) && isTargetMentioned
         ) {
             return true
         }
@@ -198,7 +222,7 @@ object TamperDetectionEngine {
                     trimmed == "neofreezer" || trimmed == "icebox" || trimmed == "hail" ||
                     trimmed == "to freezer" || trimmed == "send to freezer" ||
                     trimmed == "add to freezer" || trimmed == "freeze apps"
-            if (isFreezerClick && (lowerPkg.contains("launcher") || isFreezerPackage(lowerPkg))) {
+            if (isFreezerClick && (isLauncherPackage(lowerPkg) || isFreezerPackage(lowerPkg))) {
                 return true
             }
         }
@@ -222,8 +246,9 @@ object TamperDetectionEngine {
                 return true
             }
 
-            // Dedicated standalone freezer packages
-            if (isFreezerPackage(lowerPkg) && !lowerPkg.contains("launcher") && !lowerPkg.contains("phonemaster")) {
+            // Dedicated standalone freezer packages (IceBox, Hail, NeoFreezer, etc.)
+            // NOTE: Never block multi-purpose OEM device care/power managers or launchers on window change!
+            if (isDedicatedFreezerPackage(lowerPkg)) {
                 return true
             }
         }
@@ -258,7 +283,7 @@ object TamperDetectionEngine {
         }
 
         // Dedicated freezer activities (excluding launcher desktop activities)
-        if (!pkg.contains("launcher") && (
+        if (!isLauncherPackage(pkg) && (
             context.hasClassName("freezer") || context.hasClassName("neofreezer") ||
             context.hasClassName("deepsleep") || context.hasClassName("appfreezer")
         )) {
@@ -271,7 +296,7 @@ object TamperDetectionEngine {
         }
 
         // Inside launcher: An opened Freezer folder, Freezer drawer, or Add to Freezer picker
-        if (pkg.contains("launcher")) {
+        if (isLauncherPackage(pkg)) {
             val hasFreezerHeader = allTexts.any { it.trim().equals("freezer", ignoreCase = true) || it.trim().equals("फ्रीजर", ignoreCase = true) }
             val hasExplicitFreezeAction = allTexts.any {
                 val t = it.trim().lowercase(Locale.US)
@@ -351,7 +376,8 @@ object TamperDetectionEngine {
 
     private fun isPotentialTamperPackage(pkg: String): Boolean {
         return pkg in BASE_TAMPER_PACKAGES ||
-                pkg in OEM_FREEZER_AND_POWER_PACKAGES ||
+                isFreezerPackage(pkg) ||
+                isLauncherPackage(pkg) ||
                 pkg.contains("packageinstaller") ||
                 pkg.contains("securitycenter") ||
                 pkg.contains("safecenter") ||
@@ -365,7 +391,6 @@ object TamperDetectionEngine {
                 pkg.contains("appfreezer") ||
                 pkg.contains("settings") ||
                 pkg.contains("accessibility") ||
-                pkg.contains("launcher") ||
                 pkg == "com.android.vending" ||
                 pkg == "android"
     }
@@ -541,7 +566,7 @@ object TamperDetectionEngine {
         }
 
         // Case 4: OEM & Third-Party App Freezer, Deep Sleep, or Background Restrict Interception
-        val isFreezerOrPowerPackage = isFreezerPackage(pkg) || pkg.contains("launcher")
+        val isFreezerOrPowerPackage = isFreezerPackage(pkg) || isLauncherPackage(pkg)
 
         val hasFreezerKeyword = hasFreezerKeyword(allTexts) ||
                 allTokens.any { it in setOf("freezer", "freeze", "frozen", "deepsleep", "hibernate") } ||
@@ -560,7 +585,7 @@ object TamperDetectionEngine {
 
             if (isFreezerScreen) {
                 // If in launcher, distinguish between regular desktop workspace and actual freezer screen/dialog/popup
-                if (pkg.contains("launcher")) {
+                if (isLauncherPackage(pkg)) {
                     val isPopupOrMenu = context.hasClassName("shortcut") ||
                             context.hasClassName("popup") ||
                             context.hasClassName("menu") ||

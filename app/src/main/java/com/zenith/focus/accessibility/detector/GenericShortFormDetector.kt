@@ -69,7 +69,7 @@ class GenericShortFormDetector : ContentDetector {
         }
         
         // Never inspect our own app, launchers, or system UI
-        if (pkg.contains("zenith") || pkg.contains("launcher") || pkg.contains("systemui")) {
+        if (pkg.contains("zenith") || TamperDetectionEngine.isLauncherPackage(pkg) || pkg.contains("systemui")) {
             return false
         }
 

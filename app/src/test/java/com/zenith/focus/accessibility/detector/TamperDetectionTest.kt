@@ -425,10 +425,11 @@ class TamperDetectionTest {
     @Test
     fun testIsFreezerPackage() {
         assertTrue(TamperDetectionEngine.isFreezerPackage("com.transsion.phonemaster"))
-        assertTrue(TamperDetectionEngine.isFreezerPackage("com.transsion.xoslauncher"))
-        assertTrue(TamperDetectionEngine.isFreezerPackage("com.infinix.freezer"))
-        assertTrue(TamperDetectionEngine.isFreezerPackage("com.catchingnow.icebox"))
+        assertTrue(TamperDetectionEngine.isDedicatedFreezerPackage("com.infinix.freezer"))
+        assertTrue(TamperDetectionEngine.isDedicatedFreezerPackage("com.catchingnow.icebox"))
         assertTrue(TamperDetectionEngine.isFreezerPackage("com.oplus.battery"))
+        assertTrue(TamperDetectionEngine.isLauncherPackage("com.transsion.xoslauncher"))
+        assertFalse(TamperDetectionEngine.isFreezerPackage("com.transsion.xoslauncher"))
         assertFalse(TamperDetectionEngine.isFreezerPackage("com.google.android.calculator"))
         assertFalse(TamperDetectionEngine.isFreezerPackage("com.whatsapp"))
     }
@@ -601,4 +602,171 @@ class TamperDetectionTest {
         assertTrue("Add to freezer is a freeze action", TamperDetectionEngine.isFreezeActionText("add to freezer"))
         assertTrue("To freezer is a freeze action", TamperDetectionEngine.isFreezeActionText("to freezer"))
     }
+
+    @Test
+    fun testIsLauncherPackageDetection() {
+        assertTrue("Xiaomi MIUI home is launcher", TamperDetectionEngine.isLauncherPackage("com.miui.home"))
+        assertTrue("POCO global launcher is launcher", TamperDetectionEngine.isLauncherPackage("com.mi.android.globallauncher"))
+        assertTrue("Vivo home is launcher", TamperDetectionEngine.isLauncherPackage("com.vivo.home"))
+        assertTrue("Vivo upslide is launcher", TamperDetectionEngine.isLauncherPackage("com.vivo.upslide"))
+        assertTrue("BBK launcher is launcher", TamperDetectionEngine.isLauncherPackage("com.bbk.launcher2"))
+        assertTrue("ColorOS home is launcher", TamperDetectionEngine.isLauncherPackage("com.coloros.home"))
+        assertTrue("Oppo launcher is launcher", TamperDetectionEngine.isLauncherPackage("com.oppo.launcher"))
+        assertTrue("OnePlus launcher is launcher", TamperDetectionEngine.isLauncherPackage("com.oneplus.launcher"))
+        assertTrue("Transsion desktop is launcher", TamperDetectionEngine.isLauncherPackage("com.transsion.desktop"))
+        assertTrue("XOS launcher is launcher", TamperDetectionEngine.isLauncherPackage("com.transsion.xoslauncher"))
+        assertTrue("Samsung launcher is launcher", TamperDetectionEngine.isLauncherPackage("com.sec.android.app.launcher"))
+        assertTrue("Nexus launcher is launcher", TamperDetectionEngine.isLauncherPackage("com.google.android.apps.nexuslauncher"))
+        assertTrue("Trebuchet is launcher", TamperDetectionEngine.isLauncherPackage("org.lineageos.trebuchet"))
+
+        assertFalse("Settings is not launcher", TamperDetectionEngine.isLauncherPackage("com.android.settings"))
+        assertFalse("IceBox is not launcher", TamperDetectionEngine.isLauncherPackage("com.catchingnow.icebox"))
+        assertFalse("PhoneMaster is not launcher", TamperDetectionEngine.isLauncherPackage("com.transsion.phonemaster"))
+        assertFalse("Device Care is not launcher", TamperDetectionEngine.isLauncherPackage("com.samsung.android.lool"))
+    }
+
+    @Test
+    fun testXiaomiMiuiHomeDesktopAllowed() {
+        val context = ScreenContext(
+            packageName = "com.miui.home",
+            className = "com.miui.home.launcher.Workspace",
+            classNames = setOf("com.miui.home.launcher.Workspace", "com.miui.home.launcher.CellLayout"),
+            viewIds = setOf("workspace", "cell_layout"),
+            visibleTexts = listOf("Reel Narcotics", "Settings", "Gallery", "Camera"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("reel", "narcotics", "settings", "gallery", "camera"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertFalse("Xiaomi desktop workspace with Reel Narcotics icon must NEVER be flagged as tamper", result.isTamperAttempt)
+    }
+
+    @Test
+    fun testVivoHomeDesktopAllowed() {
+        val context = ScreenContext(
+            packageName = "com.vivo.home",
+            className = "com.vivo.home.Workspace",
+            classNames = setOf("com.vivo.home.Workspace", "com.vivo.home.CellLayout"),
+            viewIds = setOf("workspace", "cell_layout"),
+            visibleTexts = listOf("Reel Narcotics", "Phone", "Messages"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("reel", "narcotics", "phone", "messages"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertFalse("Vivo desktop workspace must NEVER be flagged as tamper", result.isTamperAttempt)
+    }
+
+    @Test
+    fun testOppoColorOsHomeDesktopAllowed() {
+        val context = ScreenContext(
+            packageName = "com.coloros.home",
+            className = "com.coloros.home.Workspace",
+            classNames = setOf("com.coloros.home.Workspace"),
+            viewIds = setOf("workspace"),
+            visibleTexts = listOf("Reel Narcotics", "Photos", "Browser"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("reel", "narcotics", "photos", "browser"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertFalse("ColorOS desktop workspace must NEVER be flagged as tamper", result.isTamperAttempt)
+    }
+
+    @Test
+    fun testTranssionDesktopAllowed() {
+        val context = ScreenContext(
+            packageName = "com.transsion.desktop",
+            className = "com.transsion.desktop.Workspace",
+            classNames = setOf("com.transsion.desktop.Workspace"),
+            viewIds = setOf("workspace"),
+            visibleTexts = listOf("Reel Narcotics", "Freezer", "Calendar"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("reel", "narcotics", "freezer", "calendar"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertFalse("Transsion desktop workspace with Freezer icon must NEVER be flagged as tamper", result.isTamperAttempt)
+    }
+
+    @Test
+    fun testSamsungOneUiDesktopAllowed() {
+        val context = ScreenContext(
+            packageName = "com.sec.android.app.launcher",
+            className = "com.sec.android.app.launcher.Workspace",
+            classNames = setOf("com.sec.android.app.launcher.Workspace"),
+            viewIds = setOf("workspace"),
+            visibleTexts = listOf("Reel Narcotics", "Gallery", "Clock"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("reel", "narcotics", "gallery", "clock"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertFalse("Samsung One UI desktop workspace must NEVER be flagged as tamper", result.isTamperAttempt)
+    }
+
+    @Test
+    fun testXiaomiMiuiFreezeShortcutIntercepted() {
+        val context = ScreenContext(
+            packageName = "com.miui.home",
+            className = "com.miui.home.launcher.shortcuts.ShortcutMenu",
+            classNames = setOf("com.miui.home.launcher.shortcuts.ShortcutMenu"),
+            viewIds = setOf("shortcut_popup"),
+            visibleTexts = listOf("Reel Narcotics", "Freeze", "App info"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("reel", "narcotics", "freeze", "app", "info"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertTrue("Shortcut menu with Freeze targeting Reel Narcotics on Xiaomi must be intercepted", result.isTamperAttempt)
+    }
+
+    @Test
+    fun testSamsungDeviceCareNormalUsageAllowed() {
+        val context = ScreenContext(
+            packageName = "com.samsung.android.lool",
+            className = "com.samsung.android.sm.ui.battery.BatteryActivity",
+            classNames = setOf("com.samsung.android.sm.ui.battery.BatteryActivity"),
+            viewIds = setOf("battery_usage_graph"),
+            visibleTexts = listOf("Battery", "85% remaining", "12 hours left", "Power saving"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("battery", "85%", "remaining", "power", "saving"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertFalse("Normal Samsung Device Care battery screen must NOT be flagged as tamper", result.isTamperAttempt)
+    }
+
+    @Test
+    fun testDedicatedIceBoxFreezerIntercepted() {
+        val context = ScreenContext(
+            packageName = "com.catchingnow.icebox",
+            className = "com.catchingnow.icebox.MainActivity",
+            classNames = setOf("com.catchingnow.icebox.MainActivity"),
+            viewIds = setOf("app_list"),
+            visibleTexts = listOf("IceBox", "Reel Narcotics", "Freeze all"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("icebox", "reel", "narcotics", "freeze", "all"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertTrue("Dedicated IceBox freezer targeting Reel Narcotics must be intercepted", result.isTamperAttempt)
+    }
 }
+

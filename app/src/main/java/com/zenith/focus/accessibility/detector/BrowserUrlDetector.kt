@@ -65,7 +65,14 @@ class BrowserUrlDetector(
             "mozac_browser_toolbar_url_view",
             "search_box",
             "location_bar_edit_text",
+            "location_bar",
             "addressbar",
+            "address_bar",
+            "search_engine_bar",
+            "url_text",
+            "url_bar_title",
+            "title_url_bar",
+            "omnibar_text_input",
             "omnibox"
         )
 
