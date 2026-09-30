@@ -567,4 +567,38 @@ class TamperDetectionTest {
         val result = TamperDetectionEngine.evaluate(context)
         assertTrue("Add to Freezer app picker targeting Reel Narcotics must be intercepted", result.isTamperAttempt)
     }
+
+    @Test
+    fun testEvaluateRealInfinixDesktopWithFolderIconAllowed() {
+        val context = ScreenContext(
+            packageName = "com.transsion.xoslauncher",
+            className = "com.transsion.launcher.Workspace",
+            classNames = setOf(
+                "com.transsion.launcher.Workspace",
+                "com.transsion.launcher.CellLayout",
+                "com.transsion.launcher.folder.FolderIcon",
+                "com.transsion.launcher.BubbleTextView",
+                "android.widget.TextView"
+            ),
+            viewIds = setOf("workspace", "folder_icon", "icon"),
+            visibleTexts = listOf("Freezer", "Reel Narcotics", "Camera", "Phone", "WhatsApp", "Chrome"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("freezer", "reel", "narcotics", "camera", "phone", "whatsapp", "chrome"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        assertFalse("isFreezerScreenContext must be false for normal desktop even with FolderIcon", TamperDetectionEngine.isFreezerScreenContext(context))
+        val result = TamperDetectionEngine.evaluate(context)
+        assertFalse("evaluate must be false for normal desktop with FolderIcon and Reel Narcotics", result.isTamperAttempt)
+    }
+
+    @Test
+    fun testIsFreezeActionTextNounsVsVerbs() {
+        assertFalse("Freezer noun is not a freeze action verb", TamperDetectionEngine.isFreezeActionText("freezer"))
+        assertFalse("Hindi Freezer noun is not a freeze action verb", TamperDetectionEngine.isFreezeActionText("फ्रीजर"))
+        assertTrue("Freeze verb is a freeze action", TamperDetectionEngine.isFreezeActionText("freeze"))
+        assertTrue("Add to freezer is a freeze action", TamperDetectionEngine.isFreezeActionText("add to freezer"))
+        assertTrue("To freezer is a freeze action", TamperDetectionEngine.isFreezeActionText("to freezer"))
+    }
 }

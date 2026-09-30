@@ -161,14 +161,6 @@ class ZenithAccessibilityService : AccessibilityService() {
                     performGlobalAction(GLOBAL_ACTION_HOME)
                     performGlobalAction(GLOBAL_ACTION_BACK)
                     triggerHapticAlert()
-                    if (isNuclear) {
-                        runCatching {
-                            val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager
-                            if (ZenithDeviceAdminReceiver.isAdminActive(this@ZenithAccessibilityService)) {
-                                dpm?.lockNow()
-                            }
-                        }
-                    }
                     if (nowTime - lastEjectTime >= 500L) {
                         lastEjectTime = nowTime
                         serviceScope.launch(Dispatchers.Main) {
@@ -192,14 +184,6 @@ class ZenithAccessibilityService : AccessibilityService() {
                 performGlobalAction(GLOBAL_ACTION_HOME)
                 performGlobalAction(GLOBAL_ACTION_BACK)
                 triggerHapticAlert()
-                if (isNuclear) {
-                    runCatching {
-                        val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager
-                        if (ZenithDeviceAdminReceiver.isAdminActive(this@ZenithAccessibilityService)) {
-                            dpm?.lockNow()
-                        }
-                    }
-                }
                 if (nowTime - lastEjectTime >= 500L) {
                     lastEjectTime = nowTime
                     serviceScope.launch(Dispatchers.Main) {
@@ -434,18 +418,7 @@ class ZenithAccessibilityService : AccessibilityService() {
             // 2. Instant physical haptic shock
             triggerHapticAlert()
 
-            // 3. If Nuclear Mode is active, IMMEDIATELY lock the screen via Device Admin.
-            // This shuts the screen off instantaneously, eliminating any touch window for the user.
-            if (isNuclear) {
-                runCatching {
-                    val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager
-                    if (ZenithDeviceAdminReceiver.isAdminActive(this@ZenithAccessibilityService)) {
-                        dpm?.lockNow()
-                    }
-                }
-            }
-
-            // 4. Force home intent and show alert toast on main thread
+            // 3. Force home intent and show alert toast on main thread
             withContext(Dispatchers.Main) {
                 runCatching {
                     val homeIntent = Intent(Intent.ACTION_MAIN).apply {

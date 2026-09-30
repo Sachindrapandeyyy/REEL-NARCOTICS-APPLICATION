@@ -133,10 +133,11 @@ object TamperDetectionEngine {
 
     fun isFreezeActionText(text: String): Boolean {
         val lower = text.lowercase(Locale.US).trim()
-        return lower == "freeze" || lower == "freezer" || lower == "to freezer" ||
+        return lower == "freeze" || lower == "to freezer" ||
                 lower == "send to freezer" || lower == "add to freezer" || lower == "freeze apps" ||
                 lower == "deep sleep" || lower == "put to sleep" || lower == "quick freeze" ||
-                lower == "hibernate" || lower == "restrict" || lower.contains("फ्रीज")
+                lower == "hibernate" || lower == "restrict" ||
+                (lower.contains("फ्रीज") && !lower.contains("फ्रीजर"))
     }
 
     fun isUninstallActionText(text: String): Boolean {
@@ -167,8 +168,9 @@ object TamperDetectionEngine {
         val isFreezerPkg = isFreezerPackage(lowerPkg)
 
         // 1. User clicked directly on Reel Narcotics inside a Freezer / PhoneMaster / IceBox picker/list
+        // (Never trigger on launcher desktop where clicking Reel Narcotics launches the app)
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED &&
-            isFreezerPkg && isTargetMentioned
+            isFreezerPkg && !lowerPkg.contains("launcher") && isTargetMentioned
         ) {
             return true
         }
@@ -191,11 +193,11 @@ object TamperDetectionEngine {
 
         // 1. Tapped "Freezer" icon/folder on launcher or PhoneMaster
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED) {
-            val isFreezerClick = eventText.trim() == "freezer" || eventText.contains("freezer") ||
-                    eventText.contains("neofreezer") || eventText.contains("frozen") ||
-                    eventText.contains("फ्रीजर") || eventText.contains("फ्रीज") ||
-                    eventText.contains("deep sleep") || eventText.contains("quick freeze") ||
-                    eventText.contains("to freezer") || eventText.contains("add to freezer")
+            val trimmed = eventText.trim().lowercase(Locale.US)
+            val isFreezerClick = trimmed == "freezer" || trimmed == "फ्रीजर" ||
+                    trimmed == "neofreezer" || trimmed == "icebox" || trimmed == "hail" ||
+                    trimmed == "to freezer" || trimmed == "send to freezer" ||
+                    trimmed == "add to freezer" || trimmed == "freeze apps"
             if (isFreezerClick && (lowerPkg.contains("launcher") || isFreezerPackage(lowerPkg))) {
                 return true
             }
@@ -207,11 +209,14 @@ object TamperDetectionEngine {
                     className.contains("neofreezer") ||
                     className.contains("deepsleep") ||
                     className.contains("appfreeze")
-            if (isFreezerActivity) {
+            if (isFreezerActivity && !className.contains("workspace") && !className.contains("launcherrootview")) {
                 return true
             }
 
-            val isFreezerFolderWindow = (className.contains("folder") || className.contains("selectapps") || className.contains("addapps")) &&
+            val isFolderOrPicker = (className.contains("folder") && !className.contains("icon")) ||
+                    className.contains("selectapps") || className.contains("addapps") ||
+                    className.contains("freezeapps")
+            val isFreezerFolderWindow = isFolderOrPicker &&
                     (eventText.contains("freezer") || eventText.contains("फ्रीजर") || eventText.contains("freeze"))
             if (isFreezerFolderWindow) {
                 return true
@@ -231,7 +236,7 @@ object TamperDetectionEngine {
         // 4. Clicked inside an open Freezer folder or Freezer activity
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED &&
             (className.contains("freezer") || className.contains("neofreezer") ||
-             (className.contains("folder") && (eventText.contains("freezer") || eventText.contains("फ्रीजर"))) ||
+             ((className.contains("folder") && !className.contains("icon")) && (eventText.contains("freezer") || eventText.contains("फ्रीजर"))) ||
              eventText.contains("add to freezer") || eventText.contains("freeze apps"))
         ) {
             return true
@@ -252,10 +257,11 @@ object TamperDetectionEngine {
             return true
         }
 
-        // Class name explicitly identifies a Freezer screen
-        if (context.hasClassName("freezer") || context.hasClassName("neofreezer") ||
+        // Dedicated freezer activities (excluding launcher desktop activities)
+        if (!pkg.contains("launcher") && (
+            context.hasClassName("freezer") || context.hasClassName("neofreezer") ||
             context.hasClassName("deepsleep") || context.hasClassName("appfreezer")
-        ) {
+        )) {
             return true
         }
 
@@ -264,30 +270,25 @@ object TamperDetectionEngine {
             return true
         }
 
-        // Inside launcher or OEM freezer package: An opened Freezer folder, Freezer drawer, or Add to Freezer picker
-        if (pkg.contains("launcher") || isFreezerPackage(pkg)) {
+        // Inside launcher: An opened Freezer folder, Freezer drawer, or Add to Freezer picker
+        if (pkg.contains("launcher")) {
             val hasFreezerHeader = allTexts.any { it.trim().equals("freezer", ignoreCase = true) || it.trim().equals("फ्रीजर", ignoreCase = true) }
             val hasExplicitFreezeAction = allTexts.any {
                 val t = it.trim().lowercase(Locale.US)
                 t == "to freezer" || t == "send to freezer" || t == "add to freezer" || t == "freeze apps" || t == "frozen apps"
             }
-            val isFolder = context.hasClassName("folder") || className.contains("folder") ||
-                    context.hasAnyViewId("folder", "folder_content", "folder_name")
-            val hasAddButton = allTexts.any { it.trim() == "+" || it.trim().equals("add", ignoreCase = true) || it.trim().equals("add apps", ignoreCase = true) }
+            // Open folder container (not desktop icon FolderIcon / folder_icon)
+            val isFolder = (context.hasClassName("folder") && !context.hasClassName("foldericon")) ||
+                    (className.contains("folder") && !className.contains("icon")) ||
+                    context.classNames.any {
+                        val l = it.lowercase(Locale.US)
+                        l.contains("folder") && !l.contains("icon")
+                    } ||
+                    context.hasAnyViewId("folder_content", "folder_paged_view", "folder_grid")
 
-            // An open Freezer folder has folder in class/viewIds + "Freezer" header/title
-            if (isFolder && hasFreezerHeader) {
-                return true
-            }
-
-            // Or explicit freeze action buttons inside launcher
-            if (hasExplicitFreezeAction) {
-                return true
-            }
-
-            // If it's a folder, dialog, or app picker with "Freezer" title and Add button (not the entire desktop workspace)
-            if (hasFreezerHeader && hasAddButton && !context.hasClassName("workspace") && !className.contains("workspace")) {
-                return true
+            val hasAddButton = allTexts.any {
+                val t = it.trim().lowercase(Locale.US)
+                t == "+" || t == "add" || t == "add apps" || t == "जोड़ें"
             }
 
             // Add to Freezer app picker inside launcher
@@ -296,11 +297,39 @@ object TamperDetectionEngine {
                 t == "add to freezer" || t == "freeze apps" ||
                 (hasFreezerHeader && (t == "select apps" || t == "choose apps" || t == "add apps"))
             } || context.hasClassName("selectapps") || context.hasClassName("addapps") ||
+                 className.contains("selectapps") || className.contains("addapps") ||
                  context.hasAnyViewId("select_apps", "freezer_app_list")
 
             if (isAppPicker) {
                 return true
             }
+
+            // Exclude normal desktop workspace from being classified as a freezer folder
+            val isDesktopWorkspace = className.contains("workspace") || className.contains("celllayout") ||
+                    context.hasClassName("workspace")
+
+            // Desktop workspace without both open folder and add button is NEVER a freezer screen
+            if (isDesktopWorkspace && (!isFolder || !hasAddButton)) {
+                return false
+            }
+
+            // An open Freezer folder has folder in class/viewIds + "Freezer" header/title + Add button
+            if (isFolder && hasFreezerHeader && hasAddButton) {
+                return true
+            }
+
+            // Or explicit freeze action buttons inside launcher (not regular desktop)
+            if (hasExplicitFreezeAction && !isDesktopWorkspace) {
+                return true
+            }
+
+            // Standalone Freezer activity inside launcher
+            if ((className.contains("freezeractivity") || className.contains("neofreezeractivity")) &&
+                !className.contains("workspace")) {
+                return true
+            }
+
+            return false
         }
 
         // Samsung Deep Sleeping apps screen
@@ -531,7 +560,7 @@ object TamperDetectionEngine {
 
             if (isFreezerScreen) {
                 // If in launcher, distinguish between regular desktop workspace and actual freezer screen/dialog/popup
-                if (pkg.contains("launcher") || isFreezerPackage(pkg)) {
+                if (pkg.contains("launcher")) {
                     val isPopupOrMenu = context.hasClassName("shortcut") ||
                             context.hasClassName("popup") ||
                             context.hasClassName("menu") ||
@@ -541,7 +570,7 @@ object TamperDetectionEngine {
                     val hasExplicitFreezeOption = allTexts.any {
                         val t = it.trim().lowercase(Locale.US)
                         t == "freeze" || t == "to freezer" || t == "send to freezer" ||
-                        t == "add to freezer" || t == "freeze apps" || t.contains("फ्रीज")
+                        t == "add to freezer" || t == "freeze apps" || (t.contains("फ्रीज") && !t.contains("फ्रीजर"))
                     }
 
                     // If popup/shortcut menu on Reel Narcotics contains "Freeze"
@@ -570,9 +599,9 @@ object TamperDetectionEngine {
                     }
 
                     // If class name explicitly identifies a Freezer activity or screen inside launcher
-                    val isFreezerActivity = context.hasClassName("freezer") ||
-                            context.hasClassName("neofreezer") ||
-                            context.hasAnyViewId("freezer")
+                    val isFreezerActivity = (context.className.contains("freezeractivity", ignoreCase = true) ||
+                            context.className.contains("neofreezeractivity", ignoreCase = true)) &&
+                            !context.className.contains("workspace", ignoreCase = true)
 
                     if (isFreezerActivity) {
                         return TamperDetectionResult(
