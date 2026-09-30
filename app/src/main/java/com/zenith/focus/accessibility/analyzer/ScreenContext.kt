@@ -3,6 +3,7 @@ package com.zenith.focus.accessibility.analyzer
 data class ScreenContext(
     val packageName: String,
     val className: String = "",
+    val classNames: Set<String> = emptySet(),
     val viewIds: Set<String> = emptySet(),
     val visibleTexts: List<String> = emptyList(),
     val contentDescriptions: List<String> = emptyList(),
@@ -12,6 +13,11 @@ data class ScreenContext(
     val nodeTextMap: Map<String, String> = emptyMap(),
     val timestamp: Long = System.currentTimeMillis()
 ) {
+    fun hasClassName(partial: String, ignoreCase: Boolean = true): Boolean {
+        return className.contains(partial, ignoreCase = ignoreCase) ||
+                classNames.any { it.contains(partial, ignoreCase = ignoreCase) }
+    }
+
     fun hasViewId(partialOrFull: String): Boolean {
         return viewIds.any { it.contains(partialOrFull, ignoreCase = true) }
     }

@@ -130,6 +130,11 @@ class ZenithAccessibilityService : AccessibilityService() {
             val sb = StringBuilder()
             event.text.forEach { t -> if (!t.isNullOrBlank()) sb.append(t).append(" ") }
             event.contentDescription?.let { d -> if (d.isNotBlank()) sb.append(d).append(" ") }
+            val src = runCatching { event.source }.getOrNull()
+            if (src != null) {
+                src.text?.let { if (!it.isNullOrBlank()) sb.append(it).append(" ") }
+                src.contentDescription?.let { if (it.isNotBlank()) sb.append(it).append(" ") }
+            }
             sb.toString().lowercase(java.util.Locale.US)
         }
 
@@ -141,7 +146,16 @@ class ZenithAccessibilityService : AccessibilityService() {
 
         // 1. LAYER 1: Prevent Long-Press / Dragging / Context Menus on Reel Narcotics
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_LONG_CLICKED) {
-            if (TamperDetectionEngine.mentionsTargetApp(eventText)) {
+            val mentionsTarget = TamperDetectionEngine.mentionsTargetApp(eventText) || run {
+                val src = runCatching { event.source }.getOrNull()
+                if (src != null) {
+                    val sText = src.text?.toString() ?: ""
+                    val sDesc = src.contentDescription?.toString() ?: ""
+                    TamperDetectionEngine.mentionsTargetApp(sText) || TamperDetectionEngine.mentionsTargetApp(sDesc)
+                } else false
+            }
+
+            if (mentionsTarget) {
                 lastTargetAppLongPressTime = now
                 if (isNuclear || isLockActive) {
                     performGlobalAction(GLOBAL_ACTION_HOME)
@@ -331,15 +345,17 @@ class ZenithAccessibilityService : AccessibilityService() {
         // Launcher & Essential Utility performance guard:
         // Launchers and essential utilities (calculators/clocks) only need heavy hierarchy inspection
         // if a target app was recently long-pressed or the event indicates a freezer/tamper UI.
+        // NOTE: During active Nuclear Mode or Focus Lock, we NEVER skip inspection!
         val isLauncherPkg = lowerPkg.contains("launcher")
         val isEssential = isEssentialUtility(lowerPkg)
-        if (isLauncherPkg || isEssential) {
+        if ((isLauncherPkg || isEssential) && !isNuclear && !isLockActive) {
             val recentLongPress = (now - lastTargetAppLongPressTime) < 10000L
             val className = event.className?.toString()?.lowercase(java.util.Locale.US) ?: ""
             val isFreezerCandidate = TamperDetectionEngine.isFreezerPackage(lowerPkg) ||
                     TamperDetectionEngine.hasFreezerKeyword(eventText) ||
                     className.contains("freezer") || className.contains("shortcut") ||
-                    className.contains("menu") || className.contains("popup")
+                    className.contains("menu") || className.contains("popup") ||
+                    className.contains("folder")
 
             if (!recentLongPress && !isFreezerCandidate) {
                 return

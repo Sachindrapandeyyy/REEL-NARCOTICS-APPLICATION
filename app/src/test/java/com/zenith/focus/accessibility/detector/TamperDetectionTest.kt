@@ -530,4 +530,41 @@ class TamperDetectionTest {
         val result = TamperDetectionEngine.evaluate(context)
         assertTrue("Reel Narcotics visible inside open Freezer folder must be intercepted", result.isTamperAttempt)
     }
+
+    @Test
+    fun testIsFreezerScreenContextOpenFolderWithLauncherRootClass() {
+        // Even when root window className is com.transsion.launcher.Launcher,
+        // child class in classNames has Folder and title is Freezer
+        val context = ScreenContext(
+            packageName = "com.transsion.xoslauncher",
+            className = "com.transsion.launcher.Launcher",
+            classNames = setOf("com.transsion.launcher.Launcher", "com.transsion.launcher.folder.Folder", "android.widget.TextView"),
+            viewIds = setOf("folder_content", "folder_name"),
+            visibleTexts = listOf("Freezer", "+", "PUBG Mobile"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("freezer", "pubg", "mobile"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        assertTrue("Open Freezer folder with root Launcher class must be detected via classNames/viewIds", TamperDetectionEngine.isFreezerScreenContext(context))
+    }
+
+    @Test
+    fun testEvaluateAddToFreezerAppPickerIntercepted() {
+        val context = ScreenContext(
+            packageName = "com.transsion.xoslauncher",
+            className = "com.transsion.launcher.folder.SelectAppsActivity",
+            classNames = setOf("com.transsion.launcher.folder.SelectAppsActivity", "android.widget.CheckBox"),
+            viewIds = setOf("select_apps", "checkbox"),
+            visibleTexts = listOf("Add to Freezer", "Reel Narcotics", "Camera", "OK"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("add", "to", "freezer", "reel", "narcotics", "camera", "ok"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertTrue("Add to Freezer app picker targeting Reel Narcotics must be intercepted", result.isTamperAttempt)
+    }
 }

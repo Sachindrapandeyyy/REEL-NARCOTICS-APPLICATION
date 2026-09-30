@@ -25,6 +25,11 @@ object HierarchyTraverser {
         val packageName = root.packageName?.toString() ?: ""
         val className = root.className?.toString() ?: ""
 
+        val classNames = mutableSetOf<String>()
+        if (className.isNotBlank()) {
+            classNames.add(className)
+        }
+
         val viewIds = mutableSetOf<String>()
         val visibleTexts = mutableListOf<String>()
         val contentDescriptions = mutableListOf<String>()
@@ -40,6 +45,11 @@ object HierarchyTraverser {
         while (queue.isNotEmpty() && visitedCount < MAX_NODES) {
             val (node, depth) = queue.poll() ?: break
             visitedCount++
+
+            val nodeClass = node.className?.toString()
+            if (!nodeClass.isNullOrBlank()) {
+                classNames.add(nodeClass)
+            }
 
             val isChecked = runCatching { node.isChecked }.getOrDefault(false)
             val isSelected = runCatching { node.isSelected }.getOrDefault(false) || isChecked
@@ -115,6 +125,7 @@ object HierarchyTraverser {
         return ScreenContext(
             packageName = packageName,
             className = className,
+            classNames = classNames,
             viewIds = viewIds,
             visibleTexts = visibleTexts,
             contentDescriptions = contentDescriptions,
