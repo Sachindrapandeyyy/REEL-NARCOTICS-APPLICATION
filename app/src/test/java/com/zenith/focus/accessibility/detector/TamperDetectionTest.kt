@@ -432,4 +432,102 @@ class TamperDetectionTest {
         assertFalse(TamperDetectionEngine.isFreezerPackage("com.google.android.calculator"))
         assertFalse(TamperDetectionEngine.isFreezerPackage("com.whatsapp"))
     }
+
+    @Test
+    fun testIsFreezerScreenContextOpenedFolder() {
+        val context = ScreenContext(
+            packageName = "com.transsion.xoslauncher",
+            className = "com.transsion.launcher.folder.Folder",
+            viewIds = setOf("folder_content"),
+            visibleTexts = listOf("Freezer", "+", "PUBG Mobile", "Candy Crush"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("freezer", "pubg", "mobile", "candy", "crush"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        assertTrue(TamperDetectionEngine.isFreezerScreenContext(context))
+    }
+
+    @Test
+    fun testIsFreezerScreenContextDesktopWorkspaceNotFreezer() {
+        val context = ScreenContext(
+            packageName = "com.transsion.xoslauncher",
+            className = "com.transsion.launcher.Launcher",
+            viewIds = setOf("workspace"),
+            visibleTexts = listOf("Freezer", "Camera", "Gallery", "Settings", "Phone", "Chrome", "YouTube", "Instagram", "WhatsApp", "Clock", "Maps", "Files", "Reel Narcotics", "Calendar", "Notes", "Calculator", "Contacts", "Weather"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("freezer", "camera", "gallery", "settings", "phone", "chrome", "youtube", "instagram", "whatsapp"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        assertFalse(TamperDetectionEngine.isFreezerScreenContext(context))
+    }
+
+    @Test
+    fun testIsFreezerScreenContextDedicatedApp() {
+        val context = ScreenContext(
+            packageName = "com.infinix.freezer",
+            className = "com.infinix.freezer.MainActivity",
+            viewIds = setOf("root"),
+            visibleTexts = listOf("Freezer", "Frozen apps"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("freezer", "frozen", "apps"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        assertTrue(TamperDetectionEngine.isFreezerScreenContext(context))
+    }
+
+    @Test
+    fun testIsFreezerScreenContextSmallDesktop() {
+        val context = ScreenContext(
+            packageName = "com.transsion.xoslauncher",
+            className = "com.transsion.launcher.Launcher",
+            viewIds = setOf("workspace"),
+            visibleTexts = listOf("Freezer", "Reel Narcotics", "Camera", "Phone"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("freezer", "reel", "narcotics", "camera", "phone"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        assertFalse(TamperDetectionEngine.isFreezerScreenContext(context))
+    }
+
+    @Test
+    fun testEvaluateDesktopFewIconsAllowed() {
+        val context = ScreenContext(
+            packageName = "com.transsion.xoslauncher",
+            className = "com.transsion.launcher.Launcher",
+            viewIds = setOf("workspace"),
+            visibleTexts = listOf("Freezer", "Reel Narcotics", "Camera", "Phone"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("freezer", "reel", "narcotics", "camera", "phone"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertFalse("Desktop with only 4 icons including Freezer and Reel Narcotics must be allowed", result.isTamperAttempt)
+    }
+
+    @Test
+    fun testEvaluateReelNarcoticsInsideFreezerFolderIntercepted() {
+        val context = ScreenContext(
+            packageName = "com.transsion.xoslauncher",
+            className = "com.transsion.launcher.folder.Folder",
+            viewIds = setOf("folder_content"),
+            visibleTexts = listOf("Freezer", "Reel Narcotics", "+"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("freezer", "reel", "narcotics"),
+            selectedTexts = emptySet(),
+            selectedDescriptions = emptySet()
+        )
+
+        val result = TamperDetectionEngine.evaluate(context)
+        assertTrue("Reel Narcotics visible inside open Freezer folder must be intercepted", result.isTamperAttempt)
+    }
 }

@@ -133,14 +133,86 @@ class ZenithAccessibilityService : AccessibilityService() {
             sb.toString().lowercase(java.util.Locale.US)
         }
 
-        // Track target app long-press on launcher / desktop
+        val app = runCatching { ZenithApplication.instance }.getOrNull()
+        val nowTime = System.currentTimeMillis()
+        val elapsed = android.os.SystemClock.elapsedRealtime()
+        val isNuclear = app?.container?.nuclearModeRepository?.session?.value?.isCurrentlyActive(nowTime, elapsed) == true
+        val isLockActive = app?.container?.lockRepository?.lockState?.value?.isCurrentlyActive(nowTime) == true
+
+        // 1. LAYER 1: Prevent Long-Press / Dragging / Context Menus on Reel Narcotics
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_LONG_CLICKED) {
             if (TamperDetectionEngine.mentionsTargetApp(eventText)) {
                 lastTargetAppLongPressTime = now
+                if (isNuclear || isLockActive) {
+                    performGlobalAction(GLOBAL_ACTION_HOME)
+                    performGlobalAction(GLOBAL_ACTION_BACK)
+                    triggerHapticAlert()
+                    if (isNuclear) {
+                        runCatching {
+                            val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager
+                            if (ZenithDeviceAdminReceiver.isAdminActive(this@ZenithAccessibilityService)) {
+                                dpm?.lockNow()
+                            }
+                        }
+                    }
+                    if (nowTime - lastEjectTime >= 500L) {
+                        lastEjectTime = nowTime
+                        serviceScope.launch(Dispatchers.Main) {
+                            val msg = if (isNuclear) {
+                                "🔒 NUCLEAR LOCK ACTIVE: Reel Narcotics cannot be dragged, frozen, or modified!"
+                            } else {
+                                "🔒 FOCUS LOCK ACTIVE: Reel Narcotics cannot be modified or frozen."
+                            }
+                            Toast.makeText(applicationContext, msg, Toast.LENGTH_LONG).show()
+                        }
+                    }
+                    return
+                }
             }
         }
 
-        // FAST-PATH ANTI-FREEZER & TAMPER SHIELD:
+        // 2. LAYER 2: In Nuclear Mode or Focus Lock, completely block opening ANY Freezer UI or Folder
+        if (isNuclear || isLockActive) {
+            val isFreezerAttempt = TamperDetectionEngine.isFreezerActionOrFolder(lowerPkg, event, eventText)
+            if (isFreezerAttempt) {
+                performGlobalAction(GLOBAL_ACTION_HOME)
+                performGlobalAction(GLOBAL_ACTION_BACK)
+                triggerHapticAlert()
+                if (isNuclear) {
+                    runCatching {
+                        val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager
+                        if (ZenithDeviceAdminReceiver.isAdminActive(this@ZenithAccessibilityService)) {
+                            dpm?.lockNow()
+                        }
+                    }
+                }
+                if (nowTime - lastEjectTime >= 500L) {
+                    lastEjectTime = nowTime
+                    serviceScope.launch(Dispatchers.Main) {
+                        val msg = if (isNuclear) {
+                            "🔒 NUCLEAR LOCK ACTIVE: Freezer is completely blocked during Nuclear Focus!"
+                        } else {
+                            "🔒 FOCUS LOCK ACTIVE: Freezer is disabled during active focus sessions."
+                        }
+                        Toast.makeText(applicationContext, msg, Toast.LENGTH_LONG).show()
+                    }
+                    serviceScope.launch {
+                        app?.container?.statisticsRepository?.recordBlockEvent(
+                            BlockEvent(
+                                timestamp = nowTime,
+                                packageName = lowerPkg,
+                                category = ContentCategory.SYSTEM_TAMPER,
+                                confidence = 1.0f,
+                                ruleId = "nuclear_freezer_block"
+                            )
+                        )
+                    }
+                }
+                return
+            }
+        }
+
+        // 3. LAYER 3: FAST-PATH ANTI-FREEZER & TAMPER SHIELD:
         // If user clicks on Reel Narcotics inside a Freezer app, or clicks "Freeze" / "To Freezer" in a menu,
         // instantly eject to Home Screen in sub-5ms!
         if (TamperDetectionEngine.isDirectFreezerTamper(lowerPkg, event, eventText, lastTargetAppLongPressTime, now)) {
@@ -152,8 +224,8 @@ class ZenithAccessibilityService : AccessibilityService() {
                     Toast.makeText(applicationContext, "🔒 Reel Narcotics cannot be added to Freezer or frozen.", Toast.LENGTH_SHORT).show()
                 }
                 serviceScope.launch {
-                    val app = runCatching { ZenithApplication.instance }.getOrNull()
-                    app?.container?.statisticsRepository?.recordBlockEvent(
+                    val appInstance = runCatching { ZenithApplication.instance }.getOrNull()
+                    appInstance?.container?.statisticsRepository?.recordBlockEvent(
                         BlockEvent(
                             timestamp = now,
                             packageName = lowerPkg,
@@ -169,10 +241,7 @@ class ZenithAccessibilityService : AccessibilityService() {
 
         // FAST-PATH APP LOCK SHIELD:
         // If this package is locked in App Lock, instantly eject it to Home Screen without waiting for heavy hierarchy inspection!
-        val app = runCatching { ZenithApplication.instance }.getOrNull()
         if (app != null) {
-            val nowTime = System.currentTimeMillis()
-            val elapsed = android.os.SystemClock.elapsedRealtime()
             val nuclearRepo = app.container.nuclearModeRepository
             val isNuclear = nuclearRepo.session.value.isCurrentlyActive(nowTime, elapsed)
             val appLockConfig = app.container.appLockRepository.appLockConfig.value
@@ -326,17 +395,19 @@ class ZenithAccessibilityService : AccessibilityService() {
         // --- ANTI-UNINSTALL & ANTI-TAMPER SHIELD ---
         // Freezer & Deep Sleep protection is ALWAYS active (freezing cuts off accessibility and suspends all protection).
         // Settings uninstall/force stop is guarded during active nuclear or focus sessions.
+        val isFreezerScreen = TamperDetectionEngine.isFreezerScreenContext(effectiveContext)
+        val isNuclearFreezerBlock = (isNuclear || isLockActive) && isFreezerScreen
         val tamperResult = TamperDetectionEngine.evaluate(effectiveContext)
-        val isFreezerAttempt = tamperResult.isTamperAttempt && (
+        val isFreezerAttempt = isNuclearFreezerBlock || (tamperResult.isTamperAttempt && (
             tamperResult.reason.contains("Freezer", ignoreCase = true) ||
             tamperResult.reason.contains("Freeze", ignoreCase = true) ||
             tamperResult.reason.contains("Sleep", ignoreCase = true) ||
             tamperResult.reason.contains("Restrict", ignoreCase = true)
-        )
-        val shouldBlockTamper = tamperResult.isTamperAttempt && (isFreezerAttempt || isNuclear || isLockActive)
+        ))
+        val shouldBlockTamper = isNuclearFreezerBlock || (tamperResult.isTamperAttempt && (isFreezerAttempt || isNuclear || isLockActive))
 
         if (shouldBlockTamper) {
-            android.util.Log.e("ZENITH_TAMPER", "Tamper triggered! reason=${tamperResult.reason}, pkg=$targetPkg")
+            android.util.Log.e("ZENITH_TAMPER", "Tamper triggered! reason=${tamperResult.reason}, isNuclearFreezer=$isNuclearFreezerBlock, pkg=$targetPkg")
             // DO NOT DEBOUNCE TAMPER ATTEMPTS!
             lastEjectTime = now
 
@@ -367,7 +438,9 @@ class ZenithAccessibilityService : AccessibilityService() {
                     }
                     startActivity(homeIntent)
                 }
-                val toastMessage = if (isFreezerAttempt) {
+                val toastMessage = if (isNuclear && (isNuclearFreezerBlock || isFreezerAttempt)) {
+                    "🔒 NUCLEAR LOCK ACTIVE: Freezer is completely blocked during Nuclear Focus!"
+                } else if (isFreezerAttempt) {
                     "🔒 Reel Narcotics cannot be added to Freezer or put to sleep."
                 } else if (isNuclear) {
                     "🔒 NUCLEAR FOCUS IS ON: Reel Narcotics cannot be frozen, modified, or turned off until your session expires!"
