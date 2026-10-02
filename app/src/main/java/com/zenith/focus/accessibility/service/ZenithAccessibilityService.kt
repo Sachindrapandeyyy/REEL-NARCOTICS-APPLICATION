@@ -39,6 +39,10 @@ class ZenithAccessibilityService : AccessibilityService() {
     private var lastTargetAppLongPressTime = 0L
 
     companion object {
+        @Volatile
+        var isServiceRunning: Boolean = false
+            private set
+
         private const val FAST_DEBOUNCE_MS = 60L
         private const val EJECT_COOLDOWN_MS = 750L
 
@@ -108,6 +112,7 @@ class ZenithAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
+        isServiceRunning = true
         detectionEngine = DetectionEngine(applicationContext)
         overlayWindowManager = OverlayWindowManager(this) {
             ejectToHomeScreen()
@@ -117,6 +122,9 @@ class ZenithAccessibilityService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
+        if (!::detectionEngine.isInitialized) {
+            detectionEngine = DetectionEngine(applicationContext)
+        }
 
         val pkg = event.packageName?.toString() ?: return
         val lowerPkg = pkg.lowercase(java.util.Locale.US)
@@ -344,8 +352,8 @@ class ZenithAccessibilityService : AccessibilityService() {
             }
         }
 
-        // Debounce only extremely rapid duplicate events within 60ms
-        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
+        // Debounce rapid non-window-state events within 60ms
+        if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             if (pkg == lastPackageName && now - lastEventTime < FAST_DEBOUNCE_MS) {
                 return
             }
@@ -354,18 +362,27 @@ class ZenithAccessibilityService : AccessibilityService() {
         lastEventTime = now
         lastPackageName = pkg
 
-        val rootNode = runCatching { rootInActiveWindow }.getOrNull() ?: event.source
+        val activeWindowRoot = runCatching { rootInActiveWindow }.getOrNull()
+        val eventSource = runCatching { event.source }.getOrNull()
+        val rootNode = activeWindowRoot ?: eventSource
         val screenContext = try {
             HierarchyTraverser.inspect(rootNode)
+        } catch (t: Throwable) {
+            android.util.Log.w("ZenithAccessibility", "Hierarchy inspection error: ${t.message}")
+            com.zenith.focus.accessibility.analyzer.ScreenContext(packageName = pkg)
         } finally {
-            if (Build.VERSION.SDK_INT < 34 && rootNode != null) {
+            if (Build.VERSION.SDK_INT < 34 && rootNode != null && rootNode !== eventSource) {
                 @Suppress("DEPRECATION")
                 runCatching { rootNode.recycle() }
             }
         }
 
         serviceScope.launch {
-            processScreenContext(pkg, screenContext)
+            try {
+                processScreenContext(pkg, screenContext)
+            } catch (t: Throwable) {
+                android.util.Log.e("ZenithAccessibility", "processScreenContext failed: ${t.message}", t)
+            }
         }
     }
 
@@ -666,13 +683,18 @@ class ZenithAccessibilityService : AccessibilityService() {
     }
 
     override fun onInterrupt() {
-        overlayWindowManager.dismissOverlay()
+        if (::overlayWindowManager.isInitialized) {
+            overlayWindowManager.dismissOverlay()
+        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        isServiceRunning = false
         ServiceStateBroadcaster.updateConnected(false)
-        overlayWindowManager.dismissOverlay()
+        if (::overlayWindowManager.isInitialized) {
+            overlayWindowManager.dismissOverlay()
+        }
         serviceScope.cancel()
     }
 }

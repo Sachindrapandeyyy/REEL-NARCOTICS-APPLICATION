@@ -589,7 +589,8 @@ class MainActivity : ComponentActivity() {
         val app = application as? ZenithApplication ?: return
         val orch = app.container.permissionOrchestrator
         val state = orch.refresh(this)
-        ServiceStateBroadcaster.updateConnected(state.isAccessibilityGranted)
+        val isActuallyConnected = state.isAccessibilityGranted && com.zenith.focus.accessibility.service.ZenithAccessibilityService.isServiceRunning
+        ServiceStateBroadcaster.updateConnected(isActuallyConnected)
     }
 }
 

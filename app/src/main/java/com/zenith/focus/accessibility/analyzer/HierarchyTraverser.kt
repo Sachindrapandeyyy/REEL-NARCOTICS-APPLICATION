@@ -5,8 +5,8 @@ import android.view.accessibility.AccessibilityNodeInfo
 import java.util.ArrayDeque
 
 object HierarchyTraverser {
-    private const val MAX_DEPTH = 50
-    private const val MAX_NODES = 400
+    private const val MAX_DEPTH = 30
+    private const val MAX_NODES = 200
 
     fun inspect(root: AccessibilityNodeInfo?): ScreenContext {
         if (root == null) {
