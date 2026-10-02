@@ -581,6 +581,8 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         checkAccessibilityStatus()
+        val app = application as? ZenithApplication ?: return
+        app.container.updateManager.checkForUpdates()
     }
 
     private fun checkAccessibilityStatus() {
