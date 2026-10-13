@@ -121,47 +121,52 @@ class ZenithAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (event == null) return
-        if (!::detectionEngine.isInitialized) {
-            detectionEngine = DetectionEngine(applicationContext)
-        }
-
-        val pkg = event.packageName?.toString() ?: return
-        val lowerPkg = pkg.lowercase(java.util.Locale.US)
-        if (lowerPkg.isBlank() || lowerPkg == packageName.lowercase(java.util.Locale.US) || lowerPkg.contains("systemui")) {
-            return
-        }
-
-        val now = System.currentTimeMillis()
-
-        val eventText = run {
-            val sb = StringBuilder()
-            event.text.forEach { t -> if (!t.isNullOrBlank()) sb.append(t).append(" ") }
-            event.contentDescription?.let { d -> if (d.isNotBlank()) sb.append(d).append(" ") }
-            val src = runCatching { event.source }.getOrNull()
-            if (src != null) {
-                src.text?.let { if (!it.isNullOrBlank()) sb.append(it).append(" ") }
-                src.contentDescription?.let { if (it.isNotBlank()) sb.append(it).append(" ") }
+        try {
+            if (event == null) return
+            if (!::detectionEngine.isInitialized) {
+                detectionEngine = DetectionEngine(applicationContext)
             }
-            sb.toString().lowercase(java.util.Locale.US)
-        }
 
-        val app = runCatching { ZenithApplication.instance }.getOrNull()
-        val nowTime = System.currentTimeMillis()
-        val elapsed = android.os.SystemClock.elapsedRealtime()
-        val isNuclear = app?.container?.nuclearModeRepository?.session?.value?.isCurrentlyActive(nowTime, elapsed) == true
-        val isLockActive = app?.container?.lockRepository?.lockState?.value?.isCurrentlyActive(nowTime) == true
+            val pkg = event.packageName?.toString() ?: return
+            val lowerPkg = pkg.lowercase(java.util.Locale.US)
+            if (lowerPkg.isBlank() || lowerPkg == packageName.lowercase(java.util.Locale.US) || lowerPkg.contains("systemui")) {
+                return
+            }
 
-        // 1. LAYER 1: Prevent Long-Press / Dragging / Context Menus on Reel Narcotics
-        if (event.eventType == AccessibilityEvent.TYPE_VIEW_LONG_CLICKED) {
-            val mentionsTarget = TamperDetectionEngine.mentionsTargetApp(eventText) || run {
+            val now = System.currentTimeMillis()
+
+            val eventText = run {
+                val sb = StringBuilder()
+                runCatching {
+                    event.text.forEach { t -> if (!t.isNullOrBlank()) sb.append(t).append(" ") }
+                }
+                runCatching {
+                    event.contentDescription?.let { d -> if (d.isNotBlank()) sb.append(d).append(" ") }
+                }
                 val src = runCatching { event.source }.getOrNull()
                 if (src != null) {
-                    val sText = src.text?.toString() ?: ""
-                    val sDesc = src.contentDescription?.toString() ?: ""
-                    TamperDetectionEngine.mentionsTargetApp(sText) || TamperDetectionEngine.mentionsTargetApp(sDesc)
-                } else false
+                    runCatching { src.text?.let { if (!it.isNullOrBlank()) sb.append(it).append(" ") } }
+                    runCatching { src.contentDescription?.let { if (it.isNotBlank()) sb.append(it).append(" ") } }
+                }
+                sb.toString().lowercase(java.util.Locale.US)
             }
+
+            val app = runCatching { ZenithApplication.instance }.getOrNull()
+            val nowTime = System.currentTimeMillis()
+            val elapsed = android.os.SystemClock.elapsedRealtime()
+            val isNuclear = app?.container?.nuclearModeRepository?.session?.value?.isCurrentlyActive(nowTime, elapsed) == true
+            val isLockActive = app?.container?.lockRepository?.lockState?.value?.isCurrentlyActive(nowTime) == true
+
+            // 1. LAYER 1: Prevent Long-Press / Dragging / Context Menus on Reel Narcotics
+            if (event.eventType == AccessibilityEvent.TYPE_VIEW_LONG_CLICKED) {
+                val mentionsTarget = TamperDetectionEngine.mentionsTargetApp(eventText) || run {
+                    val src = runCatching { event.source }.getOrNull()
+                    if (src != null) {
+                        val sText = runCatching { src.text?.toString() }.getOrNull() ?: ""
+                        val sDesc = runCatching { src.contentDescription?.toString() }.getOrNull() ?: ""
+                        TamperDetectionEngine.mentionsTargetApp(sText) || TamperDetectionEngine.mentionsTargetApp(sDesc)
+                    } else false
+                }
 
             if (mentionsTarget) {
                 lastTargetAppLongPressTime = now
@@ -300,8 +305,12 @@ class ZenithAccessibilityService : AccessibilityService() {
                 if (isAdultProtectionEnabled) {
                     val eventHasAdultText = run {
                         val texts = mutableListOf<String>()
-                        event.text.forEach { t -> if (!t.isNullOrBlank()) texts.add(t.toString()) }
-                        event.contentDescription?.let { d -> if (d.isNotBlank()) texts.add(d.toString()) }
+                        runCatching {
+                            event.text.forEach { t -> if (!t.isNullOrBlank()) texts.add(t.toString()) }
+                        }
+                        runCatching {
+                            event.contentDescription?.let { d -> if (d.isNotBlank()) texts.add(d.toString()) }
+                        }
                         texts.any { t -> com.zenith.focus.accessibility.detector.BrowserUrlDetector.hasExplicitAdultContent(t) }
                     }
 
@@ -384,7 +393,10 @@ class ZenithAccessibilityService : AccessibilityService() {
                 android.util.Log.e("ZenithAccessibility", "processScreenContext failed: ${t.message}", t)
             }
         }
+    } catch (t: Throwable) {
+        android.util.Log.e("ZenithAccessibility", "Unhandled error in onAccessibilityEvent safely caught: ${t.message}", t)
     }
+}
 
     private suspend fun processScreenContext(pkg: String, screenContext: com.zenith.focus.accessibility.analyzer.ScreenContext) {
         val app = runCatching { ZenithApplication.instance }.getOrNull() ?: return
@@ -647,13 +659,13 @@ class ZenithAccessibilityService : AccessibilityService() {
 
     private fun closeActiveShortsOrReel() {
         // Press BACK to exit the short/reel player while keeping the main app open
-        performGlobalAction(GLOBAL_ACTION_BACK)
+        runCatching { performGlobalAction(GLOBAL_ACTION_BACK) }
     }
 
     private fun ejectToHomeScreen() {
         // Press BACK to stop playback and immediately return to phone Home Screen
-        performGlobalAction(GLOBAL_ACTION_BACK)
-        performGlobalAction(GLOBAL_ACTION_HOME)
+        runCatching { performGlobalAction(GLOBAL_ACTION_BACK) }
+        runCatching { performGlobalAction(GLOBAL_ACTION_HOME) }
         runCatching {
             val homeIntent = Intent(Intent.ACTION_MAIN).apply {
                 addCategory(Intent.CATEGORY_HOME)
@@ -664,21 +676,23 @@ class ZenithAccessibilityService : AccessibilityService() {
     }
 
     private fun triggerHapticAlert() {
-        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? android.os.VibratorManager
-            vibratorManager?.defaultVibrator
-        } else {
-            @Suppress("DEPRECATION")
-            getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-        } ?: return
+        runCatching {
+            val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? android.os.VibratorManager
+                vibratorManager?.defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+            } ?: return
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val timings = longArrayOf(0, 180, 80, 250)
-            val amplitudes = intArrayOf(0, 255, 0, 255)
-            vibrator.vibrate(VibrationEffect.createWaveform(timings, amplitudes, -1))
-        } else {
-            @Suppress("DEPRECATION")
-            vibrator.vibrate(400L)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val timings = longArrayOf(0, 180, 80, 250)
+                val amplitudes = intArrayOf(0, 255, 0, 255)
+                vibrator.vibrate(VibrationEffect.createWaveform(timings, amplitudes, -1))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(400L)
+            }
         }
     }
 

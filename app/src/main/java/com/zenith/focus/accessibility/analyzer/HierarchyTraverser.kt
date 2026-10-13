@@ -46,7 +46,7 @@ object HierarchyTraverser {
             val (node, depth) = queue.poll() ?: break
             visitedCount++
 
-            val nodeClass = node.className?.toString()
+            val nodeClass = runCatching { node.className?.toString() }.getOrNull()
             if (!nodeClass.isNullOrBlank()) {
                 classNames.add(nodeClass)
             }
@@ -55,7 +55,7 @@ object HierarchyTraverser {
             val isSelected = runCatching { node.isSelected }.getOrDefault(false) || isChecked
 
             // Extract View ID
-            val viewId = node.viewIdResourceName
+            val viewId = runCatching { node.viewIdResourceName }.getOrNull()
             var entryName = ""
             if (!viewId.isNullOrBlank()) {
                 viewIds.add(viewId)
@@ -66,7 +66,7 @@ object HierarchyTraverser {
             }
 
             // Extract Visible Text
-            val text = node.text?.toString()
+            val text = runCatching { node.text?.toString() }.getOrNull()
             if (!text.isNullOrBlank()) {
                 visibleTexts.add(text)
                 if (isSelected) {
@@ -83,7 +83,7 @@ object HierarchyTraverser {
             }
 
             // Extract Content Description
-            val desc = node.contentDescription?.toString()
+            val desc = runCatching { node.contentDescription?.toString() }.getOrNull()
             if (!desc.isNullOrBlank()) {
                 contentDescriptions.add(desc)
                 if (isSelected) {
@@ -95,7 +95,7 @@ object HierarchyTraverser {
 
             // Queue children if within max depth
             if (depth < MAX_DEPTH) {
-                val childCount = node.childCount
+                val childCount = runCatching { node.childCount }.getOrDefault(0)
                 for (i in 0 until childCount) {
                     val child = runCatching { node.getChild(i) }.getOrNull()
                     if (child != null) {

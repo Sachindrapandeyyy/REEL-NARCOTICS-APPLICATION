@@ -252,6 +252,14 @@ fun HomeScreen(
                 }
             }
 
+            if (!isServiceConnected) {
+                Spacer(modifier = Modifier.height(14.dp))
+                ServiceMalfunctionWarningCard(
+                    onReToggleClick = { OemNavigationManager.openAccessibilitySettings(context) },
+                    onBatteryClick = { OemNavigationManager.openBatteryOptimization(context) }
+                )
+            }
+
             Spacer(modifier = Modifier.height(26.dp))
 
             // ====================================================================
@@ -893,3 +901,92 @@ private fun BentoCardExact(
         }
     }
 }
+
+@Composable
+fun ServiceMalfunctionWarningCard(
+    onReToggleClick: () -> Unit,
+    onBatteryClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF2F2)),
+        modifier = modifier
+            .fillMaxWidth()
+            .border(1.5.dp, Color(0xFFF87171), RoundedCornerShape(20.dp))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(text = "⚠️", fontSize = 18.sp)
+                Text(
+                    text = "SHIELD SERVICE INACTIVE",
+                    color = Color(0xFFB91C1C),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = "Android paused the shield or the background process was killed by battery saver. To fix in 10 seconds:",
+                color = Color(0xFF7F1D1D),
+                fontSize = 12.sp,
+                lineHeight = 16.sp
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = "1. Tap 'Re-toggle Shield' below\n2. Turn switch OFF, then ON\n3. Tap 'Unrestricted Battery' to prevent auto-kill",
+                color = Color(0xFF991B1B),
+                fontSize = 11.5.sp,
+                lineHeight = 16.sp,
+                fontWeight = FontWeight.Medium
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = onReToggleClick,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(38.dp)
+                ) {
+                    Text(
+                        text = "🔄 Re-toggle Shield",
+                        color = Color.White,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                OutlinedButton(
+                    onClick = onBatteryClick,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF991B1B)),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(38.dp)
+                ) {
+                    Text(
+                        text = "⚡ Battery Exemption",
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+    }
+}
+
