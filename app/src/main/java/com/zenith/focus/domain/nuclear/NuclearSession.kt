@@ -69,4 +69,22 @@ data class NuclearSession(
         val elapsed = (durationMillis - remaining).coerceAtLeast(0L)
         return (elapsed.toFloat() / durationMillis.toFloat()).coerceIn(0f, 1f)
     }
+
+    /**
+     * Re-anchors monotonic hardware clock reference and remaining duration across phone reboots
+     * to eliminate system date/time manipulation bypasses.
+     */
+    fun reanchorAfterReboot(
+        newElapsedRealtime: Long,
+        remainingDurationMillis: Long,
+        newStartTimeMillis: Long = System.currentTimeMillis()
+    ): NuclearSession {
+        val duration = remainingDurationMillis.coerceAtLeast(0L)
+        return this.copy(
+            startTimeMillis = newStartTimeMillis,
+            endTimeMillis = newStartTimeMillis + duration,
+            startElapsedRealtime = newElapsedRealtime,
+            durationMillis = duration
+        )
+    }
 }

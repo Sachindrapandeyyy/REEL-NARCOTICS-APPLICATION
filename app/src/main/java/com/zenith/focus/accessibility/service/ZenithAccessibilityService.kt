@@ -29,6 +29,7 @@ class ZenithAccessibilityService : AccessibilityService() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private lateinit var detectionEngine: DetectionEngine
     private lateinit var overlayWindowManager: OverlayWindowManager
+    private lateinit var buttonShield: com.zenith.focus.accessibility.overlay.ShortFormButtonShield
 
     private var lastEventTime = 0L
     private var lastPackageName = ""
@@ -114,6 +115,7 @@ class ZenithAccessibilityService : AccessibilityService() {
         super.onServiceConnected()
         isServiceRunning = true
         detectionEngine = DetectionEngine(applicationContext)
+        buttonShield = com.zenith.focus.accessibility.overlay.ShortFormButtonShield(this)
         overlayWindowManager = OverlayWindowManager(this) {
             ejectToHomeScreen()
         }
@@ -393,6 +395,45 @@ class ZenithAccessibilityService : AccessibilityService() {
                 android.util.Log.e("ZenithAccessibility", "processScreenContext failed: ${t.message}", t)
             }
         }
+
+        // Multi-Window & Floating Window Scanning (Samsung Pop-up view, Xiaomi Floating, Split-Screen)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            val interactiveAppWindows = runCatching {
+                windows.filter { win ->
+                    win.type == android.view.accessibility.AccessibilityWindowInfo.TYPE_APPLICATION &&
+                    win.root != null &&
+                    win.root !== rootNode
+                }.take(2)
+            }.getOrDefault(emptyList())
+
+            for (win in interactiveAppWindows) {
+                val winRoot = win.root ?: continue
+                val winPkg = winRoot.packageName?.toString() ?: ""
+                val winLower = winPkg.lowercase(java.util.Locale.US)
+                if (winLower.isNotBlank() && winLower != packageName.lowercase(java.util.Locale.US) && !winLower.contains("systemui")) {
+                    val winContext = try {
+                        HierarchyTraverser.inspect(winRoot)
+                    } catch (_: Throwable) {
+                        null
+                    } finally {
+                        if (Build.VERSION.SDK_INT < 34) {
+                            @Suppress("DEPRECATION")
+                            runCatching { winRoot.recycle() }
+                        }
+                    }
+
+                    if (winContext != null) {
+                        serviceScope.launch {
+                            try {
+                                processScreenContext(winPkg, winContext)
+                            } catch (t: Throwable) {
+                                android.util.Log.e("ZenithAccessibility", "Multi-window process failed: ${t.message}", t)
+                            }
+                        }
+                    }
+                }
+            }
+        }
     } catch (t: Throwable) {
         android.util.Log.e("ZenithAccessibility", "Unhandled error in onAccessibilityEvent safely caught: ${t.message}", t)
     }
@@ -419,12 +460,18 @@ class ZenithAccessibilityService : AccessibilityService() {
         val isNuclear = nuclearSession.isCurrentlyActive(now, elapsed)
         val isLockActive = lockState.isCurrentlyActive(now)
 
+        if (::buttonShield.isInitialized) {
+            withContext(Dispatchers.Main) {
+                buttonShield.updateShield(targetPkg, effectiveContext.shortFormTabBounds, isNuclear || isLockActive)
+            }
+        }
+
         // --- ANTI-UNINSTALL & ANTI-TAMPER SHIELD ---
         // Freezer & Deep Sleep protection is ALWAYS active (freezing cuts off accessibility and suspends all protection).
         // Settings uninstall/force stop is guarded during active nuclear or focus sessions.
         val isFreezerScreen = TamperDetectionEngine.isFreezerScreenContext(effectiveContext)
         val isNuclearFreezerBlock = (isNuclear || isLockActive) && isFreezerScreen
-        val tamperResult = TamperDetectionEngine.evaluate(effectiveContext)
+        val tamperResult = TamperDetectionEngine.evaluate(effectiveContext, isNuclear)
         val isFreezerAttempt = isNuclearFreezerBlock || (tamperResult.isTamperAttempt && (
             tamperResult.reason.contains("Freezer", ignoreCase = true) ||
             tamperResult.reason.contains("Freeze", ignoreCase = true) ||
@@ -700,6 +747,16 @@ class ZenithAccessibilityService : AccessibilityService() {
         if (::overlayWindowManager.isInitialized) {
             overlayWindowManager.dismissOverlay()
         }
+        if (::buttonShield.isInitialized) {
+            buttonShield.removeShield()
+        }
+    }
+
+    override fun onUnbind(intent: Intent?): Boolean {
+        if (::buttonShield.isInitialized) {
+            buttonShield.removeShield()
+        }
+        return super.onUnbind(intent)
     }
 
     override fun onDestroy() {
@@ -708,6 +765,9 @@ class ZenithAccessibilityService : AccessibilityService() {
         ServiceStateBroadcaster.updateConnected(false)
         if (::overlayWindowManager.isInitialized) {
             overlayWindowManager.dismissOverlay()
+        }
+        if (::buttonShield.isInitialized) {
+            buttonShield.removeShield()
         }
         serviceScope.cancel()
     }

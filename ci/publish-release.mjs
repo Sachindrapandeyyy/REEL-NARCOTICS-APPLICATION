@@ -51,9 +51,13 @@ async function main() {
   console.log(`Version Name: ${versionInfo.versionName}`);
   console.log(`Version Code: ${versionInfo.versionCode}`);
 
-  const defaultApkPath = path.join(projectRoot, 'app', 'build', 'outputs', 'apk', 'release', 'app-release.apk');
-  if (!fs.existsSync(defaultApkPath)) {
-    throw new Error(`Release APK not found at: ${defaultApkPath}. Run './gradlew assembleRelease' first.`);
+  const candidatePaths = [
+    path.join(projectRoot, 'app', 'build', 'outputs', 'apk', 'githubDirect', 'release', 'app-githubDirect-release.apk'),
+    path.join(projectRoot, 'app', 'build', 'outputs', 'apk', 'release', 'app-release.apk')
+  ];
+  const defaultApkPath = candidatePaths.find(p => fs.existsSync(p));
+  if (!defaultApkPath) {
+    throw new Error(`Release APK not found. Looked in: ${candidatePaths.join(', ')}. Run './gradlew assembleGithubDirectRelease' or './gradlew assembleRelease' first.`);
   }
 
   const apkStats = fs.statSync(defaultApkPath);
@@ -82,11 +86,13 @@ async function main() {
   // Read release notes from Git log or environment if available
   const releaseNotes = [
     `Reel Narcotics Release v${versionInfo.versionName} (Build ${versionInfo.versionCode})`,
-    "Nuclear Mode lock extension: add time to active lock without conflicts",
-    "Surgical Shorts & Reels close: exits reel player without closing host app",
-    "High-contrast Organic Earth & Linen typography and onboarding screens",
-    "Production auto-update checking with SHA-256 cryptographic verification",
-    "100% Offline blocking engine with zero telemetry"
+    "Universal Anti-Tamper Shield: blocks OEM freezing, deep sleeping, date & time manipulation during Nuclear locks",
+    "Physical Bottom-Tab Click Shield: intercepts Shorts, Reels, and Spotlight navigation tabs",
+    "Universal Short-Form App Blocker: surgical ejection for TikTok, Moj, Josh, ShareChat, Chingari, Hipi, Roposo, MX TakaTak",
+    "Browser Short-Form URL Shield: blocks /shorts, /reels, and tiktok.com URLs on all browsers",
+    "Reboot & Clock-Jump Hardening: monotonic clock re-anchoring across reboots",
+    "Optional ADB God Mode (Device Owner): prevents uninstallation and settings bypass",
+    "Dual Distribution Flavors: Vercel/GitHub Direct OTA updates and Play Store compliance"
   ];
 
   const updateManifest = {

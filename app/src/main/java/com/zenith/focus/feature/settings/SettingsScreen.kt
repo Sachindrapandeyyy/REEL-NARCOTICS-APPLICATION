@@ -87,10 +87,15 @@ fun SettingsScreen(
     @Suppress("UNUSED_PARAMETER") onSelectFrictionType: (FrictionType) -> Unit = {},
     @Suppress("UNUSED_PARAMETER") onSetPin: suspend (String) -> Unit = {},
     @Suppress("UNUSED_PARAMETER") onClearPin: suspend () -> Unit = {},
-    @Suppress("UNUSED_PARAMETER") onSetTheme: (String) -> Unit = {}
+    @Suppress("UNUSED_PARAMETER") onSetTheme: (String) -> Unit = {},
+    onEnableAccessibility: (() -> Unit)? = null
 ) {
     val earth = EarthTheme.colors
     val context = LocalContext.current
+    val handleOpenAccessibility: () -> Unit = onEnableAccessibility ?: {
+        OemNavigationManager.openAccessibilitySettings(context)
+        Unit
+    }
     val lifecycleOwner = LocalLifecycleOwner.current
     val scrollState = rememberScrollState()
 
@@ -226,9 +231,7 @@ fun SettingsScreen(
                         subtitle = if (isServiceConnected) "Active & protecting dopamine baseline" else "Disabled • Tap to grant permission",
                         badge = if (isServiceConnected) "ACTIVE" else "REQUIRED",
                         badgeColor = if (isServiceConnected) OrbitalMint else OrbitalCoral,
-                        onClick = {
-                            OemNavigationManager.openAccessibilitySettings(context)
-                        }
+                        onClick = handleOpenAccessibility
                     )
 
                     EtherealDivider()
@@ -344,7 +347,7 @@ fun SettingsScreen(
                     ) {
                         Column {
                             Text(
-                                text = "Reel Narcotics v2.5.0",
+                                text = "Reel Narcotics v2.8.0",
                                 color = earth.textPrimary,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold
@@ -356,23 +359,154 @@ fun SettingsScreen(
                             )
                         }
 
-                        Button(
-                            onClick = onShowUpdateDialog,
-                            shape = RoundedCornerShape(14.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = earth.surfaceVariant),
-                            modifier = Modifier.height(38.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Sync,
-                                contentDescription = "Check for updates",
-                                tint = earth.textPrimary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
+                        if (com.zenith.focus.BuildConfig.ENABLE_SELF_UPDATER) {
+                            Button(
+                                onClick = onShowUpdateDialog,
+                                shape = RoundedCornerShape(14.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = earth.surfaceVariant),
+                                modifier = Modifier.height(38.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Sync,
+                                    contentDescription = "Check for updates",
+                                    tint = earth.textPrimary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Update",
+                                    color = earth.textPrimary,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // ====================================================================
+            // GOD MODE (ADB DEVICE OWNER) CARD
+            // ====================================================================
+            GroupHeader(title = "GOD MODE (ADB)", subtitle = "Ultimate tamper-proofing")
+            Spacer(modifier = Modifier.height(10.dp))
+
+            val isDeviceOwner = remember(isNuclearActive) {
+                com.zenith.focus.core.security.DeviceOwnerManager.isDeviceOwner(context)
+            }
+            val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
+
+            Card(
+                shape = RoundedCornerShape(22.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.90f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(
+                        1.dp,
+                        if (isDeviceOwner) earth.forestGreen else earth.border,
+                        RoundedCornerShape(22.dp)
+                    )
+            ) {
+                Column(modifier = Modifier.padding(18.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(if (isDeviceOwner) "⚡" else "🛡️", fontSize = 18.sp)
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Update",
+                                text = "Device Owner Status",
                                 color = earth.textPrimary,
-                                fontSize = 12.sp,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isDeviceOwner) earth.forestGreen.copy(alpha = 0.15f) else earth.surfaceVariant)
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = if (isDeviceOwner) "Active (God Mode Armed)" else "Not Enabled",
+                                color = if (isDeviceOwner) earth.forestGreen else earth.textMuted,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = if (isDeviceOwner) {
+                            "Device Owner privileges active. Uninstallation, application controls, and safe boot are natively blocked during Nuclear Sessions."
+                        } else {
+                            "Connect your phone to a PC and run the ADB command below to grant Device Owner privileges for zero-bypass focus."
+                        },
+                        color = earth.textMuted,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // ADB Command Box with Copy button
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFFF2EEE9))
+                            .clickable {
+                                clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(com.zenith.focus.core.security.DeviceOwnerManager.ADB_PROVISION_COMMAND))
+                                android.widget.Toast.makeText(context, "Copied ADB command to clipboard", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                            .padding(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = com.zenith.focus.core.security.DeviceOwnerManager.ADB_PROVISION_COMMAND,
+                                color = Color(0xFF333333),
+                                fontSize = 10.5.sp,
+                                fontFamily = FontFamily.Monospace,
+                                modifier = Modifier.weight(1f).padding(end = 8.dp)
+                            )
+                            Text(
+                                text = "COPY",
+                                color = OrbitalCoral,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    if (isDeviceOwner) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedButton(
+                            onClick = {
+                                if (isNuclearActive) {
+                                    android.widget.Toast.makeText(context, "Cannot deactivate God Mode during an active lock!", android.widget.Toast.LENGTH_SHORT).show()
+                                } else {
+                                    val success = com.zenith.focus.core.security.DeviceOwnerManager.deactivateDeviceOwner(context)
+                                    if (success) {
+                                        android.widget.Toast.makeText(context, "Device Owner deactivated", android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            },
+                            enabled = !isNuclearActive,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth().height(38.dp)
+                        ) {
+                            Text(
+                                text = if (isNuclearActive) "LOCKED DURING NUCLEAR MODE" else "DEACTIVATE GOD MODE",
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }

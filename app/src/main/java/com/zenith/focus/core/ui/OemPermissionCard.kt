@@ -45,11 +45,16 @@ import com.zenith.focus.core.permission.OemNavigationManager
 fun OemPermissionCard(
     isServiceConnected: Boolean,
     modifier: Modifier = Modifier,
-    onOpenGuideDialog: (() -> Unit)? = null
+    onOpenGuideDialog: (() -> Unit)? = null,
+    onOpenAccessibility: (() -> Unit)? = null
 ) {
     val earth = EarthTheme.colors
     val context = LocalContext.current
     val guidance = OemNavigationManager.getGuidance()
+    val openSettings: () -> Unit = onOpenAccessibility ?: {
+        OemNavigationManager.openAccessibilitySettings(context)
+        Unit
+    }
 
     val isAndroid13Plus = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
     val isBatteryIgnored = OemNavigationManager.isBatteryOptimizationIgnored(context)
@@ -128,7 +133,7 @@ fun OemPermissionCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .border(1.dp, earth.camelOchre.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
-                            .clickable { OemNavigationManager.openAccessibilitySettings(context) }
+                            .clickable { openSettings() }
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -149,7 +154,7 @@ fun OemPermissionCard(
                                 modifier = Modifier.padding(vertical = 4.dp)
                             )
                             Button(
-                                onClick = { OemNavigationManager.openAccessibilitySettings(context) },
+                                onClick = { openSettings() },
                                 colors = ButtonDefaults.buttonColors(containerColor = earth.forestGreen),
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier
@@ -236,7 +241,7 @@ fun OemPermissionCard(
                                 modifier = Modifier.padding(vertical = 4.dp)
                             )
                             Button(
-                                onClick = { OemNavigationManager.openAccessibilitySettings(context) },
+                                onClick = { openSettings() },
                                 colors = ButtonDefaults.buttonColors(containerColor = earth.forestGreen),
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier

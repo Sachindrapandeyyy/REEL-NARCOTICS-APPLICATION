@@ -37,6 +37,7 @@ object HierarchyTraverser {
         val selectedTexts = mutableSetOf<String>()
         val selectedDescriptions = mutableSetOf<String>()
         val nodeTextMap = mutableMapOf<String, String>()
+        var detectedTabBounds: android.graphics.Rect? = null
 
         val queue = ArrayDeque<Pair<AccessibilityNodeInfo, Int>>()
         queue.add(root to 0)
@@ -93,6 +94,23 @@ object HierarchyTraverser {
                 allNormalizedTokens.addAll(TextNormalizer.extractTokens(normalized))
             }
 
+            // Inspect potential bottom navigation tab bounds for Shorts, Reels, or Spotlight
+            if (detectedTabBounds == null) {
+                val t = text?.trim()?.lowercase(java.util.Locale.US) ?: ""
+                val d = desc?.trim()?.lowercase(java.util.Locale.US) ?: ""
+                val v = entryName.lowercase(java.util.Locale.US)
+                val isShortsOrReelsTab = (t == "shorts" || t == "reels" || t == "spotlight" ||
+                        d.startsWith("shorts") || d.startsWith("reels") || d.startsWith("spotlight") ||
+                        v.contains("shorts_tab") || v.contains("reels_tab") || v.contains("spotlight_tab"))
+                if (isShortsOrReelsTab) {
+                    val rect = android.graphics.Rect()
+                    runCatching { node.getBoundsInScreen(rect) }
+                    if (rect.width() > 0 && rect.height() > 0 && rect.top > 0) {
+                        detectedTabBounds = rect
+                    }
+                }
+            }
+
             // Queue children if within max depth
             if (depth < MAX_DEPTH) {
                 val childCount = runCatching { node.childCount }.getOrDefault(0)
@@ -132,7 +150,8 @@ object HierarchyTraverser {
             allNormalizedTokens = allNormalizedTokens,
             selectedTexts = selectedTexts,
             selectedDescriptions = selectedDescriptions,
-            nodeTextMap = nodeTextMap
+            nodeTextMap = nodeTextMap,
+            shortFormTabBounds = detectedTabBounds
         )
     }
 }

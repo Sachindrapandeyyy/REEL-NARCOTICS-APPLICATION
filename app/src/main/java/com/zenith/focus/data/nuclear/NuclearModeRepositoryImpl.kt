@@ -150,6 +150,8 @@ class NuclearModeRepositoryImpl(
         persistSession(activeSession)
         _session.value = activeSession
         scheduleNuclearAlarm(end)
+        com.zenith.focus.feature.nuclear.NuclearForegroundService.start(context)
+        com.zenith.focus.core.security.DeviceOwnerManager.applyNuclearRestrictions(context)
         return true
     }
 
@@ -181,6 +183,8 @@ class NuclearModeRepositoryImpl(
             val expired = current.copy(status = NuclearSessionStatus.EXPIRED)
             persistSession(expired)
             _session.value = expired
+            com.zenith.focus.feature.nuclear.NuclearForegroundService.stop(context)
+            com.zenith.focus.core.security.DeviceOwnerManager.clearNuclearRestrictions(context)
             return false
         }
 
@@ -198,6 +202,8 @@ class NuclearModeRepositoryImpl(
         persistSession(inactive)
         _session.value = inactive
         cancelNuclearAlarm()
+        com.zenith.focus.feature.nuclear.NuclearForegroundService.stop(context)
+        com.zenith.focus.core.security.DeviceOwnerManager.clearNuclearRestrictions(context)
         return true
     }
 
@@ -258,17 +264,23 @@ class NuclearModeRepositoryImpl(
                 val expired = current.copy(status = NuclearSessionStatus.EXPIRED)
                 persistSession(expired)
                 _session.value = expired
+                com.zenith.focus.feature.nuclear.NuclearForegroundService.stop(context)
+                com.zenith.focus.core.security.DeviceOwnerManager.clearNuclearRestrictions(context)
             } else {
                 // Device rebooted: monotonic elapsed counter reset to 0.
                 // Re-anchor monotonic reference to current elapsedRealtime and remaining duration.
                 val remainingWall = current.endTimeMillis - now
                 val newElapsed = SystemClock.elapsedRealtime()
-                val reanchored = current.copy(
-                    startElapsedRealtime = newElapsed,
-                    durationMillis = remainingWall
+                val reanchored = current.reanchorAfterReboot(
+                    newElapsedRealtime = newElapsed,
+                    remainingDurationMillis = remainingWall,
+                    newStartTimeMillis = now
                 )
                 persistSession(reanchored)
                 _session.value = reanchored
+                com.zenith.focus.feature.nuclear.NuclearForegroundService.start(context)
+                com.zenith.focus.core.security.DeviceOwnerManager.applyNuclearRestrictions(context)
+                scheduleNuclearAlarm(reanchored.endTimeMillis)
             }
         }
     }

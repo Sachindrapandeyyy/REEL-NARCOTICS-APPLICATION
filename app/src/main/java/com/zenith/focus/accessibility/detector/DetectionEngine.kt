@@ -13,6 +13,7 @@ class DetectionEngine(context: Context) {
     private val snapchatSpotlightDetector = SnapchatSpotlightDetector()
     private val facebookReelsDetector = FacebookReelsDetector()
     private val tiktokDetector = TikTokDetector()
+    private val universalShortFormAppDetector = UniversalShortFormAppDetector()
     private val browserUrlDetector = BrowserUrlDetector(context)
     private val adultContentDetector = AdultContentDetector()
     private val genericShortFormDetector = GenericShortFormDetector()
@@ -23,6 +24,7 @@ class DetectionEngine(context: Context) {
         snapchatSpotlightDetector,
         facebookReelsDetector,
         tiktokDetector,
+        universalShortFormAppDetector,
         browserUrlDetector,
         adultContentDetector,
         genericShortFormDetector

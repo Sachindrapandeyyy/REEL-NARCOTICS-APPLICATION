@@ -158,6 +158,7 @@ class MainActivity : ComponentActivity() {
                     var showAppLockScreen by remember { mutableStateOf(false) }
                     var showAppPickerDialog by remember { mutableStateOf(false) }
                     var showGuideDialog by remember { mutableStateOf(false) }
+                    var showAccessibilityDisclosure by remember { mutableStateOf(false) }
                     var pickerInitialMode by remember { mutableStateOf(com.zenith.focus.domain.model.AppLockMode.NUCLEAR_ONLY) }
                     val updateState by updateManager.state.collectAsState()
                     var showGlobalUpdateDialog by remember { mutableStateOf(false) }
@@ -211,19 +212,23 @@ class MainActivity : ComponentActivity() {
 
                     // Automatic OTA update check on launch (with 1.5s delay to let UI settle)
                     androidx.compose.runtime.LaunchedEffect(Unit) {
-                        delay(1500L)
-                        updateManager.checkForUpdates()
+                        if (com.zenith.focus.BuildConfig.ENABLE_SELF_UPDATER) {
+                            delay(1500L)
+                            updateManager.checkForUpdates()
+                        }
                     }
 
                     // Automatically trigger global update modal when actionable update state arrives
                     androidx.compose.runtime.LaunchedEffect(updateState) {
-                        if (updateState is UpdateState.Available ||
-                            updateState is UpdateState.Downloading ||
-                            updateState is UpdateState.Verifying ||
-                            updateState is UpdateState.ReadyToInstall ||
-                            updateState is UpdateState.Failed
-                        ) {
-                            showGlobalUpdateDialog = true
+                        if (com.zenith.focus.BuildConfig.ENABLE_SELF_UPDATER) {
+                            if (updateState is UpdateState.Available ||
+                                updateState is UpdateState.Downloading ||
+                                updateState is UpdateState.Verifying ||
+                                updateState is UpdateState.ReadyToInstall ||
+                                updateState is UpdateState.Failed
+                            ) {
+                                showGlobalUpdateDialog = true
+                            }
                         }
                     }
 
@@ -250,6 +255,7 @@ class MainActivity : ComponentActivity() {
                         // Global system BackHandler for proper back-stack navigation
                         androidx.activity.compose.BackHandler(enabled = true) {
                             when {
+                                showAccessibilityDisclosure -> showAccessibilityDisclosure = false
                                 showAppPickerDialog -> showAppPickerDialog = false
                                 showAppLockScreen -> showAppLockScreen = false
                                 showGuideDialog -> showGuideDialog = false
@@ -322,7 +328,7 @@ class MainActivity : ComponentActivity() {
                                         onNavigateProtection = { selectedTab = 1 },
                                         onNavigateStats = { selectedTab = 2 },
                                         onEnableAccessibility = {
-                                            com.zenith.focus.core.permission.OemNavigationManager.openAccessibilitySettings(this@MainActivity)
+                                            showAccessibilityDisclosure = true
                                         },
                                         onEnableDeviceAdmin = {
                                             ZenithDeviceAdminReceiver.openDeviceAdminActivation(context)
@@ -395,6 +401,9 @@ class MainActivity : ComponentActivity() {
                                         },
                                         onSetTheme = { theme ->
                                             coroutineScope.launch { settingsRepo.setAppTheme(theme) }
+                                        },
+                                        onEnableAccessibility = {
+                                            showAccessibilityDisclosure = true
                                         }
                                     )
                                 }
@@ -543,8 +552,19 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
 
-                                // Global In-App OTA Update Dialog
-                                if (showGlobalUpdateDialog && updateState !is UpdateState.Idle &&
+                                // Accessibility Prominent Disclosure Dialog
+                                if (showAccessibilityDisclosure) {
+                                    com.zenith.focus.core.ui.AccessibilityDisclosureDialog(
+                                        onDismiss = { showAccessibilityDisclosure = false },
+                                        onConfirm = {
+                                            showAccessibilityDisclosure = false
+                                            com.zenith.focus.core.permission.OemNavigationManager.openAccessibilitySettings(this@MainActivity)
+                                        }
+                                    )
+                                }
+
+                                // Global In-App OTA Update Dialog (Disabled for Play Store Flavor)
+                                if (com.zenith.focus.BuildConfig.ENABLE_SELF_UPDATER && showGlobalUpdateDialog && updateState !is UpdateState.Idle &&
                                     (userTriggeredUpdateCheck || (updateState !is UpdateState.Checking && updateState !is UpdateState.UpToDate))
                                 ) {
                                     UpdateDialog(

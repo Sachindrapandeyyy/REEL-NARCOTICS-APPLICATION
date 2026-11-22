@@ -27,6 +27,10 @@
     <!-- Required for daily habit pledge & evening focus victory notifications on Android 13+ (API 33+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Required for Nuclear Mode foreground service protection against cgroup v2 cached apps freezer -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+
     <application
         android:name=".ZenithApplication"
         android:allowBackup="false"
@@ -77,9 +81,20 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
+
+        <!-- Foreground Service for Stock Android Cached Apps Freezer Defense during Nuclear Mode -->
+        <service
+            android:name=".feature.nuclear.NuclearForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Active focus lock and anti-tamper protection" />
+        </service>
 
         <!-- Lock Expiration Alarm Receiver -->
         <receiver

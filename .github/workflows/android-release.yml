@@ -57,10 +57,10 @@ jobs:
           fi
 
       - name: Run Unit Tests
-        run: ./gradlew testReleaseUnitTest
+        run: ./gradlew testGithubDirectReleaseUnitTest
 
       - name: Assemble Signed Release APK
-        run: ./gradlew assembleRelease
+        run: ./gradlew assembleGithubDirectRelease
         env:
           ANDROID_KEYSTORE_FILE: zenith-release.keystore
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}

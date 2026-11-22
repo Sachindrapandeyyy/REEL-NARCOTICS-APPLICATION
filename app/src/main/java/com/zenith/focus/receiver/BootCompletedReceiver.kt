@@ -31,8 +31,13 @@ class BootCompletedReceiver : BroadcastReceiver() {
 
                     val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
 
-                    // Schedule Nuclear Mode expiration wake-up if active using standard inexact alarm
+                    // Schedule Nuclear Mode expiration wake-up if active using exact alarm
                     if (nuclearSession.isCurrentlyActive(now)) {
+                        try {
+                            com.zenith.focus.feature.nuclear.NuclearForegroundService.start(context)
+                        } catch (e: Exception) {
+                            android.util.Log.w("BootCompletedReceiver", "Failed starting Nuclear FGS on boot: ${e.message}")
+                        }
                         val nucIntent = Intent(context, LockAlarmReceiver::class.java).apply {
                             putExtra("IS_NUCLEAR", true)
                         }
@@ -42,11 +47,15 @@ class BootCompletedReceiver : BroadcastReceiver() {
                             nucIntent,
                             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                         )
-                        alarmManager?.set(AlarmManager.RTC_WAKEUP, nuclearSession.endTimeMillis, nucPending)
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                            alarmManager?.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, nuclearSession.endTimeMillis, nucPending)
+                        } else {
+                            alarmManager?.setExact(AlarmManager.RTC_WAKEUP, nuclearSession.endTimeMillis, nucPending)
+                        }
                     }
 
                     if (state.isActive && now < state.endTimeMillis) {
-                        // Reschedule Alarm for normal lock expiration using standard inexact alarm
+                        // Reschedule Alarm for normal lock expiration using exact alarm
                         val alarmIntent = Intent(context, LockAlarmReceiver::class.java)
                         val pendingIntent = PendingIntent.getBroadcast(
                             context,
@@ -54,7 +63,11 @@ class BootCompletedReceiver : BroadcastReceiver() {
                             alarmIntent,
                             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                         )
-                        alarmManager?.set(AlarmManager.RTC_WAKEUP, state.endTimeMillis, pendingIntent)
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                            alarmManager?.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, state.endTimeMillis, pendingIntent)
+                        } else {
+                            alarmManager?.setExact(AlarmManager.RTC_WAKEUP, state.endTimeMillis, pendingIntent)
+                        }
                     } else if (state.isActive && now >= state.endTimeMillis) {
                         lockRepo.endLock()
                     }

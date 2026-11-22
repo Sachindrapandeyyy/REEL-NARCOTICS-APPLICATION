@@ -66,13 +66,25 @@ fun OnboardingScreen(
     onCompleteOnboarding: () -> Unit
 ) {
     val earth = EarthTheme.colors
+    val context = androidx.compose.ui.platform.LocalContext.current
     var currentPage by remember { mutableIntStateOf(0) }
     var showRestrictedDialog by remember { mutableStateOf(false) }
+    var showAccessibilityDisclosure by remember { mutableStateOf(false) }
     val totalPages = 3
     val scrollState = rememberScrollState()
 
     if (showRestrictedDialog) {
         RestrictedSettingsGuideDialog(onDismiss = { showRestrictedDialog = false })
+    }
+
+    if (showAccessibilityDisclosure) {
+        com.zenith.focus.core.ui.AccessibilityDisclosureDialog(
+            onDismiss = { showAccessibilityDisclosure = false },
+            onConfirm = {
+                showAccessibilityDisclosure = false
+                com.zenith.focus.core.permission.OemNavigationManager.openAccessibilitySettings(context)
+            }
+        )
     }
 
     // Warm Ivory Linen & Peach Mist Gradient Canvas
@@ -213,7 +225,8 @@ fun OnboardingScreen(
 
                         OemPermissionCard(
                             isServiceConnected = isServiceConnected,
-                            onOpenGuideDialog = { showRestrictedDialog = true }
+                            onOpenGuideDialog = { showRestrictedDialog = true },
+                            onOpenAccessibility = { showAccessibilityDisclosure = true }
                         )
                     }
 

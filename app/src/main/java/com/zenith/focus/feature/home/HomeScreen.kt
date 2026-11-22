@@ -255,7 +255,7 @@ fun HomeScreen(
             if (!isServiceConnected) {
                 Spacer(modifier = Modifier.height(14.dp))
                 ServiceMalfunctionWarningCard(
-                    onReToggleClick = { OemNavigationManager.openAccessibilitySettings(context) },
+                    onReToggleClick = onEnableAccessibility,
                     onBatteryClick = { OemNavigationManager.openBatteryOptimization(context) }
                 )
             }

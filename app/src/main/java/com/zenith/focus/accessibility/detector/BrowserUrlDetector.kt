@@ -89,6 +89,26 @@ class BrowserUrlDetector(
             "creampie", "desiporn", "bhabhisex", "chudai"
         )
 
+        val ALLOWED_BROWSER_URL_PATTERNS = listOf(
+            "youtube.com/watch",
+            "youtube.com/results",
+            "m.youtube.com/watch",
+            "m.youtube.com/results",
+            "instagram.com/direct",
+            "wikipedia.org",
+            "google.com/search"
+        )
+
+        val SHORT_FORM_URL_PATTERNS = listOf(
+            "instagram.com/reels",
+            "instagram.com/reel/",
+            "youtube.com/shorts",
+            "m.youtube.com/shorts",
+            "facebook.com/reel",
+            "m.facebook.com/reel",
+            "tiktok.com"
+        )
+
         private val EXPLICIT_WORD_REGEX = Regex("\\b(porn|porno|pornography|xxx|hentai|blowjob|dildo)\\b", RegexOption.IGNORE_CASE)
 
         fun isBrowserPackage(packageName: String): Boolean {
@@ -140,75 +160,127 @@ class BrowserUrlDetector(
     }
 
     override fun evaluate(context: ScreenContext, config: ProtectionConfig): DetectionResult {
-        if (!config.blockAdultWebsites || !config.browserProtectionEnabled) {
-            return DetectionResult.allowed(ContentCategory.ADULT_WEBSITE, "Browser adult protection disabled")
+        if (!config.browserProtectionEnabled) {
+            return DetectionResult.allowed(ContentCategory.ADULT_WEBSITE, "Browser protection disabled")
         }
 
         val addressBarText = findAddressBarText(context)
-
-        // 1. If address bar contains raw search terms (not a full URL), inspect for adult keywords/roots immediately
-        if (addressBarText.isNotBlank() && !isUrlLike(addressBarText) && hasExplicitAdultContent(addressBarText)) {
-            return DetectionResult(
-                isBlocked = true,
-                confidence = 1.0f,
-                category = ContentCategory.ADULT_WEBSITE,
-                ruleId = "ADULT_ADDRESS_BAR_MATCH",
-                reason = "Explicit adult query detected in address bar: $addressBarText"
-            )
-        }
-
-        // 2. Find URL text from address bar node or visible texts
         val extractedUrl = if (addressBarText.isNotBlank() && isUrlLike(addressBarText)) {
             addressBarText
         } else {
             findUrlText(context)
         }
 
-        if (extractedUrl.isBlank()) {
-            return DetectionResult.allowed(ContentCategory.ADULT_WEBSITE, "No URL detected in browser surface")
-        }
+        val effectiveUrlOrQuery = if (extractedUrl.isNotBlank()) extractedUrl else addressBarText
+        val lowerUrl = effectiveUrlOrQuery.lowercase(Locale.US).trim()
 
-        val domain = extractDomain(extractedUrl)
-        if (domain.isBlank()) {
-            return DetectionResult.allowed(ContentCategory.ADULT_WEBSITE, "Unable to extract domain from: $extractedUrl")
-        }
-
-        // 3. Check blocked domain suffixes (.xxx, .porn, etc.)
-        for (suffix in blockedSuffixes) {
-            if (domain.endsWith(suffix)) {
+        // 1. Adult Content Detection (Evaluated first so adult search queries and explicit domains are intercepted)
+        if (config.blockAdultWebsites) {
+            // Check raw address bar text if not a full URL
+            if (addressBarText.isNotBlank() && !isUrlLike(addressBarText) && hasExplicitAdultContent(addressBarText)) {
                 return DetectionResult(
                     isBlocked = true,
                     confidence = 1.0f,
                     category = ContentCategory.ADULT_WEBSITE,
-                    ruleId = "ADULT_TLD_MATCH",
-                    reason = "Adult top level domain ($suffix) detected: $domain"
+                    ruleId = "ADULT_ADDRESS_BAR_MATCH",
+                    reason = "Explicit adult query detected in address bar: $addressBarText"
+                )
+            }
+
+            if (extractedUrl.isNotBlank()) {
+                val domain = extractDomain(extractedUrl)
+                if (domain.isNotBlank()) {
+                    for (suffix in blockedSuffixes) {
+                        if (domain.endsWith(suffix)) {
+                            return DetectionResult(
+                                isBlocked = true,
+                                confidence = 1.0f,
+                                category = ContentCategory.ADULT_WEBSITE,
+                                ruleId = "ADULT_TLD_MATCH",
+                                reason = "Adult top level domain ($suffix) detected: $domain"
+                            )
+                        }
+                    }
+
+                    if (isDomainBlocked(domain)) {
+                        return DetectionResult(
+                            isBlocked = true,
+                            confidence = 1.0f,
+                            category = ContentCategory.ADULT_WEBSITE,
+                            ruleId = "ADULT_DOMAIN_MATCH",
+                            reason = "Known adult domain blocked: $domain"
+                        )
+                    }
+                }
+            }
+
+            // Check full URL or address bar query for adult keywords/roots (e.g. google.com/search?q=xvideos+free)
+            if (hasExplicitAdultContent(effectiveUrlOrQuery)) {
+                return DetectionResult(
+                    isBlocked = true,
+                    confidence = 1.0f,
+                    category = ContentCategory.ADULT_WEBSITE,
+                    ruleId = "ADULT_URL_CONTENT_MATCH",
+                    reason = "Explicit adult query or path detected in URL: $effectiveUrlOrQuery"
                 )
             }
         }
 
-        // 4. Check exact or subdomain match against offline blocklist
-        if (isDomainBlocked(domain)) {
-            return DetectionResult(
-                isBlocked = true,
-                confidence = 1.0f,
-                category = ContentCategory.ADULT_WEBSITE,
-                ruleId = "ADULT_DOMAIN_MATCH",
-                reason = "Known adult domain blocked: $domain"
-            )
+        // 2. Short-Form Video URL Shield (YouTube Shorts, Reels, TikTok)
+        val isAllowedLongForm = lowerUrl.contains("youtube.com/watch") ||
+                lowerUrl.contains("youtube.com/results") ||
+                lowerUrl.contains("m.youtube.com/watch") ||
+                lowerUrl.contains("m.youtube.com/results") ||
+                lowerUrl.contains("instagram.com/direct")
+
+        if (!isAllowedLongForm) {
+            if (lowerUrl.contains("youtube.com/shorts") || lowerUrl.contains("youtu.be/shorts")) {
+                if (config.blockYouTubeShorts) {
+                    return DetectionResult(
+                        isBlocked = true,
+                        confidence = 1.0f,
+                        category = ContentCategory.YOUTUBE_SHORTS,
+                        ruleId = "BROWSER_YT_SHORTS_MATCH",
+                        reason = "YouTube Shorts web URL blocked: $lowerUrl"
+                    )
+                }
+            }
+            if (lowerUrl.contains("instagram.com/reels") || lowerUrl.contains("instagram.com/reel/")) {
+                if (config.blockInstagramReels) {
+                    return DetectionResult(
+                        isBlocked = true,
+                        confidence = 1.0f,
+                        category = ContentCategory.INSTAGRAM_REELS,
+                        ruleId = "BROWSER_IG_REELS_MATCH",
+                        reason = "Instagram Reels web URL blocked: $lowerUrl"
+                    )
+                }
+            }
+            if (lowerUrl.contains("facebook.com/reel") || lowerUrl.contains("m.facebook.com/reel")) {
+                if (config.blockFacebookReels) {
+                    return DetectionResult(
+                        isBlocked = true,
+                        confidence = 1.0f,
+                        category = ContentCategory.FACEBOOK_REELS,
+                        ruleId = "BROWSER_FB_REELS_MATCH",
+                        reason = "Facebook Reels web URL blocked: $lowerUrl"
+                    )
+                }
+            }
+            if (lowerUrl.contains("tiktok.com")) {
+                if (config.blockTikTok) {
+                    return DetectionResult(
+                        isBlocked = true,
+                        confidence = 1.0f,
+                        category = ContentCategory.TIKTOK,
+                        ruleId = "BROWSER_TIKTOK_MATCH",
+                        reason = "TikTok web URL blocked: $lowerUrl"
+                    )
+                }
+            }
         }
 
-        // 5. Inspect full URL (query parameters, search paths) for adult keywords
-        if (hasExplicitAdultContent(extractedUrl)) {
-            return DetectionResult(
-                isBlocked = true,
-                confidence = 1.0f,
-                category = ContentCategory.ADULT_WEBSITE,
-                ruleId = "ADULT_URL_CONTENT_MATCH",
-                reason = "Explicit adult query or path detected in URL: $extractedUrl"
-            )
-        }
-
-        return DetectionResult.allowed(ContentCategory.ADULT_WEBSITE, "Safe domain: $domain")
+        return DetectionResult.allowed(ContentCategory.OTHER_SHORT_VIDEO, "Safe or educational browser URL: $lowerUrl")
     }
 
     private fun findAddressBarText(context: ScreenContext): String {

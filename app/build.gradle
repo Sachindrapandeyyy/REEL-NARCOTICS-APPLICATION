@@ -5,14 +5,14 @@ plugins {
 
 android {
     namespace 'com.zenith.focus'
-    compileSdk 34
+    compileSdk 35
 
     defaultConfig {
         applicationId "com.zenith.focus"
         minSdk 24
-        targetSdk 33
-        versionCode 37
-        versionName "2.7.3"
+        targetSdk 35
+        versionCode 38
+        versionName "2.8.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -70,13 +70,25 @@ android {
                 println("⚠️ [build.gradle] Production release keystore or credentials not configured; falling back to debug signingConfig for packaging.")
                 signingConfig signingConfigs.debug
             }
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
             debuggable true
         }
     }
+    flavorDimensions += "distribution"
+    productFlavors {
+        githubDirect {
+            dimension "distribution"
+            buildConfigField "boolean", "ENABLE_SELF_UPDATER", "true"
+        }
+        playStore {
+            dimension "distribution"
+            buildConfigField "boolean", "ENABLE_SELF_UPDATER", "false"
+        }
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
@@ -86,6 +98,7 @@ android {
     }
     buildFeatures {
         compose true
+        buildConfig true
     }
     composeOptions {
         kotlinCompilerExtensionVersion '1.5.1'

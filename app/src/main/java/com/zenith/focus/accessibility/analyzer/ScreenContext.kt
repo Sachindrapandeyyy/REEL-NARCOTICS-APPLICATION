@@ -11,6 +11,7 @@ data class ScreenContext(
     val selectedTexts: Set<String> = emptySet(),
     val selectedDescriptions: Set<String> = emptySet(),
     val nodeTextMap: Map<String, String> = emptyMap(),
+    val shortFormTabBounds: android.graphics.Rect? = null,
     val timestamp: Long = System.currentTimeMillis()
 ) {
     fun hasClassName(partial: String, ignoreCase: Boolean = true): Boolean {

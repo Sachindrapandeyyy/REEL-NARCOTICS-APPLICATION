@@ -43,6 +43,45 @@ object TamperDetectionEngine {
         "com.draco.island"
     )
 
+    val THIRD_PARTY_FREEZERS_CLONERS_AND_SANDBOXES = setOf(
+        "com.catchingnow.icebox",
+        "com.aistra.hail",
+        "com.oasisfeng.greenify",
+        "me.piebridge.brevent",
+        "com.tafayor.hibernator",
+        "com.hy.freezer",
+        "exa.free.f",
+        "com.oasisfeng.island",
+        "net.typeblog.shelter",
+        "com.lbe.parallel.intl",
+        "com.excelliance.dualaid",
+        "com.ludashi.dualspace",
+        "com.clone.android.dual.space",
+        "com.vmos.pro",
+        "com.pspace.vandroid",
+        "com.applisto.appcloner"
+    )
+
+    val UNIVERSAL_DANGER_TOKENS = setOf(
+        "freeze",
+        "freezer",
+        "neofreezer",
+        "hibernate",
+        "deep sleep",
+        "sleeping apps",
+        "force stop",
+        "uninstall",
+        "disable",
+        "clear data",
+        "clear storage",
+        "background restriction",
+        "suspend",
+        "deactivate",
+        "revoke",
+        "फ्रीजर",
+        "फ्रीज"
+    )
+
     val OEM_DEVICE_CARE_AND_POWER_PACKAGES = setOf(
         // Transsion PhoneMaster (contains Cleaner, Antivirus, Toolbox, and Freezer tab)
         "com.transsion.phonemaster",
@@ -270,6 +309,39 @@ object TamperDetectionEngine {
         return false
     }
 
+    fun isLauncherTamperContext(context: ScreenContext): Boolean {
+        val pkg = context.packageName.lowercase(Locale.US)
+        if (!isLauncherPackage(pkg)) return false
+
+        val className = context.className.lowercase(Locale.US)
+        val allTexts = context.visibleTexts.map { it.lowercase(Locale.US) }
+
+        // 1. Popup menu / shortcut view (e.g. user long presses Reel Narcotics icon on desktop)
+        val isPopupOrMenu = context.hasClassName("shortcut") ||
+                context.hasClassName("popup") ||
+                context.hasClassName("menu") ||
+                (context.hasClassName("bubble") && !context.hasClassName("bubbletextview")) ||
+                context.hasAnyViewId("popup", "shortcut", "menu")
+
+        // 2. Add to Freezer app picker
+        val isAddPicker = allTexts.any {
+            val t = it.trim()
+            t == "add to freezer" || t == "freeze apps" || t == "to freezer" ||
+            t == "select apps" || t == "choose apps" || t == "add apps"
+        } || context.hasClassName("selectapps") || context.hasClassName("addapps") ||
+             className.contains("selectapps") || className.contains("addapps") ||
+             context.hasAnyViewId("select_apps", "app_list", "freezer_app_list")
+
+        // 3. Dedicated Freezer activity inside launcher
+        val isFreezerActivity = (className.contains("freezeractivity") || className.contains("neofreezeractivity")) &&
+                !className.contains("workspace")
+
+        // 4. Open Freezer folder
+        val isFreezerFolder = isFreezerScreenContext(context)
+
+        return isPopupOrMenu || isAddPicker || isFreezerActivity || isFreezerFolder
+    }
+
     fun isFreezerScreenContext(context: ScreenContext): Boolean {
         val pkg = context.packageName.lowercase(Locale.US)
         val className = context.className.lowercase(Locale.US)
@@ -374,10 +446,58 @@ object TamperDetectionEngine {
         return false
     }
 
+    fun isThirdPartyFreezerOrCloner(pkg: String): Boolean {
+        val lower = pkg.lowercase(Locale.US)
+        return lower in THIRD_PARTY_FREEZERS_CLONERS_AND_SANDBOXES ||
+                lower.contains("parallel") || lower.contains("dualspace") ||
+                lower.contains("appcloner") || lower.contains("greenify") ||
+                lower.contains("brevent") || lower.contains("hibernator") ||
+                lower.contains("vmos")
+    }
+
+    fun isUnknownFreezerOrCloner(context: ScreenContext): Boolean {
+        val pkg = context.packageName.lowercase(Locale.US)
+        if (pkg.startsWith("com.android.") || pkg.startsWith("com.google.android.") || pkg == "android") {
+            return false
+        }
+        val allTexts = context.visibleTexts.map { it.lowercase(Locale.US) }
+        val allDescs = context.contentDescriptions.map { it.lowercase(Locale.US) }
+        val titles = allTexts + allDescs
+        return titles.any { text ->
+            text.contains("app freezer") ||
+            text.contains("app cloner") ||
+            text.contains("parallel space") ||
+            text.contains("dual space") ||
+            text.contains("hibernator")
+        }
+    }
+
+    fun isDateTimeTamper(context: ScreenContext, isNuclearActive: Boolean): Boolean {
+        if (!isNuclearActive) return false
+        val pkg = context.packageName.lowercase(Locale.US)
+        if (!pkg.contains("settings")) return false
+
+        val allTexts = context.visibleTexts.map { it.lowercase(Locale.US) }
+        val allDescs = context.contentDescriptions.map { it.lowercase(Locale.US) }
+        val allTokens = context.allNormalizedTokens
+
+        return allTexts.any { text ->
+            text.contains("date & time") ||
+            text.contains("date and time") ||
+            text.contains("set time automatically") ||
+            text.contains("set date") ||
+            text.contains("set time") ||
+            text.contains("automatic date & time")
+        } || allDescs.any { desc ->
+            desc.contains("date & time") || desc.contains("date and time")
+        } || (allTokens.contains("date") && allTokens.contains("time"))
+    }
+
     private fun isPotentialTamperPackage(pkg: String): Boolean {
         return pkg in BASE_TAMPER_PACKAGES ||
                 isFreezerPackage(pkg) ||
                 isLauncherPackage(pkg) ||
+                isThirdPartyFreezerOrCloner(pkg) ||
                 pkg.contains("packageinstaller") ||
                 pkg.contains("securitycenter") ||
                 pkg.contains("safecenter") ||
@@ -396,8 +516,38 @@ object TamperDetectionEngine {
     }
 
     fun evaluate(context: ScreenContext): TamperDetectionResult {
+        return evaluate(context, isNuclearActive = false)
+    }
+
+    fun evaluate(context: ScreenContext, isNuclearActive: Boolean): TamperDetectionResult {
         val pkg = context.packageName.lowercase(Locale.US)
-        if (!isPotentialTamperPackage(pkg)) {
+
+        // 1. Third-party freezers, cloners & virtual sandboxes (Block immediately on launch during Nuclear Mode)
+        if (isNuclearActive) {
+            if (isThirdPartyFreezerOrCloner(pkg)) {
+                return TamperDetectionResult(
+                    isTamperAttempt = true,
+                    reason = "3rd-Party Freezer/Cloner ($pkg) blocked during Nuclear Mode",
+                    targetPackage = pkg
+                )
+            }
+            if (isUnknownFreezerOrCloner(context)) {
+                return TamperDetectionResult(
+                    isTamperAttempt = true,
+                    reason = "Unknown Freezer/Cloner heuristic matched in $pkg during Nuclear Mode",
+                    targetPackage = pkg
+                )
+            }
+            if (isDateTimeTamper(context, isNuclearActive)) {
+                return TamperDetectionResult(
+                    isTamperAttempt = true,
+                    reason = "Date & Time modification blocked during Nuclear Mode",
+                    targetPackage = pkg
+                )
+            }
+        }
+
+        if (!isPotentialTamperPackage(pkg) && !isUnknownFreezerOrCloner(context)) {
             return TamperDetectionResult(isTamperAttempt = false)
         }
 
@@ -409,6 +559,25 @@ object TamperDetectionEngine {
             allTokens.contains(id) ||
             context.viewIds.any { it.contains(id, ignoreCase = true) } ||
             context.contentDescriptions.any { it.contains(id, ignoreCase = true) }
+        }
+
+        // UNIVERSAL SEMANTIC GUARD (Rule A):
+        // If ANY foreground app contains our identity AND any danger token,
+        // intercept immediately! (Excludes normal launcher desktop workspace where app icons simply coexist)
+        val isLauncherDesktop = isLauncherPackage(pkg) && !isLauncherTamperContext(context)
+        if (mentionsTargetApp && !isLauncherDesktop) {
+            val matchedDanger = UNIVERSAL_DANGER_TOKENS.firstOrNull { danger ->
+                allTexts.any { it.contains(danger) } ||
+                allTokens.contains(danger) ||
+                context.contentDescriptions.any { it.contains(danger, ignoreCase = true) }
+            }
+            if (matchedDanger != null) {
+                return TamperDetectionResult(
+                    isTamperAttempt = true,
+                    reason = "Universal Semantic Guard: Target app identity and danger token ('$matchedDanger') detected in $pkg",
+                    targetPackage = pkg
+                )
+            }
         }
 
         // Case 1: Package installer attempting to delete/uninstall Reel Narcotics / Zenith
@@ -589,8 +758,8 @@ object TamperDetectionEngine {
                     val isPopupOrMenu = context.hasClassName("shortcut") ||
                             context.hasClassName("popup") ||
                             context.hasClassName("menu") ||
-                            context.hasClassName("bubble") ||
-                            context.hasAnyViewId("popup", "shortcut", "menu", "bubble")
+                            (context.hasClassName("bubble") && !context.hasClassName("bubbletextview")) ||
+                            context.hasAnyViewId("popup", "shortcut", "menu")
 
                     val hasExplicitFreezeOption = allTexts.any {
                         val t = it.trim().lowercase(Locale.US)

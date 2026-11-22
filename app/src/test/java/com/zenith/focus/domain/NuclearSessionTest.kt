@@ -336,4 +336,42 @@ class NuclearSessionTest {
         assertEquals(originalEnd + additionalOneDay, extendedSession.endTimeMillis)
         assertTrue(extendedSession.isCurrentlyActive(startWall + 1000L, startElapsed + 1000L))
     }
+
+    @Test
+    fun testNuclearSessionReanchorAfterRebootSurvivesElapsedResetAndClockJump() {
+        val startWall = 1000000L
+        val startElapsed = 500000L // Phone was on for 500s
+        val duration = 3600000L // 1 hour
+        val endWall = startWall + duration
+
+        val session = NuclearSession(
+            startTimeMillis = startWall,
+            endTimeMillis = endWall,
+            startElapsedRealtime = startElapsed,
+            durationMillis = duration,
+            status = NuclearSessionStatus.ACTIVE
+        )
+
+        // User spends 20 minutes in lock:
+        val remainingBeforeReboot = 40 * 60 * 1000L // 40 minutes left
+
+        // DEVICE REBOOTS:
+        // elapsedRealtime resets to 0 (or low value like 5 seconds)
+        val rebootElapsed = 5000L
+        // System wall clock jumped 10 days forward (attempted bypass)
+        val jumpedWallClock = startWall + (10L * 24 * 60 * 60 * 1000L)
+
+        // Session reanchors with remaining duration:
+        val reanchored = session.reanchorAfterReboot(
+            newElapsedRealtime = rebootElapsed,
+            remainingDurationMillis = remainingBeforeReboot,
+            newStartTimeMillis = jumpedWallClock
+        )
+
+        // Must still be active!
+        assertTrue(reanchored.isCurrentlyActive(jumpedWallClock + 1000L, rebootElapsed + 1000L))
+        // Remaining time must reflect remaining 40 minutes minus 1 second
+        assertEquals(remainingBeforeReboot - 1000L, reanchored.remainingMillis(jumpedWallClock + 1000L, rebootElapsed + 1000L))
+        assertEquals(remainingBeforeReboot, reanchored.durationMillis)
+    }
 }
