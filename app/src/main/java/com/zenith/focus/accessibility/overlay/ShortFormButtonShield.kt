@@ -82,7 +82,9 @@ class ShortFormButtonShield(private val context: Context) {
                     lowerPkg.contains("facebook") ||
                     lowerPkg.contains("snapchat")
 
-            if (!isTargetApp || tabBounds.isEmpty || tabBounds.width() <= 0 || tabBounds.height() <= 0) {
+            val isLandscape = context.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+            if (isLandscape || !isTargetApp || tabBounds.isEmpty || tabBounds.width() <= 0 || tabBounds.height() <= 0) {
                 removeShieldInternal()
                 return@runOnMainThread
             }
@@ -166,6 +168,11 @@ class ShortFormButtonShield(private val context: Context) {
     private fun updateShieldLayoutInternal(bounds: Rect, packageName: String, stealthCoverEnabled: Boolean) {
         val wm = windowManager ?: return
         val view = shieldView ?: return
+
+        if (context.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            removeShieldInternal()
+            return
+        }
 
         configureShieldStyling(view, packageName, stealthCoverEnabled)
 

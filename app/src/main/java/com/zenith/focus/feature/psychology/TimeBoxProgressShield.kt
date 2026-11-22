@@ -129,6 +129,7 @@ class TimeBoxProgressShield(private val context: Context) {
                     cleanupState()
                 }
             } else {
+                view.requestLayout()
                 view.invalidate()
             }
         }

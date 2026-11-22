@@ -27,6 +27,13 @@ class ZenithDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABAS
         const val COL_RULE_ID = "rule_id"
     }
 
+    override fun onConfigure(db: SQLiteDatabase) {
+        super.onConfigure(db)
+        try {
+            db.enableWriteAheadLogging()
+        } catch (_: Exception) {}
+    }
+
     override fun onCreate(db: SQLiteDatabase) {
         val createQuery = "CREATE TABLE " + TABLE_BLOCK_EVENTS + " (" +
                 COL_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +

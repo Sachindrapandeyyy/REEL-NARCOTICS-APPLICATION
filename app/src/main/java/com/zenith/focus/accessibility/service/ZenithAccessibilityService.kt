@@ -159,7 +159,13 @@ class ZenithAccessibilityService : AccessibilityService() {
 
             val pkg = event.packageName?.toString() ?: return
             val lowerPkg = pkg.lowercase(java.util.Locale.US)
-            if (lowerPkg.isBlank() || lowerPkg == packageName.lowercase(java.util.Locale.US) || lowerPkg.contains("systemui")) {
+            if (lowerPkg.isBlank() || lowerPkg == packageName.lowercase(java.util.Locale.US)) {
+                return
+            }
+            if (lowerPkg.contains("systemui")) {
+                if (::buttonShield.isInitialized) {
+                    buttonShield.removeShield()
+                }
                 return
             }
 
@@ -517,6 +523,7 @@ class ZenithAccessibilityService : AccessibilityService() {
             val interactiveAppWindows = runCatching {
                 windows.filter { win ->
                     win.type == android.view.accessibility.AccessibilityWindowInfo.TYPE_APPLICATION &&
+                    (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) !win.isInPictureInPictureMode else true) &&
                     win.root != null &&
                     win.root !== rootNode
                 }.take(2)

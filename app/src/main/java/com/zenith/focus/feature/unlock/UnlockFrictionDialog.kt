@@ -110,6 +110,7 @@ fun UnlockFrictionDialog(
             (config.nfcAnchorHash.isNotBlank() || config.qrAnchorHash.isNotBlank())
 
     var qrTokenInput by remember { mutableStateOf("") }
+    var qrError by remember { mutableStateOf<String?>(null) }
     var isEmergencyTimerActive by remember { mutableStateOf(false) }
     var emergencySecondsRemaining by remember { mutableIntStateOf(PhysicalAnchorManager.EMERGENCY_OVERRIDE_MINUTES * 60) }
 
@@ -237,11 +238,17 @@ fun UnlockFrictionDialog(
                             onValueChange = { input ->
                                 qrTokenInput = input
                                 if (PhysicalAnchorManager.verifyQrPayload(input, config.qrAnchorHash)) {
+                                    qrError = null
                                     Toast.makeText(context, "✓ QR Anchor Key Verified!", Toast.LENGTH_SHORT).show()
                                     onUnlockConfirmed()
                                     onDismiss()
+                                } else if (input.isNotBlank() && input.length >= 10) {
+                                    qrError = "Invalid QR key token"
+                                } else {
+                                    qrError = null
                                 }
                             },
+                            isError = qrError != null,
                             placeholder = { Text("Enter QR payload token...", fontSize = 12.sp) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
@@ -250,6 +257,14 @@ fun UnlockFrictionDialog(
                                 Icon(imageVector = Icons.Outlined.QrCodeScanner, contentDescription = "Scan")
                             }
                         )
+                        if (qrError != null) {
+                            Text(
+                                text = "✗ $qrError",
+                                color = Color(0xFFD32F2F),
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(top = 2.dp, bottom = 4.dp)
+                            )
+                        }
                         Spacer(modifier = Modifier.height(12.dp))
                     }
 
