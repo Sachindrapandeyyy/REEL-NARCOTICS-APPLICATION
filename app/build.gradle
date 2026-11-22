@@ -70,8 +70,8 @@ android {
                 println("⚠️ [build.gradle] Production release keystore or credentials not configured; falling back to debug signingConfig for packaging.")
                 signingConfig signingConfigs.debug
             }
-            minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         debug {
             debuggable true
