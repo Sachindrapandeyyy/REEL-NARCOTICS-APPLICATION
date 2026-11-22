@@ -32,7 +32,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run Unit Tests
-        run: ./gradlew testGithubDirectReleaseUnitTest --continue
+        run: ./gradlew testGithubDirectReleaseUnitTest testPlayStoreDebugUnitTest --continue --no-daemon
 
       - name: Assemble Debug Build
-        run: ./gradlew assembleGithubDirectDebug
+        run: ./gradlew assembleGithubDirectDebug --no-daemon

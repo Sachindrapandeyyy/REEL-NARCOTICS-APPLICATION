@@ -57,10 +57,10 @@ jobs:
           fi
 
       - name: Run Unit Tests
-        run: ./gradlew testGithubDirectReleaseUnitTest
+        run: ./gradlew testGithubDirectReleaseUnitTest testPlayStoreDebugUnitTest --no-daemon
 
       - name: Assemble Signed Release APK
-        run: ./gradlew assembleGithubDirectRelease
+        run: ./gradlew assembleGithubDirectRelease --no-daemon
         env:
           ANDROID_KEYSTORE_FILE: zenith-release.keystore
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -70,7 +70,7 @@ jobs:
       - name: Install CI Dependencies
         run: |
           cd ci
-          npm install
+          npm ci || npm install
           cd ..
 
       - name: Package Release & Publish to Vercel Blob
@@ -84,7 +84,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
         with:
           name: Reel Narcotics v${{ steps.release_packager.outputs.versionName }}
-          tag_name: ${{ github.ref_name }}
+          tag_name: ${{ inputs.release_tag || github.ref_name }}
           files: |
             build/release-dist/*.apk
             build/release-dist/update.json

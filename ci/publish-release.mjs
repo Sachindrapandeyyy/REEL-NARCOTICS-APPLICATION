@@ -53,7 +53,9 @@ async function main() {
 
   const candidatePaths = [
     path.join(projectRoot, 'app', 'build', 'outputs', 'apk', 'githubDirect', 'release', 'app-githubDirect-release.apk'),
-    path.join(projectRoot, 'app', 'build', 'outputs', 'apk', 'release', 'app-release.apk')
+    path.join(projectRoot, 'app', 'build', 'outputs', 'apk', 'release', 'app-release.apk'),
+    path.join(projectRoot, 'app', 'build', 'outputs', 'apk', 'githubDirect', 'release', 'app-githubDirect-release-unsigned.apk'),
+    path.join(projectRoot, 'app', 'build', 'outputs', 'apk', 'release', 'app-release-unsigned.apk')
   ];
   const defaultApkPath = candidatePaths.find(p => fs.existsSync(p));
   if (!defaultApkPath) {
@@ -86,8 +88,14 @@ async function main() {
   // Read release notes from Git log or environment if available
   const releaseNotes = [
     `Reel Narcotics Release v${versionInfo.versionName} (Build ${versionInfo.versionCode})`,
+    "Free DIY Physical Blocker: NFC Card tap / QR Code focus key (with 15m anti-impulse cooldown override)",
+    "Auto-Grayscale Monochrome Mode: sensory dopamine kill during Nuclear Mode via Android Daltonizer",
+    "Daily Focus Score (0–100) & Time Reclaimed: Opal-style positive reinforcement powered 100% offline",
+    "5-Second Mindful Breathing Pause: One Sec model breaking autopilot muscle-memory app opening",
+    "Intent & Time-Box Picker: Regain / ScreenZen stopping cues with subtle top progress indicator",
+    "Gentle Doomscroll Warning Intercept: velocity guard detecting infinite feed dopamine loops",
     "Universal Anti-Tamper Shield: blocks OEM freezing, deep sleeping, date & time manipulation during Nuclear locks",
-    "Physical Bottom-Tab Click Shield: intercepts Shorts, Reels, and Spotlight navigation tabs",
+    "Physical Bottom-Tab Click Shield: intercepts Shorts, Reels, and Spotlight navigation tabs with stealth styling",
     "Universal Short-Form App Blocker: surgical ejection for TikTok, Moj, Josh, ShareChat, Chingari, Hipi, Roposo, MX TakaTak",
     "Browser Short-Form URL Shield: blocks /shorts, /reels, and tiktok.com URLs on all browsers",
     "Reboot & Clock-Jump Hardening: monotonic clock re-anchoring across reboots",
@@ -189,7 +197,7 @@ async function main() {
 
   // 4. Output GitHub Actions step parameters if running in GitHub Actions
   const githubOutput = process.env.GITHUB_OUTPUT;
-  if (githubOutput && fs.existsSync(githubOutput)) {
+  if (githubOutput) {
     const outputs = [
       `versionName=${versionInfo.versionName}`,
       `versionCode=${versionInfo.versionCode}`,
@@ -199,7 +207,11 @@ async function main() {
       `updateJsonPath=${stagedUpdateJsonPath}`,
       `apkName=${versionedApkName}`
     ].join('\n') + '\n';
-    fs.appendFileSync(githubOutput, outputs, 'utf8');
+    try {
+      fs.appendFileSync(githubOutput, outputs, 'utf8');
+    } catch (e) {
+      console.warn('Could not write to GITHUB_OUTPUT:', e.message);
+    }
   }
 
   console.log('\n✅ Packager completed successfully.');
