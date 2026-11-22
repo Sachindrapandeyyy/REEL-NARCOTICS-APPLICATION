@@ -34,3 +34,13 @@
 -keep class com.zenith.focus.domain.model.** { *; }
 -keep class com.zenith.focus.domain.nuclear.** { *; }
 -keep class com.zenith.focus.data.local.** { *; }
+
+# --- Physical & Sensory Armor (v3.0.0) ---
+-keep class com.zenith.focus.feature.physical.** { *; }
+-keep class com.zenith.focus.feature.sensory.** { *; }
+-keep class com.zenith.focus.feature.stats.FocusScoreCalculator** { *; }
+
+# --- ZXing Core QR Code Generation ---
+-keep class com.google.zxing.** { *; }
+-dontwarn com.google.zxing.**
+

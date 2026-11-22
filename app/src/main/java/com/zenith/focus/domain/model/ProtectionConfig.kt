@@ -18,7 +18,11 @@ data class ProtectionConfig(
     val pinSalt: String = "",
     val enableMindfulPause: Boolean = true,
     val stealthButtonCover: Boolean = true,
-    val enableDoomscrollGuard: Boolean = true
+    val enableDoomscrollGuard: Boolean = true,
+    val enablePhysicalAnchor: Boolean = false,
+    val nfcAnchorHash: String = "",
+    val qrAnchorHash: String = "",
+    val enableAutoGrayscale: Boolean = false
 ) {
     fun isCategoryBlocked(category: ContentCategory): Boolean {
         return when (category) {

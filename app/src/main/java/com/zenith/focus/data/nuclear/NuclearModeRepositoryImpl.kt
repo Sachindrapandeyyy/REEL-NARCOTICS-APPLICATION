@@ -99,6 +99,7 @@ class NuclearModeRepositoryImpl(
                 // Session expired while app was dead
                 loadedSession = loadedSession.copy(status = NuclearSessionStatus.EXPIRED)
                 persistSession(loadedSession)
+                com.zenith.focus.feature.sensory.GrayscaleController.restoreColor(context)
             }
         }
 
@@ -152,6 +153,9 @@ class NuclearModeRepositoryImpl(
         scheduleNuclearAlarm(end)
         com.zenith.focus.feature.nuclear.NuclearForegroundService.start(context)
         com.zenith.focus.core.security.DeviceOwnerManager.applyNuclearRestrictions(context)
+        val appInstance = runCatching { com.zenith.focus.ZenithApplication.instance }.getOrNull()
+        val isAutoGrayscale = appInstance?.container?.settingsRepository?.protectionConfig?.value?.enableAutoGrayscale == true
+        com.zenith.focus.feature.sensory.GrayscaleController.applyGrayscaleIfEnabled(context, isAutoGrayscale)
         return true
     }
 
@@ -185,6 +189,7 @@ class NuclearModeRepositoryImpl(
             _session.value = expired
             com.zenith.focus.feature.nuclear.NuclearForegroundService.stop(context)
             com.zenith.focus.core.security.DeviceOwnerManager.clearNuclearRestrictions(context)
+            com.zenith.focus.feature.sensory.GrayscaleController.restoreColor(context)
             return false
         }
 
@@ -204,6 +209,7 @@ class NuclearModeRepositoryImpl(
         cancelNuclearAlarm()
         com.zenith.focus.feature.nuclear.NuclearForegroundService.stop(context)
         com.zenith.focus.core.security.DeviceOwnerManager.clearNuclearRestrictions(context)
+        com.zenith.focus.feature.sensory.GrayscaleController.restoreColor(context)
         return true
     }
 

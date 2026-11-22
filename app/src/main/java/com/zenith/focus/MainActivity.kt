@@ -1,7 +1,10 @@
 package com.zenith.focus
 
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.nfc.NfcAdapter
+import android.nfc.Tag
 import android.os.Bundle
 import android.provider.Settings
 import android.view.accessibility.AccessibilityManager
@@ -75,6 +78,8 @@ import com.zenith.focus.feature.nuclear.NuclearArmingDialog
 import com.zenith.focus.feature.nuclear.NuclearCompleteDialog
 import com.zenith.focus.feature.nuclear.NuclearExtendDialog
 import com.zenith.focus.feature.onboarding.OnboardingScreen
+import com.zenith.focus.feature.physical.PhysicalAnchorManager
+import com.zenith.focus.feature.physical.PhysicalAnchorSetupDialog
 import com.zenith.focus.feature.protection.ProtectionScreen
 import com.zenith.focus.feature.settings.SettingsScreen
 import com.zenith.focus.feature.stats.StatisticsScreen
@@ -85,6 +90,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    private val latestNfcHash = mutableStateOf<String?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -157,6 +164,7 @@ class MainActivity : ComponentActivity() {
                     var showNuclearExtendDialog by remember { mutableStateOf(false) }
                     var showAppLockScreen by remember { mutableStateOf(false) }
                     var showAppPickerDialog by remember { mutableStateOf(false) }
+                    var showPhysicalAnchorSetupDialog by remember { mutableStateOf(false) }
                     var showGuideDialog by remember { mutableStateOf(false) }
                     var showAccessibilityDisclosure by remember { mutableStateOf(false) }
                     var pickerInitialMode by remember { mutableStateOf(com.zenith.focus.domain.model.AppLockMode.NUCLEAR_ONLY) }
@@ -173,6 +181,7 @@ class MainActivity : ComponentActivity() {
                     var todayAdult by remember { mutableIntStateOf(0) }
                     var todayTamper by remember { mutableIntStateOf(0) }
                     var todayImpulsesDefeated by remember { mutableIntStateOf(0) }
+                    var todayDoomscrolls by remember { mutableIntStateOf(0) }
                     var streakDays by remember { mutableIntStateOf(0) }
                     var dailyStats by remember { mutableStateOf<List<DailyStat>>(emptyList()) }
                     var recentEvents by remember { mutableStateOf<List<BlockEvent>>(emptyList()) }
@@ -186,6 +195,7 @@ class MainActivity : ComponentActivity() {
                                          statsRepo.getTodayCountByCategory(ContentCategory.ADULT_KEYWORD)
                             todayTamper = statsRepo.getTodayCountByCategory(ContentCategory.SYSTEM_TAMPER)
                             todayImpulsesDefeated = statsRepo.getTodayImpulsesDefeated()
+                            todayDoomscrolls = statsRepo.getTodayCountByCategory(ContentCategory.DOOMSCROLL_BROKEN)
                             streakDays = statsRepo.getFocusStreakDays()
                             statsRepo.getRecentEvents(25).collect {
                                 recentEvents = it
@@ -258,6 +268,7 @@ class MainActivity : ComponentActivity() {
                         androidx.activity.compose.BackHandler(enabled = true) {
                             when {
                                 showAccessibilityDisclosure -> showAccessibilityDisclosure = false
+                                showPhysicalAnchorSetupDialog -> showPhysicalAnchorSetupDialog = false
                                 showAppPickerDialog -> showAppPickerDialog = false
                                 showAppLockScreen -> showAppLockScreen = false
                                 showGuideDialog -> showGuideDialog = false
@@ -302,6 +313,8 @@ class MainActivity : ComponentActivity() {
                                         todayReelsBlocks = todayReels,
                                         todayAdultBlocks = todayAdult,
                                         todayImpulsesDefeated = todayImpulsesDefeated,
+                                        todayDoomscrollsBroken = todayDoomscrolls,
+                                        todayTamperAttempts = todayTamper,
                                         focusStreakDays = streakDays,
                                         isDarkTheme = isDarkTheme,
                                         onToggleTheme = {
@@ -389,6 +402,9 @@ class MainActivity : ComponentActivity() {
                                         onUpdateProtectionConfig = { updated ->
                                             coroutineScope.launch { settingsRepo.updateProtectionConfig(updated) }
                                         },
+                                        onOpenPhysicalAnchorDialog = {
+                                            showPhysicalAnchorSetupDialog = true
+                                        },
                                         todayTotalBlocks = todayTotal,
                                         focusStreakDays = streakDays,
                                         onShowUpdateDialog = {
@@ -438,6 +454,7 @@ class MainActivity : ComponentActivity() {
                                          lockState = lockState,
                                          config = config,
                                          isNuclearActive = nuclearSession.isCurrentlyActive(),
+                                         scannedNfcTagHash = latestNfcHash.value,
                                          onDismiss = { showUnlockDialog = false },
                                          onUnlockConfirmed = {
                                              coroutineScope.launch {
@@ -448,6 +465,33 @@ class MainActivity : ComponentActivity() {
                                          onVerifyPin = { pin ->
                                              settingsRepo.verifyPin(pin)
                                          }
+                                     )
+                                 }
+
+                                 // Physical Anchor Key Setup Modal (NFC Card / QR Key)
+                                 if (showPhysicalAnchorSetupDialog) {
+                                     PhysicalAnchorSetupDialog(
+                                         config = config,
+                                         scannedNfcTagHash = latestNfcHash.value,
+                                         onClearScannedNfcTag = { latestNfcHash.value = null },
+                                         onSaveNfcHash = { hash ->
+                                             coroutineScope.launch {
+                                                 settingsRepo.setNfcAnchorHash(hash)
+                                                 settingsRepo.setPhysicalAnchorEnabled(true)
+                                             }
+                                         },
+                                         onSaveQrHash = { hash ->
+                                             coroutineScope.launch {
+                                                 settingsRepo.setQrAnchorHash(hash)
+                                                 settingsRepo.setPhysicalAnchorEnabled(true)
+                                             }
+                                         },
+                                         onToggleEnabled = { enabled ->
+                                             coroutineScope.launch {
+                                                 settingsRepo.setPhysicalAnchorEnabled(enabled)
+                                             }
+                                         },
+                                         onDismiss = { showPhysicalAnchorSetupDialog = false }
                                      )
                                  }
 
@@ -607,8 +651,65 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         checkAccessibilityStatus()
+        enableNfcForegroundDispatch()
         val app = application as? ZenithApplication ?: return
         app.container.updateManager.checkForUpdates()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        disableNfcForegroundDispatch()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleNfcIntent(intent)
+    }
+
+    private fun enableNfcForegroundDispatch() {
+        try {
+            val adapter = NfcAdapter.getDefaultAdapter(this) ?: return
+            if (!adapter.isEnabled) return
+            val intent = Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            val flags = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                PendingIntent.FLAG_MUTABLE
+            } else {
+                0
+            }
+            val pendingIntent = PendingIntent.getActivity(this, 0, intent, flags)
+            adapter.enableForegroundDispatch(this, pendingIntent, null, null)
+        } catch (e: Exception) {
+            // Safe catch for any NfcAdapter or SecurityException
+        }
+    }
+
+    private fun disableNfcForegroundDispatch() {
+        try {
+            val adapter = NfcAdapter.getDefaultAdapter(this) ?: return
+            adapter.disableForegroundDispatch(this)
+        } catch (e: Exception) {
+            // Safe catch
+        }
+    }
+
+    private fun handleNfcIntent(intent: Intent?) {
+        if (intent == null) return
+        val action = intent.action ?: return
+        if (NfcAdapter.ACTION_TAG_DISCOVERED == action ||
+            NfcAdapter.ACTION_TECH_DISCOVERED == action ||
+            NfcAdapter.ACTION_NDEF_DISCOVERED == action
+        ) {
+            val tag: Tag? = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                intent.getParcelableExtra(NfcAdapter.EXTRA_TAG, Tag::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
+            }
+            tag?.id?.let { idBytes ->
+                val hash = PhysicalAnchorManager.hashBytes(idBytes)
+                latestNfcHash.value = hash
+            }
+        }
     }
 
     private fun checkAccessibilityStatus() {

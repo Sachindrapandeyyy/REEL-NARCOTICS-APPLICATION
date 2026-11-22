@@ -52,6 +52,12 @@ class BootCompletedReceiver : BroadcastReceiver() {
                         } else {
                             alarmManager?.setExact(AlarmManager.RTC_WAKEUP, nuclearSession.endTimeMillis, nucPending)
                         }
+                        val protectionConfig = app.container.settingsRepository.protectionConfig.value
+                        if (protectionConfig.enableAutoGrayscale) {
+                            com.zenith.focus.feature.sensory.GrayscaleController.applyGrayscaleIfEnabled(context, true)
+                        }
+                    } else {
+                        com.zenith.focus.feature.sensory.GrayscaleController.restoreColor(context)
                     }
 
                     if (state.isActive && now < state.endTimeMillis) {

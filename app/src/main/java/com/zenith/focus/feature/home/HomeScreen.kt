@@ -85,6 +85,8 @@ fun HomeScreen(
     todayReelsBlocks: Int,
     todayAdultBlocks: Int,
     todayImpulsesDefeated: Int = 0,
+    todayDoomscrollsBroken: Int = 0,
+    todayTamperAttempts: Int = 0,
     focusStreakDays: Int,
     isDarkTheme: Boolean = false,
     onToggleTheme: () -> Unit = {},
@@ -114,6 +116,18 @@ fun HomeScreen(
     val isRegularLocked = lockState.isCurrentlyActive(now)
     val remainingNuclearMillis = nuclearSession.remainingMillis(now)
     val remainingLockMillis = lockState.remainingMillis(now)
+
+    val focusMetrics = remember(todayImpulsesDefeated, todayDoomscrollsBroken, todayTotalBlocks, todayTamperAttempts, focusStreakDays, isNuclearActive) {
+        val shortFormCount = (todayTotalBlocks - todayImpulsesDefeated - todayDoomscrollsBroken - todayTamperAttempts).coerceAtLeast(0)
+        com.zenith.focus.feature.stats.FocusScoreCalculator.calculateMetrics(
+            impulsesDefeated = todayImpulsesDefeated,
+            doomscrollsBroken = todayDoomscrollsBroken,
+            shortFormBlocks = shortFormCount,
+            tamperAttempts = todayTamperAttempts,
+            streakDays = focusStreakDays,
+            isNuclearActive = isNuclearActive
+        )
+    }
 
     val hour = remember { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
     val greeting = remember(hour) {
@@ -434,8 +448,103 @@ fun HomeScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // ====================================================================
+            // FOCUS SCORE & TIME RECLAIMED (OPAL-STYLE CARD)
+            // ====================================================================
+            Card(
+                shape = RoundedCornerShape(22.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.90f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, earth.border, RoundedCornerShape(22.dp))
+                    .clickable { onNavigateStats() }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(18.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "DAILY FOCUS SCORE",
+                                color = earth.forestGreen,
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = 1.2.sp
+                            )
+                            if (isNuclearActive) {
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "☢️ +10",
+                                    color = earth.camelOchre,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text(
+                                text = "${focusMetrics.score}",
+                                color = earth.forestDark,
+                                fontSize = 34.sp,
+                                fontWeight = FontWeight.Black,
+                                lineHeight = 36.sp
+                            )
+                            Text(
+                                text = "/100",
+                                color = earth.textMuted,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(bottom = 4.dp, start = 2.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = if (focusMetrics.timeReclaimedMinutes > 0)
+                                "⚡ ${focusMetrics.timeReclaimedMinutes} mins attention reclaimed today"
+                            else
+                                "⚡ Defeat impulses & lock feeds to raise score",
+                            color = earth.textMuted,
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .size(54.dp)
+                            .background(
+                                Brush.radialGradient(
+                                    colors = listOf(
+                                        if (focusMetrics.score >= 80) Color(0xFFE8F5E9) else Color(0xFFFFF3E0),
+                                        Color.White
+                                    )
+                                ),
+                                CircleShape
+                            )
+                            .border(
+                                2.dp,
+                                if (focusMetrics.score >= 80) Color(0xFF4CAF50) else Color(0xFFFF9800),
+                                CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (focusMetrics.score >= 90) "💎" else if (focusMetrics.score >= 75) "🌱" else "⚡",
+                            fontSize = 22.sp
+                        )
+                    }
+                }
+            }
+
             if (todayImpulsesDefeated > 0) {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(10.dp))
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))

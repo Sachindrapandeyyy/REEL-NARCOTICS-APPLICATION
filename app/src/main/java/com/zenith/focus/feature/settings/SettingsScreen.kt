@@ -24,8 +24,10 @@ import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Bedtime
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.ColorLens
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Nfc
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.SelfImprovement
@@ -85,6 +87,7 @@ fun SettingsScreen(
     habitConfig: HabitConfig = HabitConfig(),
     onUpdateHabitConfig: (HabitConfig) -> Unit = {},
     onUpdateProtectionConfig: (ProtectionConfig) -> Unit = {},
+    onOpenPhysicalAnchorDialog: () -> Unit = {},
     @Suppress("UNUSED_PARAMETER") todayTotalBlocks: Int = 0,
     @Suppress("UNUSED_PARAMETER") focusStreakDays: Int = 1,
     onShowUpdateDialog: () -> Unit = {},
@@ -96,6 +99,7 @@ fun SettingsScreen(
 ) {
     val earth = EarthTheme.colors
     val context = LocalContext.current
+    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
     val handleOpenAccessibility: () -> Unit = onEnableAccessibility ?: {
         OemNavigationManager.openAccessibilitySettings(context)
         Unit
@@ -389,6 +393,95 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // ====================================================================
+            // PHYSICAL & SENSORY ARMOR (NFC / QR ANCHOR & AUTO-GRAYSCALE)
+            // ====================================================================
+            GroupHeader(title = "PHYSICAL & SENSORY ARMOR", subtitle = "Hardware NFC/QR keys & dopamine-free display")
+            Spacer(modifier = Modifier.height(10.dp))
+
+            val isSecureSettingsGranted = remember {
+                com.zenith.focus.feature.sensory.GrayscaleController.isPermissionGranted(context)
+            }
+
+            Card(
+                shape = RoundedCornerShape(22.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.90f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, earth.border, RoundedCornerShape(22.dp))
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 6.dp)) {
+                    // Item 1: Auto-Grayscale Monochrome Mode
+                    SettingsToggleRow(
+                        icon = Icons.Outlined.ColorLens,
+                        iconTint = if (isSecureSettingsGranted) OrbitalMint else OrbitalAmber,
+                        title = "Auto-Grayscale (Monochrome)",
+                        subtitle = if (isSecureSettingsGranted)
+                            "Monochrome screen during Nuclear Mode to kill color dopamine"
+                        else
+                            "Requires 1-time ADB permission • Tap command below to copy",
+                        isChecked = config.enableAutoGrayscale,
+                        onCheckedChange = { enabled ->
+                            if (enabled && !isSecureSettingsGranted) {
+                                android.widget.Toast.makeText(context, "Grant WRITE_SECURE_SETTINGS via ADB first!", android.widget.Toast.LENGTH_LONG).show()
+                            }
+                            onUpdateProtectionConfig(config.copy(enableAutoGrayscale = enabled))
+                        }
+                    )
+
+                    if (!isSecureSettingsGranted) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color(0xFFFFF3E0))
+                                .border(1.dp, Color(0xFFFFB74D), RoundedCornerShape(10.dp))
+                                .clickable {
+                                    clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(com.zenith.focus.feature.sensory.GrayscaleController.ADB_GRANT_COMMAND))
+                                    android.widget.Toast.makeText(context, "ADB grant command copied to clipboard!", android.widget.Toast.LENGTH_SHORT).show()
+                                }
+                                .padding(10.dp)
+                        ) {
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(text = "⚠️ ADB SETUP REQUIRED", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFE65100))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(text = "(Tap to Copy)", fontSize = 10.sp, color = Color(0xFFE65100))
+                                }
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = com.zenith.focus.feature.sensory.GrayscaleController.ADB_GRANT_COMMAND,
+                                    fontSize = 11.sp,
+                                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                    color = Color(0xFFBF360C)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
+                    EtherealDivider()
+
+                    // Item 2: Physical Anchor Lock (NFC / QR)
+                    val hasAnchorLinked = config.nfcAnchorHash.isNotBlank() || config.qrAnchorHash.isNotBlank()
+                    SettingsActionRow(
+                        icon = Icons.Outlined.Nfc,
+                        iconTint = if (config.enablePhysicalAnchor && hasAnchorLinked) OrbitalMint else OrbitalSky,
+                        title = "Physical Anchor Key (NFC / QR)",
+                        subtitle = if (hasAnchorLinked)
+                            "Active • Tap card or scan QR to unlock early"
+                        else
+                            "Free DIY Brick alternative • Tap to link card or QR",
+                        badge = if (config.enablePhysicalAnchor && hasAnchorLinked) "ACTIVE" else "CONFIGURE",
+                        badgeColor = if (config.enablePhysicalAnchor && hasAnchorLinked) OrbitalMint else OrbitalSky,
+                        onClick = onOpenPhysicalAnchorDialog
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // ====================================================================
             // 5. GROUP 3: APPLICATION UPDATES & ENGINE (UNIFIED FROSTED CONTAINER)
             // ====================================================================
             GroupHeader(title = "ENGINE & UPDATES", subtitle = "Release channel")
@@ -409,7 +502,7 @@ fun SettingsScreen(
                     ) {
                         Column {
                             Text(
-                                text = "Reel Narcotics v2.9.0",
+                                text = "Reel Narcotics v3.0.0",
                                 color = earth.textPrimary,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold

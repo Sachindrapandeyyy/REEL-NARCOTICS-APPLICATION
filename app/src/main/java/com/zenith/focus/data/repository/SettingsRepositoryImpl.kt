@@ -48,6 +48,10 @@ class SettingsRepositoryImpl(
         private val KEY_ENABLE_MINDFUL_PAUSE = booleanPreferencesKey("enable_mindful_pause")
         private val KEY_STEALTH_BUTTON_COVER = booleanPreferencesKey("stealth_button_cover")
         private val KEY_ENABLE_DOOMSCROLL_GUARD = booleanPreferencesKey("enable_doomscroll_guard")
+        private val KEY_ENABLE_PHYSICAL_ANCHOR = booleanPreferencesKey("enable_physical_anchor")
+        private val KEY_NFC_ANCHOR_HASH = stringPreferencesKey("nfc_anchor_hash")
+        private val KEY_QR_ANCHOR_HASH = stringPreferencesKey("qr_anchor_hash")
+        private val KEY_ENABLE_AUTO_GRAYSCALE = booleanPreferencesKey("enable_auto_grayscale")
         private val KEY_FRICTION_TYPE = stringPreferencesKey("friction_type")
         private val KEY_UNLOCK_PHRASE = stringPreferencesKey("unlock_phrase")
         private val KEY_PIN_HASH = stringPreferencesKey("pin_hash")
@@ -118,7 +122,11 @@ class SettingsRepositoryImpl(
             pinSalt = prefs[KEY_PIN_SALT] ?: "",
             enableMindfulPause = prefs[KEY_ENABLE_MINDFUL_PAUSE] ?: true,
             stealthButtonCover = prefs[KEY_STEALTH_BUTTON_COVER] ?: true,
-            enableDoomscrollGuard = prefs[KEY_ENABLE_DOOMSCROLL_GUARD] ?: true
+            enableDoomscrollGuard = prefs[KEY_ENABLE_DOOMSCROLL_GUARD] ?: true,
+            enablePhysicalAnchor = prefs[KEY_ENABLE_PHYSICAL_ANCHOR] ?: false,
+            nfcAnchorHash = prefs[KEY_NFC_ANCHOR_HASH] ?: "",
+            qrAnchorHash = prefs[KEY_QR_ANCHOR_HASH] ?: "",
+            enableAutoGrayscale = prefs[KEY_ENABLE_AUTO_GRAYSCALE] ?: false
         )
         _protectionConfig.value = config
         _isOnboardingCompleted.value = prefs[KEY_ONBOARDING_DONE] ?: false
@@ -183,6 +191,10 @@ class SettingsRepositoryImpl(
                     prefs[KEY_ENABLE_MINDFUL_PAUSE] = config.enableMindfulPause
                     prefs[KEY_STEALTH_BUTTON_COVER] = config.stealthButtonCover
                     prefs[KEY_ENABLE_DOOMSCROLL_GUARD] = config.enableDoomscrollGuard
+                    prefs[KEY_ENABLE_PHYSICAL_ANCHOR] = config.enablePhysicalAnchor
+                    prefs[KEY_NFC_ANCHOR_HASH] = config.nfcAnchorHash
+                    prefs[KEY_QR_ANCHOR_HASH] = config.qrAnchorHash
+                    prefs[KEY_ENABLE_AUTO_GRAYSCALE] = config.enableAutoGrayscale
                 }
             }
         }
@@ -205,6 +217,26 @@ class SettingsRepositoryImpl(
 
     override suspend fun setDoomscrollGuardEnabled(enabled: Boolean) {
         val current = _protectionConfig.value.copy(enableDoomscrollGuard = enabled)
+        updateProtectionConfig(current)
+    }
+
+    override suspend fun setPhysicalAnchorEnabled(enabled: Boolean) {
+        val current = _protectionConfig.value.copy(enablePhysicalAnchor = enabled)
+        updateProtectionConfig(current)
+    }
+
+    override suspend fun setNfcAnchorHash(hash: String) {
+        val current = _protectionConfig.value.copy(nfcAnchorHash = hash)
+        updateProtectionConfig(current)
+    }
+
+    override suspend fun setQrAnchorHash(hash: String) {
+        val current = _protectionConfig.value.copy(qrAnchorHash = hash)
+        updateProtectionConfig(current)
+    }
+
+    override suspend fun setAutoGrayscaleEnabled(enabled: Boolean) {
+        val current = _protectionConfig.value.copy(enableAutoGrayscale = enabled)
         updateProtectionConfig(current)
     }
 
