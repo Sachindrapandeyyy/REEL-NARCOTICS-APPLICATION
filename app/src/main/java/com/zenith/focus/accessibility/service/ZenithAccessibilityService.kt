@@ -40,6 +40,22 @@ class ZenithAccessibilityService : AccessibilityService() {
     private var lastBlockTimestamp = 0L
     private var lastTargetAppLongPressTime = 0L
 
+    private val screenOffReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == Intent.ACTION_SCREEN_OFF) {
+                if (::buttonShield.isInitialized) {
+                    buttonShield.removeShield()
+                }
+                if (::timeBoxProgressShield.isInitialized) {
+                    timeBoxProgressShield.remove()
+                }
+                if (::overlayWindowManager.isInitialized) {
+                    overlayWindowManager.dismissOverlay()
+                }
+            }
+        }
+    }
+
     companion object {
         @Volatile
         var isServiceRunning: Boolean = false
@@ -120,6 +136,16 @@ class ZenithAccessibilityService : AccessibilityService() {
         timeBoxProgressShield = com.zenith.focus.feature.psychology.TimeBoxProgressShield(this)
         overlayWindowManager = OverlayWindowManager(this) {
             ejectToHomeScreen()
+        }
+        val filter = android.content.IntentFilter(Intent.ACTION_SCREEN_OFF)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(screenOffReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            } else {
+                registerReceiver(screenOffReceiver, filter)
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("ZenithAccessibility", "Could not register screenOffReceiver: ${e.message}")
         }
         ServiceStateBroadcaster.updateConnected(true)
     }
@@ -307,6 +333,14 @@ class ZenithAccessibilityService : AccessibilityService() {
                 if (::timeBoxProgressShield.isInitialized) {
                     timeBoxProgressShield.remove()
                 }
+            }
+        }
+
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            val isTargetSocialApp = lowerPkg.contains("youtube") || lowerPkg.contains("instagram") ||
+                    lowerPkg.contains("facebook") || lowerPkg.contains("snapchat")
+            if (!isTargetSocialApp && ::buttonShield.isInitialized) {
+                buttonShield.removeShield()
             }
         }
 
@@ -861,6 +895,9 @@ class ZenithAccessibilityService : AccessibilityService() {
         if (::timeBoxProgressShield.isInitialized) {
             timeBoxProgressShield.remove()
         }
+        try {
+            unregisterReceiver(screenOffReceiver)
+        } catch (_: Exception) {}
         serviceScope.cancel()
     }
 }

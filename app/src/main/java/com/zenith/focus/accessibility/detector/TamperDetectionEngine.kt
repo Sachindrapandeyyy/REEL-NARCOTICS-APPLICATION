@@ -477,20 +477,28 @@ object TamperDetectionEngine {
         val pkg = context.packageName.lowercase(Locale.US)
         if (!pkg.contains("settings")) return false
 
-        val allTexts = context.visibleTexts.map { it.lowercase(Locale.US) }
-        val allDescs = context.contentDescriptions.map { it.lowercase(Locale.US) }
-        val allTokens = context.allNormalizedTokens
+        val isDateTimeActivity = context.className.contains("DateTime", ignoreCase = true) ||
+                context.className.contains("ZonePicker", ignoreCase = true) ||
+                context.className.contains("DatePicker", ignoreCase = true) ||
+                context.className.contains("TimePicker", ignoreCase = true)
 
-        return allTexts.any { text ->
-            text.contains("date & time") ||
-            text.contains("date and time") ||
+        val allTexts = context.visibleTexts.map { it.lowercase(Locale.US) }
+
+        val hasExplicitDateTimeControl = allTexts.any { text ->
             text.contains("set time automatically") ||
+            text.contains("use network-provided time") ||
+            text.contains("automatic date & time") ||
             text.contains("set date") ||
             text.contains("set time") ||
-            text.contains("automatic date & time")
-        } || allDescs.any { desc ->
-            desc.contains("date & time") || desc.contains("date and time")
-        } || (allTokens.contains("date") && allTokens.contains("time"))
+            text.contains("automatic time zone")
+        }
+
+        val isDateTimeScreen = allTexts.any { text ->
+            val trimmed = text.trim()
+            trimmed == "date & time" || trimmed == "date and time" || trimmed == "तारीख और समय"
+        } && (hasExplicitDateTimeControl || allTexts.any { it.contains("time zone") || it.contains("24-hour") })
+
+        return isDateTimeActivity || hasExplicitDateTimeControl || isDateTimeScreen
     }
 
     private fun isPotentialTamperPackage(pkg: String): Boolean {

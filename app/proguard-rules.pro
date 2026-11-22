@@ -12,16 +12,13 @@
 -keep class com.zenith.focus.core.update.UpdateManager** { *; }
 
 # --- Security, Receivers, Services & Device Admin ---
--keep class com.zenith.focus.receiver.ZenithDeviceAdminReceiver { *; }
--keep class com.zenith.focus.receiver.BootCompletedReceiver { *; }
--keep class com.zenith.focus.receiver.LockAlarmReceiver { *; }
+-keep class com.zenith.focus.receiver.** { *; }
 -keep class com.zenith.focus.feature.nuclear.NuclearForegroundService { *; }
 -keep class com.zenith.focus.core.security.DeviceOwnerManager { *; }
 
 # --- Accessibility Service & Overlays ---
 -keep class com.zenith.focus.accessibility.service.ZenithAccessibilityService { *; }
--keep class com.zenith.focus.accessibility.overlay.ShortFormButtonShield { *; }
--keep class com.zenith.focus.accessibility.overlay.ShortFormButtonShieldTheme { *; }
+-keep class com.zenith.focus.accessibility.overlay.** { *; }
 
 # --- Psychology Engine & Activities ---
 -keep class com.zenith.focus.feature.psychology.** { *; }

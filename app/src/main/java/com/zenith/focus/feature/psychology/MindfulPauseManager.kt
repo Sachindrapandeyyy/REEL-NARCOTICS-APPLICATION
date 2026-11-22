@@ -46,6 +46,9 @@ class MindfulPauseManager(
 
     fun onForegroundPackageChanged(newPackage: String) {
         val lower = newPackage.lowercase(java.util.Locale.US)
+        if (lower.isBlank() || lower == "com.zenith.focus" || lower.contains("systemui") || lower.contains("inputmethod")) {
+            return
+        }
         if (lower != currentForegroundPackage) {
             val previous = currentForegroundPackage
             currentForegroundPackage = lower
