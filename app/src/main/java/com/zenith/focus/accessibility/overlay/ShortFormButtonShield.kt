@@ -1,6 +1,9 @@
 package com.zenith.focus.accessibility.overlay
 
 import android.content.Context
+import android.content.res.Configuration
+import android.graphics.Canvas
+import android.graphics.Paint
 import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.os.Build
@@ -13,19 +16,45 @@ import android.provider.Settings
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
+import java.util.Locale
 
 /**
  * Lightweight, lifecycle-safe physical click shield.
- * Overlays an invisible, non-focusable touch-absorbing view directly on top of
- * short-form bottom navigation tabs (Shorts, Reels, Spotlight) during active locks.
+ * Overlays a touch-absorbing view directly on top of short-form bottom navigation tabs (Shorts, Reels, Spotlight).
+ * In Stealth Cover mode, seamlessly masks the icon using app-matching dark/light background colors
+ * with a subtle muted dot indicator (25% alpha).
  */
 class ShortFormButtonShield(private val context: Context) {
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as? WindowManager
     private val mainHandler = Handler(Looper.getMainLooper())
 
-    private var shieldView: View? = null
+    private var shieldView: ShieldCoverView? = null
     private var currentBounds: Rect? = null
     private var currentTargetPackage: String? = null
+    private var currentStealthMode: Boolean = true
+
+    private class ShieldCoverView(context: Context) : View(context) {
+        var coverColor: Int = 0x01000000
+        var dotColor: Int = 0x00000000
+        var isStealthCover: Boolean = true
+
+        private val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+        override fun onDraw(canvas: Canvas) {
+            if (isStealthCover) {
+                canvas.drawColor(coverColor)
+                if (dotColor != 0) {
+                    dotPaint.color = dotColor
+                    val cx = width / 2f
+                    val cy = height / 2f
+                    val radius = 3.5f * resources.displayMetrics.density
+                    canvas.drawCircle(cx, cy, radius, dotPaint)
+                }
+            } else {
+                super.onDraw(canvas)
+            }
+        }
+    }
 
     private fun runOnMainThread(action: () -> Unit) {
         if (Looper.myLooper() == Looper.getMainLooper()) {
@@ -35,14 +64,19 @@ class ShortFormButtonShield(private val context: Context) {
         }
     }
 
-    fun updateShield(packageName: String, tabBounds: Rect?, isLockActive: Boolean) {
+    fun updateShield(
+        packageName: String,
+        tabBounds: Rect?,
+        isLockActive: Boolean,
+        stealthCoverEnabled: Boolean = true
+    ) {
         runOnMainThread {
             if (!isLockActive || tabBounds == null || !Settings.canDrawOverlays(context)) {
                 removeShieldInternal()
                 return@runOnMainThread
             }
 
-            val lowerPkg = packageName.lowercase(java.util.Locale.US)
+            val lowerPkg = packageName.lowercase(Locale.US)
             val isTargetApp = lowerPkg.contains("youtube") ||
                     lowerPkg.contains("instagram") ||
                     lowerPkg.contains("facebook") ||
@@ -54,22 +88,38 @@ class ShortFormButtonShield(private val context: Context) {
             }
 
             if (shieldView == null) {
-                attachShieldInternal(tabBounds, lowerPkg)
-            } else if (currentBounds != tabBounds || currentTargetPackage != lowerPkg) {
-                updateShieldLayoutInternal(tabBounds, lowerPkg)
+                attachShieldInternal(tabBounds, lowerPkg, stealthCoverEnabled)
+            } else if (currentBounds != tabBounds || currentTargetPackage != lowerPkg || currentStealthMode != stealthCoverEnabled) {
+                updateShieldLayoutInternal(tabBounds, lowerPkg, stealthCoverEnabled)
             }
         }
     }
 
-    private fun attachShieldInternal(bounds: Rect, packageName: String) {
+    private fun isDarkMode(): Boolean {
+        return (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+    }
+
+    private fun configureShieldStyling(view: ShieldCoverView, packageName: String, stealthCoverEnabled: Boolean) {
+        view.isStealthCover = stealthCoverEnabled
+        if (stealthCoverEnabled) {
+            val dark = isDarkMode()
+            view.coverColor = ShortFormButtonShieldTheme.getBackgroundColor(packageName, dark)
+            view.dotColor = ShortFormButtonShieldTheme.getDotColor(dark)
+            view.setBackgroundColor(0)
+        } else {
+            view.setBackgroundColor(0x01000000)
+        }
+        view.invalidate()
+    }
+
+    private fun attachShieldInternal(bounds: Rect, packageName: String, stealthCoverEnabled: Boolean) {
         val wm = windowManager ?: return
-        val view = View(context).apply {
-            // Faint 0x01 alpha background ensures hardware touch interception while remaining visually unnoticeable
-            setBackgroundColor(0x01000000)
+        val view = ShieldCoverView(context).apply {
             setOnClickListener {
                 triggerHaptic()
             }
         }
+        configureShieldStyling(view, packageName, stealthCoverEnabled)
 
         val layoutType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -97,6 +147,7 @@ class ShortFormButtonShield(private val context: Context) {
             shieldView = view
             currentBounds = Rect(bounds)
             currentTargetPackage = packageName
+            currentStealthMode = stealthCoverEnabled
         } catch (e: WindowManager.BadTokenException) {
             android.util.Log.w("ShortFormButtonShield", "BadTokenException adding shield overlay: ${e.message}")
             cleanupState()
@@ -112,9 +163,11 @@ class ShortFormButtonShield(private val context: Context) {
         }
     }
 
-    private fun updateShieldLayoutInternal(bounds: Rect, packageName: String) {
+    private fun updateShieldLayoutInternal(bounds: Rect, packageName: String, stealthCoverEnabled: Boolean) {
         val wm = windowManager ?: return
         val view = shieldView ?: return
+
+        configureShieldStyling(view, packageName, stealthCoverEnabled)
 
         val layoutType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -141,6 +194,7 @@ class ShortFormButtonShield(private val context: Context) {
             wm.updateViewLayout(view, params)
             currentBounds = Rect(bounds)
             currentTargetPackage = packageName
+            currentStealthMode = stealthCoverEnabled
         } catch (e: WindowManager.BadTokenException) {
             android.util.Log.w("ShortFormButtonShield", "BadTokenException updating layout: ${e.message}")
             removeShieldInternal()

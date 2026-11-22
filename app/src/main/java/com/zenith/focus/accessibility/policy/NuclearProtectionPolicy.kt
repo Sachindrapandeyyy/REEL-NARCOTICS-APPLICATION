@@ -74,6 +74,8 @@ object NuclearProtectionPolicy {
             ContentCategory.ADULT_KEYWORD,
             ContentCategory.SYSTEM_TAMPER,
             ContentCategory.APP_LOCK -> true
+            ContentCategory.IMPULSE_DEFEATED,
+            ContentCategory.DOOMSCROLL_BROKEN -> false
         }
     }
 }

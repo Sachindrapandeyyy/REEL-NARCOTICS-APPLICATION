@@ -20,6 +20,7 @@ interface StatisticsRepository {
     fun getDailyStats(days: Int = 7): Flow<List<DailyStat>>
     suspend fun getTodayBlockCount(): Int
     suspend fun getTodayCountByCategory(category: ContentCategory): Int
+    suspend fun getTodayImpulsesDefeated(): Int
     suspend fun getFocusStreakDays(): Int
     suspend fun clearAllStatistics()
     suspend fun exportStatisticsCsv(): String

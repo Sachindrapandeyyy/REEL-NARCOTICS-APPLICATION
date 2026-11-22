@@ -84,6 +84,7 @@ fun HomeScreen(
     todayShortsBlocks: Int,
     todayReelsBlocks: Int,
     todayAdultBlocks: Int,
+    todayImpulsesDefeated: Int = 0,
     focusStreakDays: Int,
     isDarkTheme: Boolean = false,
     onToggleTheme: () -> Unit = {},
@@ -430,6 +431,24 @@ fun HomeScreen(
                             modifier = Modifier.size(22.dp)
                         )
                     }
+                }
+            }
+
+            if (todayImpulsesDefeated > 0) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color(0xFFE8F5E9))
+                        .border(1.dp, Color(0xFFA5D6A7), RoundedCornerShape(20.dp))
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = "🌱 $todayImpulsesDefeated Impulses Defeated Today",
+                        color = Color(0xFF2E7D32),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             }
 

@@ -45,6 +45,9 @@ class SettingsRepositoryImpl(
         private val KEY_BROWSER_PROTECTION = booleanPreferencesKey("browser_protection")
         private val KEY_STRICT_MODE = booleanPreferencesKey("strict_mode")
         private val KEY_NUCLEAR_MODE = booleanPreferencesKey("nuclear_mode")
+        private val KEY_ENABLE_MINDFUL_PAUSE = booleanPreferencesKey("enable_mindful_pause")
+        private val KEY_STEALTH_BUTTON_COVER = booleanPreferencesKey("stealth_button_cover")
+        private val KEY_ENABLE_DOOMSCROLL_GUARD = booleanPreferencesKey("enable_doomscroll_guard")
         private val KEY_FRICTION_TYPE = stringPreferencesKey("friction_type")
         private val KEY_UNLOCK_PHRASE = stringPreferencesKey("unlock_phrase")
         private val KEY_PIN_HASH = stringPreferencesKey("pin_hash")
@@ -112,7 +115,10 @@ class SettingsRepositoryImpl(
             frictionType = friction,
             unlockPhrase = prefs[KEY_UNLOCK_PHRASE] ?: "I choose my long term goals over cheap dopamine",
             pinHash = prefs[KEY_PIN_HASH] ?: "",
-            pinSalt = prefs[KEY_PIN_SALT] ?: ""
+            pinSalt = prefs[KEY_PIN_SALT] ?: "",
+            enableMindfulPause = prefs[KEY_ENABLE_MINDFUL_PAUSE] ?: true,
+            stealthButtonCover = prefs[KEY_STEALTH_BUTTON_COVER] ?: true,
+            enableDoomscrollGuard = prefs[KEY_ENABLE_DOOMSCROLL_GUARD] ?: true
         )
         _protectionConfig.value = config
         _isOnboardingCompleted.value = prefs[KEY_ONBOARDING_DONE] ?: false
@@ -148,6 +154,8 @@ class SettingsRepositoryImpl(
             ContentCategory.ADULT_KEYWORD -> current.copy(blockAdultKeywords = isBlocked)
             ContentCategory.SYSTEM_TAMPER -> current
             ContentCategory.APP_LOCK -> current
+            ContentCategory.IMPULSE_DEFEATED -> current
+            ContentCategory.DOOMSCROLL_BROKEN -> current
         }
         updateProtectionConfig(updated)
     }
@@ -172,6 +180,9 @@ class SettingsRepositoryImpl(
                     prefs[KEY_UNLOCK_PHRASE] = config.unlockPhrase
                     prefs[KEY_PIN_HASH] = config.pinHash
                     prefs[KEY_PIN_SALT] = config.pinSalt
+                    prefs[KEY_ENABLE_MINDFUL_PAUSE] = config.enableMindfulPause
+                    prefs[KEY_STEALTH_BUTTON_COVER] = config.stealthButtonCover
+                    prefs[KEY_ENABLE_DOOMSCROLL_GUARD] = config.enableDoomscrollGuard
                 }
             }
         }
@@ -179,6 +190,21 @@ class SettingsRepositoryImpl(
 
     override suspend fun setStrictMode(enabled: Boolean) {
         val current = _protectionConfig.value.copy(strictMode = enabled)
+        updateProtectionConfig(current)
+    }
+
+    override suspend fun setMindfulPauseEnabled(enabled: Boolean) {
+        val current = _protectionConfig.value.copy(enableMindfulPause = enabled)
+        updateProtectionConfig(current)
+    }
+
+    override suspend fun setStealthCoverEnabled(enabled: Boolean) {
+        val current = _protectionConfig.value.copy(stealthButtonCover = enabled)
+        updateProtectionConfig(current)
+    }
+
+    override suspend fun setDoomscrollGuardEnabled(enabled: Boolean) {
+        val current = _protectionConfig.value.copy(enableDoomscrollGuard = enabled)
         updateProtectionConfig(current)
     }
 

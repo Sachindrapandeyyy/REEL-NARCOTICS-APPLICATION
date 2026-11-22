@@ -104,6 +104,16 @@ class ZenithDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABAS
         }
     }
 
+    suspend fun getImpulsesDefeatedCountSince(timestamp: Long): Int = withContext(Dispatchers.IO) {
+        val cursor = readableDatabase.rawQuery(
+            "SELECT COUNT(*) FROM " + TABLE_BLOCK_EVENTS + " WHERE (" + COL_CATEGORY + " = 'IMPULSE_DEFEATED' OR " + COL_CATEGORY + " = 'DOOMSCROLL_BROKEN') AND " + COL_TIMESTAMP + " >= ?",
+            arrayOf(timestamp.toString())
+        )
+        cursor.use {
+            if (it.moveToFirst()) it.getInt(0) else 0
+        }
+    }
+
     suspend fun getDailyStats(days: Int = 7): List<DailyStat> = withContext(Dispatchers.IO) {
         val result = mutableListOf<DailyStat>()
         val cal = Calendar.getInstance()

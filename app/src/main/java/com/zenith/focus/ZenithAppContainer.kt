@@ -41,4 +41,16 @@ class ZenithAppContainer(context: Context) {
     val appLockRepository: com.zenith.focus.domain.repository.AppLockRepository by lazy {
         com.zenith.focus.data.repository.AppLockRepositoryImpl(context.applicationContext)
     }
+
+    val mindfulPauseManager: com.zenith.focus.feature.psychology.MindfulPauseManager by lazy {
+        com.zenith.focus.feature.psychology.MindfulPauseManager()
+    }
+
+    val intentTimeBoxManager: com.zenith.focus.feature.psychology.IntentTimeBoxManager by lazy {
+        com.zenith.focus.feature.psychology.IntentTimeBoxManager()
+    }
+
+    val doomscrollDetector: com.zenith.focus.feature.psychology.DoomscrollDetector by lazy {
+        com.zenith.focus.feature.psychology.DoomscrollDetector()
+    }
 }

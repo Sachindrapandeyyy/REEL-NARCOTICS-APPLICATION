@@ -172,6 +172,7 @@ class MainActivity : ComponentActivity() {
                     var todayReels by remember { mutableIntStateOf(0) }
                     var todayAdult by remember { mutableIntStateOf(0) }
                     var todayTamper by remember { mutableIntStateOf(0) }
+                    var todayImpulsesDefeated by remember { mutableIntStateOf(0) }
                     var streakDays by remember { mutableIntStateOf(0) }
                     var dailyStats by remember { mutableStateOf<List<DailyStat>>(emptyList()) }
                     var recentEvents by remember { mutableStateOf<List<BlockEvent>>(emptyList()) }
@@ -184,6 +185,7 @@ class MainActivity : ComponentActivity() {
                             todayAdult = statsRepo.getTodayCountByCategory(ContentCategory.ADULT_WEBSITE) +
                                          statsRepo.getTodayCountByCategory(ContentCategory.ADULT_KEYWORD)
                             todayTamper = statsRepo.getTodayCountByCategory(ContentCategory.SYSTEM_TAMPER)
+                            todayImpulsesDefeated = statsRepo.getTodayImpulsesDefeated()
                             streakDays = statsRepo.getFocusStreakDays()
                             statsRepo.getRecentEvents(25).collect {
                                 recentEvents = it
@@ -299,6 +301,7 @@ class MainActivity : ComponentActivity() {
                                         todayShortsBlocks = todayShorts,
                                         todayReelsBlocks = todayReels,
                                         todayAdultBlocks = todayAdult,
+                                        todayImpulsesDefeated = todayImpulsesDefeated,
                                         focusStreakDays = streakDays,
                                         isDarkTheme = isDarkTheme,
                                         onToggleTheme = {
@@ -382,6 +385,9 @@ class MainActivity : ComponentActivity() {
                                         habitConfig = habitConfig,
                                         onUpdateHabitConfig = { updated ->
                                             coroutineScope.launch { settingsRepo.updateHabitConfig(updated) }
+                                        },
+                                        onUpdateProtectionConfig = { updated ->
+                                            coroutineScope.launch { settingsRepo.updateProtectionConfig(updated) }
                                         },
                                         todayTotalBlocks = todayTotal,
                                         focusStreakDays = streakDays,

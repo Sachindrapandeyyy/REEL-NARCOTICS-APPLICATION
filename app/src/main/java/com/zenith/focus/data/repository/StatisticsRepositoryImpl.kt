@@ -35,6 +35,11 @@ class StatisticsRepositoryImpl(
         return dbHelper.getCategoryCountSince(category, startOfToday)
     }
 
+    override suspend fun getTodayImpulsesDefeated(): Int {
+        val startOfToday = DateTimeUtils.getStartOfToday()
+        return dbHelper.getImpulsesDefeatedCountSince(startOfToday)
+    }
+
     override suspend fun getFocusStreakDays(): Int {
         return dbHelper.calculateFocusStreak()
     }

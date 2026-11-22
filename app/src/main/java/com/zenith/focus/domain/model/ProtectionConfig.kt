@@ -15,7 +15,10 @@ data class ProtectionConfig(
     val frictionType: FrictionType = FrictionType.HOLD_BUTTON,
     val unlockPhrase: String = "I choose my long term goals over cheap dopamine",
     val pinHash: String = "",
-    val pinSalt: String = ""
+    val pinSalt: String = "",
+    val enableMindfulPause: Boolean = true,
+    val stealthButtonCover: Boolean = true,
+    val enableDoomscrollGuard: Boolean = true
 ) {
     fun isCategoryBlocked(category: ContentCategory): Boolean {
         return when (category) {
@@ -29,6 +32,8 @@ data class ProtectionConfig(
             ContentCategory.ADULT_KEYWORD -> blockAdultKeywords
             ContentCategory.SYSTEM_TAMPER -> true
             ContentCategory.APP_LOCK -> true
+            ContentCategory.IMPULSE_DEFEATED -> false
+            ContentCategory.DOOMSCROLL_BROKEN -> false
         }
     }
 }

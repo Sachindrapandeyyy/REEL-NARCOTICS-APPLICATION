@@ -61,6 +61,22 @@
             android:launchMode="singleInstance"
             android:theme="@style/Theme.ZenithFocus" />
 
+        <!-- Mindful Breathing Pause & Intent Time-Box Screen Activity -->
+        <activity
+            android:name=".feature.psychology.MindfulPauseActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.ZenithFocus" />
+
+        <!-- Gentle Doomscroll Warning Intercept Screen Activity -->
+        <activity
+            android:name=".feature.psychology.DoomscrollWarningActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.ZenithFocus" />
+
         <!-- Core Accessibility Service -->
         <service
             android:name=".accessibility.service.ZenithAccessibilityService"

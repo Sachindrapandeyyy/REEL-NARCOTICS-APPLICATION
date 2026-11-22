@@ -30,6 +30,7 @@ class ZenithAccessibilityService : AccessibilityService() {
     private lateinit var detectionEngine: DetectionEngine
     private lateinit var overlayWindowManager: OverlayWindowManager
     private lateinit var buttonShield: com.zenith.focus.accessibility.overlay.ShortFormButtonShield
+    private lateinit var timeBoxProgressShield: com.zenith.focus.feature.psychology.TimeBoxProgressShield
 
     private var lastEventTime = 0L
     private var lastPackageName = ""
@@ -116,6 +117,7 @@ class ZenithAccessibilityService : AccessibilityService() {
         isServiceRunning = true
         detectionEngine = DetectionEngine(applicationContext)
         buttonShield = com.zenith.focus.accessibility.overlay.ShortFormButtonShield(this)
+        timeBoxProgressShield = com.zenith.focus.feature.psychology.TimeBoxProgressShield(this)
         overlayWindowManager = OverlayWindowManager(this) {
             ejectToHomeScreen()
         }
@@ -250,6 +252,86 @@ class ZenithAccessibilityService : AccessibilityService() {
                 }
             }
             return
+        }
+
+        // 3. LAYER 3: PSYCHOLOGICAL ARMOR ENGINES (DOOMSCROLL, TIME-BOX & MINDFUL PAUSE)
+        if (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED && app != null) {
+            val protectionConfig = app.container.settingsRepository.protectionConfig.value
+            val mindfulMgr = app.container.mindfulPauseManager
+            if (protectionConfig.enableDoomscrollGuard && mindfulMgr.isMonitoredPackage(lowerPkg)) {
+                if (app.container.doomscrollDetector.onScroll()) {
+                    triggerHapticAlert()
+                    val doomIntent = Intent(this, com.zenith.focus.feature.psychology.DoomscrollWarningActivity::class.java).apply {
+                        putExtra(com.zenith.focus.feature.psychology.DoomscrollWarningActivity.EXTRA_TARGET_PACKAGE, lowerPkg)
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    }
+                    startActivity(doomIntent)
+                    return
+                }
+            }
+        }
+
+        if (app != null) {
+            val timeBoxMgr = app.container.intentTimeBoxManager
+            val activeSession = timeBoxMgr.getActiveSession(lowerPkg)
+            val currentRealtime = android.os.SystemClock.elapsedRealtime()
+            if (activeSession != null) {
+                if (activeSession.isExpired(currentRealtime)) {
+                    timeBoxMgr.clearSession(lowerPkg)
+                    if (::timeBoxProgressShield.isInitialized) {
+                        timeBoxProgressShield.remove()
+                    }
+                    ejectToHomeScreen()
+                    triggerHapticAlert()
+                    serviceScope.launch(Dispatchers.Main) {
+                        Toast.makeText(applicationContext, "⏳ Time's up! Your ${activeSession.purpose} session ended.", Toast.LENGTH_SHORT).show()
+                    }
+                    serviceScope.launch {
+                        app.container.statisticsRepository.recordBlockEvent(
+                            BlockEvent(
+                                timestamp = System.currentTimeMillis(),
+                                packageName = lowerPkg,
+                                category = ContentCategory.IMPULSE_DEFEATED,
+                                confidence = 1.0f,
+                                ruleId = "time_box_expired"
+                            )
+                        )
+                    }
+                    return
+                } else {
+                    if (::timeBoxProgressShield.isInitialized) {
+                        timeBoxProgressShield.show(activeSession.progressFraction(currentRealtime))
+                    }
+                }
+            } else if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+                if (::timeBoxProgressShield.isInitialized) {
+                    timeBoxProgressShield.remove()
+                }
+            }
+        }
+
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && app != null) {
+            val mindfulMgr = app.container.mindfulPauseManager
+            val timeBoxMgr = app.container.intentTimeBoxManager
+            val protectionConfig = app.container.settingsRepository.protectionConfig.value
+
+            mindfulMgr.onForegroundPackageChanged(lowerPkg)
+
+            val isLockedByAppLock = app.container.appLockRepository.appLockConfig.value.isPackageLocked(lowerPkg, isNuclear)
+            val isLauncher = TamperDetectionEngine.isLauncherPackage(lowerPkg)
+            val isEssential = isEssentialUtility(lowerPkg)
+            val isOurApp = lowerPkg == packageName.lowercase(java.util.Locale.US)
+
+            if (!isNuclear && !isLockActive && !isLockedByAppLock && !isLauncher && !isEssential && !isOurApp) {
+                if (mindfulMgr.shouldTriggerPause(lowerPkg, protectionConfig.enableMindfulPause, timeBoxMgr.isCurrentlyActive(lowerPkg))) {
+                    val pauseIntent = Intent(this, com.zenith.focus.feature.psychology.MindfulPauseActivity::class.java).apply {
+                        putExtra(com.zenith.focus.feature.psychology.MindfulPauseActivity.EXTRA_TARGET_PACKAGE, lowerPkg)
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    }
+                    startActivity(pauseIntent)
+                    return
+                }
+            }
         }
 
         // FAST-PATH APP LOCK SHIELD:
@@ -462,7 +544,8 @@ class ZenithAccessibilityService : AccessibilityService() {
 
         if (::buttonShield.isInitialized) {
             withContext(Dispatchers.Main) {
-                buttonShield.updateShield(targetPkg, effectiveContext.shortFormTabBounds, isNuclear || isLockActive)
+                val stealthCover = settingsRepo.protectionConfig.value.stealthButtonCover
+                buttonShield.updateShield(targetPkg, effectiveContext.shortFormTabBounds, isNuclear || isLockActive, stealthCover)
             }
         }
 
@@ -750,11 +833,17 @@ class ZenithAccessibilityService : AccessibilityService() {
         if (::buttonShield.isInitialized) {
             buttonShield.removeShield()
         }
+        if (::timeBoxProgressShield.isInitialized) {
+            timeBoxProgressShield.remove()
+        }
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
         if (::buttonShield.isInitialized) {
             buttonShield.removeShield()
+        }
+        if (::timeBoxProgressShield.isInitialized) {
+            timeBoxProgressShield.remove()
         }
         return super.onUnbind(intent)
     }
@@ -768,6 +857,9 @@ class ZenithAccessibilityService : AccessibilityService() {
         }
         if (::buttonShield.isInitialized) {
             buttonShield.removeShield()
+        }
+        if (::timeBoxProgressShield.isInitialized) {
+            timeBoxProgressShield.remove()
         }
         serviceScope.cancel()
     }

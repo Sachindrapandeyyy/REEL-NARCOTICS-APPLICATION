@@ -21,6 +21,10 @@
 # --- Accessibility Service & Overlays ---
 -keep class com.zenith.focus.accessibility.service.ZenithAccessibilityService { *; }
 -keep class com.zenith.focus.accessibility.overlay.ShortFormButtonShield { *; }
+-keep class com.zenith.focus.accessibility.overlay.ShortFormButtonShieldTheme { *; }
+
+# --- Psychology Engine & Activities ---
+-keep class com.zenith.focus.feature.psychology.** { *; }
 
 # --- Core App & Dependency Injection Container ---
 -keep class com.zenith.focus.ZenithApplication { *; }

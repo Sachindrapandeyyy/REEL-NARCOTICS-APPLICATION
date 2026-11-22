@@ -28,10 +28,13 @@ import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.SelfImprovement
 import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material.icons.outlined.SystemSecurityUpdateGood
 import androidx.compose.material.icons.outlined.VerifiedUser
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -74,13 +77,14 @@ import com.zenith.focus.receiver.ZenithDeviceAdminReceiver
 
 @Composable
 fun SettingsScreen(
-    @Suppress("UNUSED_PARAMETER") config: ProtectionConfig,
+    config: ProtectionConfig,
     isServiceConnected: Boolean,
     isNuclearActive: Boolean = false,
     @Suppress("UNUSED_PARAMETER") currentTheme: String = "",
     @Suppress("UNUSED_PARAMETER") updateManager: UpdateManager? = null,
     habitConfig: HabitConfig = HabitConfig(),
     onUpdateHabitConfig: (HabitConfig) -> Unit = {},
+    onUpdateProtectionConfig: (ProtectionConfig) -> Unit = {},
     @Suppress("UNUSED_PARAMETER") todayTotalBlocks: Int = 0,
     @Suppress("UNUSED_PARAMETER") focusStreakDays: Int = 1,
     onShowUpdateDialog: () -> Unit = {},
@@ -327,6 +331,64 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // ====================================================================
+            // PSYCHOLOGICAL ARMOR (ANTI-IMPULSE ENGINES)
+            // ====================================================================
+            GroupHeader(title = "PSYCHOLOGICAL ARMOR", subtitle = "Impulse, time blindness & doomscroll guards")
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Card(
+                shape = RoundedCornerShape(22.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.90f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, earth.border, RoundedCornerShape(22.dp))
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 6.dp)) {
+                    // Item 1: 5-Second Mindful Breathing Pause
+                    SettingsToggleRow(
+                        icon = Icons.Outlined.SelfImprovement,
+                        iconTint = OrbitalSky,
+                        title = "Mindful Breathing Pause",
+                        subtitle = "5-second breathing pause to break muscle-memory app opening",
+                        isChecked = config.enableMindfulPause,
+                        onCheckedChange = { enabled ->
+                            onUpdateProtectionConfig(config.copy(enableMindfulPause = enabled))
+                        }
+                    )
+
+                    EtherealDivider()
+
+                    // Item 2: Stealth Visual-Hide Cover
+                    SettingsToggleRow(
+                        icon = Icons.Outlined.VisibilityOff,
+                        iconTint = OrbitalViolet,
+                        title = "Stealth Button Cover",
+                        subtitle = "Masks bright Shorts/Reels tabs with app-matching color & subtle dot",
+                        isChecked = config.stealthButtonCover,
+                        onCheckedChange = { enabled ->
+                            onUpdateProtectionConfig(config.copy(stealthButtonCover = enabled))
+                        }
+                    )
+
+                    EtherealDivider()
+
+                    // Item 3: Doomscroll Velocity Guard
+                    SettingsToggleRow(
+                        icon = Icons.Outlined.Speed,
+                        iconTint = OrbitalCoral,
+                        title = "Doomscroll Velocity Guard",
+                        subtitle = "Interception alert when 18+ rapid scrolls are detected in 60s",
+                        isChecked = config.enableDoomscrollGuard,
+                        onCheckedChange = { enabled ->
+                            onUpdateProtectionConfig(config.copy(enableDoomscrollGuard = enabled))
+                        }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // ====================================================================
             // 5. GROUP 3: APPLICATION UPDATES & ENGINE (UNIFIED FROSTED CONTAINER)
             // ====================================================================
             GroupHeader(title = "ENGINE & UPDATES", subtitle = "Release channel")
@@ -347,7 +409,7 @@ fun SettingsScreen(
                     ) {
                         Column {
                             Text(
-                                text = "Reel Narcotics v2.8.0",
+                                text = "Reel Narcotics v2.9.0",
                                 color = earth.textPrimary,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold
