@@ -62,19 +62,31 @@ class MindfulPauseActivity : ComponentActivity() {
         const val EXTRA_TARGET_PACKAGE = "extra_target_package"
     }
 
+    private var targetPackageState by mutableStateOf("")
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        targetPackageState = intent.getStringExtra(EXTRA_TARGET_PACKAGE) ?: ""
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val targetPackage = intent.getStringExtra(EXTRA_TARGET_PACKAGE) ?: ""
+        targetPackageState = intent.getStringExtra(EXTRA_TARGET_PACKAGE) ?: ""
 
         val returnHome = {
+            val pkg = targetPackageState
             val app = runCatching { ZenithApplication.instance }.getOrNull()
+            if (pkg.isNotBlank()) {
+                app?.container?.mindfulPauseManager?.markClosedRecently(pkg)
+            }
             app?.container?.statisticsRepository?.let { repo ->
                 kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
                     repo.recordBlockEvent(
                         BlockEvent(
                             timestamp = System.currentTimeMillis(),
-                            packageName = targetPackage.ifBlank { "unknown" },
+                            packageName = pkg.ifBlank { "unknown" },
                             category = ContentCategory.IMPULSE_DEFEATED,
                             confidence = 1.0f,
                             ruleId = "mindful_pause_saved"
@@ -87,7 +99,7 @@ class MindfulPauseActivity : ComponentActivity() {
                 addCategory(Intent.CATEGORY_HOME)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
-            startActivity(homeIntent)
+            runCatching { startActivity(homeIntent) }
             finish()
         }
 
@@ -99,17 +111,18 @@ class MindfulPauseActivity : ComponentActivity() {
 
         setContent {
             ZenithFocusTheme {
+                val activeTarget = targetPackageState
                 MindfulPauseScreen(
-                    targetPackage = targetPackage,
+                    targetPackage = activeTarget,
                     onCloseApp = returnHome,
                     onProceedWithIntent = { durationMinutes, purpose ->
                         val app = runCatching { ZenithApplication.instance }.getOrNull()
                         app?.container?.intentTimeBoxManager?.startTimeBox(
-                            targetPackage,
+                            activeTarget,
                             durationMinutes,
                             purpose
                         )
-                        app?.container?.mindfulPauseManager?.markPassed(targetPackage)
+                        app?.container?.mindfulPauseManager?.markPassed(activeTarget)
                         finish()
                     }
                 )

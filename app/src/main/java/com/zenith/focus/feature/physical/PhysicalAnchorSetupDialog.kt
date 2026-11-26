@@ -72,7 +72,6 @@ fun PhysicalAnchorSetupDialog(
     LaunchedEffect(scannedNfcTagHash) {
         if (!scannedNfcTagHash.isNullOrBlank()) {
             onSaveNfcHash(scannedNfcTagHash)
-            onToggleEnabled(true)
             Toast.makeText(context, "✓ NFC Card registered successfully as focus key!", Toast.LENGTH_SHORT).show()
             onClearScannedNfcTag()
         }
@@ -276,7 +275,6 @@ fun PhysicalAnchorSetupDialog(
                             onClick = {
                                 val hash = PhysicalAnchorManager.hashString(generatedPayload)
                                 onSaveQrHash(hash)
-                                onToggleEnabled(true)
                                 clipboardManager.setText(AnnotatedString(generatedPayload))
                                 Toast.makeText(context, "QR Anchor registered & payload copied!", Toast.LENGTH_SHORT).show()
                             },
@@ -325,7 +323,6 @@ fun PhysicalAnchorSetupDialog(
                             onClick = {
                                 val hash = PhysicalAnchorManager.hashString(manualQrInput)
                                 onSaveQrHash(hash)
-                                onToggleEnabled(true)
                                 Toast.makeText(context, "Custom QR payload registered!", Toast.LENGTH_SHORT).show()
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = earth.camelOchre),

@@ -16,6 +16,18 @@ class DoomscrollDetector(
     private val timestamps = ArrayDeque<Long>()
     private var lastScrollTime = 0L
     private var cooldownUntil = 0L
+    private var lastPackageName: String? = null
+
+    @Synchronized
+    fun onScroll(packageName: String): Boolean {
+        val normalized = packageName.lowercase(java.util.Locale.US)
+        if (lastPackageName != null && lastPackageName != normalized) {
+            timestamps.clear()
+            lastScrollTime = 0L
+        }
+        lastPackageName = normalized
+        return onScroll()
+    }
 
     @Synchronized
     fun onScroll(): Boolean {

@@ -18,6 +18,7 @@ class BrowserUrlDetectorSubdomainTest {
         assertEquals("badsite.com", detector.extractDomain("http://m.badsite.com/feed"))
         assertEquals("badsite.com", detector.extractDomain("badsite.com/search?q=test"))
         assertEquals("sub.badsite.com", detector.extractDomain("https://sub.badsite.com/watch"))
+        assertEquals("pornhub.com", detector.extractDomain("M.Pornhub.com:443/video"))
     }
 
     @Test
@@ -74,5 +75,27 @@ class BrowserUrlDetectorSubdomainTest {
         )
         val result = detector.evaluate(context, config)
         assertFalse("Clean educational domain must be allowed", result.isBlocked)
+    }
+
+    @Test
+    fun testCamTldBoundaryDoesNotFalsePositiveOnCambridgeOrCamera() {
+        assertFalse(BrowserUrlDetector.hasExplicitAdultContent("https://dictionary.cambridge.org/dictionary/english/focus"))
+        assertFalse(BrowserUrlDetector.hasExplicitAdultContent("https://docs.camera.example.org/manual"))
+        assertFalse(BrowserUrlDetector.hasExplicitAdultContent("go deeper into kotlin architecture"))
+        assertFalse(BrowserUrlDetector.hasExplicitAdultContent("power outage blacked out city"))
+
+        assertTrue(BrowserUrlDetector.hasExplicitAdultContent("https://model.cam/live"))
+        assertTrue(BrowserUrlDetector.hasExplicitAdultContent("https://site.porn/watch"))
+
+        // Domain-only adult brand names still block when actually visited as the host domain
+        val deeperContext = ScreenContext(
+            packageName = "com.android.chrome",
+            viewIds = setOf("url_bar"),
+            nodeTextMap = mapOf("url_bar" to "https://deeper.com/videos")
+        )
+        assertTrue(detector.evaluate(deeperContext, config).isBlocked)
+
+        // Malformed URL with spaces must still extract actual domain instead of "https:"
+        assertEquals("badsite.porn", detector.extractDomain("https://badsite.porn/some path with spaces"))
     }
 }

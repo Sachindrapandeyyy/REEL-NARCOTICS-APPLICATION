@@ -5,7 +5,10 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import androidx.core.os.UserManagerCompat
 import com.zenith.focus.ZenithApplication
+import com.zenith.focus.data.repository.AppLockRepositoryImpl
+import com.zenith.focus.data.repository.SettingsRepositoryImpl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -19,10 +22,19 @@ class BootCompletedReceiver : BroadcastReceiver() {
             action == Intent.ACTION_LOCKED_BOOT_COMPLETED ||
             action == Intent.ACTION_MY_PACKAGE_REPLACED
         ) {
+            // Credential-Encrypted storage (DataStore / SQLite) is locked before user unlock on Direct Boot.
+            if (!UserManagerCompat.isUserUnlocked(context)) {
+                return
+            }
             val pendingResult = goAsync()
             CoroutineScope(Dispatchers.IO).launch {
                 try {
                     val app = runCatching { ZenithApplication.instance }.getOrNull() ?: return@launch
+                    val settingsRepo = app.container.settingsRepository
+                    val appLockRepo = app.container.appLockRepository
+                    (settingsRepo as? SettingsRepositoryImpl)?.ensureInitialized()
+                    (appLockRepo as? AppLockRepositoryImpl)?.ensureInitialized()
+
                     val lockRepo = app.container.lockRepository
                     lockRepo.refreshLockState()
                     val state = lockRepo.lockState.value
@@ -34,7 +46,7 @@ class BootCompletedReceiver : BroadcastReceiver() {
 
                     val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
 
-                    // Schedule Nuclear Mode expiration wake-up if active using exact alarm
+                    // Schedule Nuclear Mode expiration wake-up if active (exact alarm when permitted, Doze-safe fallback otherwise)
                     if (nuclearSession.isCurrentlyActive(now)) {
                         try {
                             com.zenith.focus.feature.nuclear.NuclearForegroundService.start(context)
@@ -50,11 +62,7 @@ class BootCompletedReceiver : BroadcastReceiver() {
                             nucIntent,
                             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                         )
-                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                            alarmManager?.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, nuclearSession.endTimeMillis, nucPending)
-                        } else {
-                            alarmManager?.setExact(AlarmManager.RTC_WAKEUP, nuclearSession.endTimeMillis, nucPending)
-                        }
+                        scheduleSafeAlarm(alarmManager, nuclearSession.endTimeMillis, nucPending)
                         val protectionConfig = app.container.settingsRepository.protectionConfig.value
                         if (protectionConfig.enableAutoGrayscale) {
                             com.zenith.focus.feature.sensory.GrayscaleController.applyGrayscaleIfEnabled(context, true)
@@ -64,7 +72,6 @@ class BootCompletedReceiver : BroadcastReceiver() {
                     }
 
                     if (state.isActive && now < state.endTimeMillis) {
-                        // Reschedule Alarm for normal lock expiration using exact alarm
                         val alarmIntent = Intent(context, LockAlarmReceiver::class.java)
                         val pendingIntent = PendingIntent.getBroadcast(
                             context,
@@ -72,11 +79,7 @@ class BootCompletedReceiver : BroadcastReceiver() {
                             alarmIntent,
                             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                         )
-                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                            alarmManager?.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, state.endTimeMillis, pendingIntent)
-                        } else {
-                            alarmManager?.setExact(AlarmManager.RTC_WAKEUP, state.endTimeMillis, pendingIntent)
-                        }
+                        scheduleSafeAlarm(alarmManager, state.endTimeMillis, pendingIntent)
                     } else if (state.isActive && now >= state.endTimeMillis) {
                         lockRepo.endLock()
                     }
@@ -84,8 +87,39 @@ class BootCompletedReceiver : BroadcastReceiver() {
                     // Reschedule daily habit notifications on boot
                     val habitConfig = app.container.settingsRepository.habitConfig.value
                     com.zenith.focus.core.notification.HabitNotificationScheduler.reschedule(context, habitConfig)
+                } catch (t: Throwable) {
+                    android.util.Log.e("BootCompletedReceiver", "Error handling boot/update broadcast: ${t.message}", t)
                 } finally {
                     pendingResult.finish()
+                }
+            }
+        }
+    }
+
+    private fun scheduleSafeAlarm(
+        alarmManager: AlarmManager?,
+        triggerAtMillis: Long,
+        pendingIntent: PendingIntent
+    ) {
+        if (alarmManager == null) return
+        runCatching {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                if (alarmManager.canScheduleExactAlarms()) {
+                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+                } else {
+                    alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+                }
+            } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+            } else {
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+            }
+        }.onFailure {
+            runCatching {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                    alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+                } else {
+                    alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
                 }
             }
         }

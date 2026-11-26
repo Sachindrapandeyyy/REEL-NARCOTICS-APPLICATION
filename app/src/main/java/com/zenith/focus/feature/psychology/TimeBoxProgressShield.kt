@@ -22,6 +22,7 @@ class TimeBoxProgressShield(private val context: Context) {
     private val mainHandler = Handler(Looper.getMainLooper())
 
     private var barView: ProgressBarView? = null
+    @Volatile
     private var isAttached = false
 
     private class ProgressBarView(context: Context) : View(context) {
@@ -136,6 +137,7 @@ class TimeBoxProgressShield(private val context: Context) {
     }
 
     fun remove() {
+        if (!isAttached && barView == null) return
         runOnMainThread {
             removeInternal()
         }

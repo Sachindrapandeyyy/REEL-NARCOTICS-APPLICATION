@@ -16,7 +16,13 @@ class BrowserUrlDetector(
     override val name = "BrowserUrlDetector"
     override val version = "1.4.0"
 
+    private data class BlockedUrlPath(
+        val host: String,
+        val pathPrefix: String
+    )
+
     private val blockedDomains = mutableSetOf<String>()
+    private val blockedUrlPaths = mutableSetOf<BlockedUrlPath>()
     private val blockedSuffixes = setOf(".porn", ".xxx", ".adult", ".cam", ".sex")
 
     companion object {
@@ -82,11 +88,17 @@ class BrowserUrlDetector(
             "rule34", "nhentai", "doujins", "hanime", "cam4", "bongacams",
             "myfreecams", "camsoda", "faphouse", "jerkmate", "txxx", "tube8",
             "spankwire", "drtuber", "bangbros", "naughtyamerica", "realitykings",
-            "twistys", "mofos", "blacked", "tushy", "deeper", "adultwork",
+            "twistys", "adultwork",
             "manyvids", "shemalez", "livejasmin", "flirt4free", "streamate",
-            "imlive", "fansly", "missav", "jable", "thumbzilla", "motherless",
+            "imlive", "fansly", "missav", "thumbzilla",
             "heavy-r", "hardcoresex", "milfporn", "deepthroat", "cumshot",
             "creampie", "desiporn", "bhabhisex", "chudai"
+        )
+
+        // Domain-only adult brand names that are valid everyday English words/substrings
+        // Must ONLY match as domain segments, NEVER as arbitrary page/query substrings.
+        val KNOWN_ADULT_DOMAIN_LABELS = setOf(
+            "deeper", "blacked", "tushy", "motherless", "mofos", "jable"
         )
 
         val ALLOWED_BROWSER_URL_PATTERNS = listOf(
@@ -110,6 +122,7 @@ class BrowserUrlDetector(
         )
 
         private val EXPLICIT_WORD_REGEX = Regex("\\b(porn|porno|pornography|xxx|hentai|blowjob|dildo)\\b", RegexOption.IGNORE_CASE)
+        private val ADULT_TLD_REGEX = Regex("(?:^|[/@\\s.])(?:[a-z0-9-]+\\.)+(porn|xxx|adult|cam|sex)(?=[/?#\\s:]|\$)", RegexOption.IGNORE_CASE)
 
         fun isBrowserPackage(packageName: String): Boolean {
             if (packageName.isBlank()) return false
@@ -128,15 +141,13 @@ class BrowserUrlDetector(
                 if (lower.contains(root)) return true
             }
             if (EXPLICIT_WORD_REGEX.containsMatchIn(lower)) return true
-            for (suffix in setOf(".porn", ".xxx", ".adult", ".cam", ".sex")) {
-                if (lower.contains(suffix)) return true
-            }
+            if (ADULT_TLD_REGEX.containsMatchIn(lower)) return true
             return false
         }
     }
 
     init {
-        blockedDomains.addAll(initialBlockedDomains)
+        initialBlockedDomains.forEach { addBlocklistEntry(it) }
         context?.let { loadBlocklist(it) }
     }
 
@@ -145,13 +156,34 @@ class BrowserUrlDetector(
             context.assets.open("adult_blocklist.txt").use { inputStream ->
                 BufferedReader(InputStreamReader(inputStream)).useLines { lines ->
                     lines.forEach { line ->
-                        val clean = line.trim().lowercase(Locale.US)
-                        if (clean.isNotBlank() && !clean.startsWith("#")) {
-                            blockedDomains.add(clean)
-                        }
+                        addBlocklistEntry(line)
                     }
                 }
             }
+        }
+    }
+
+    private fun addBlocklistEntry(rawEntry: String) {
+        var clean = rawEntry.trim().lowercase(Locale.US)
+        if (clean.isBlank() || clean.startsWith("#")) return
+        clean = clean.removePrefix("https://").removePrefix("http://")
+        if (clean.startsWith("www.")) clean = clean.substring(4)
+        if (clean.startsWith("m.")) clean = clean.substring(2)
+        if ("/" in clean) {
+            val host = clean.substringBefore('/').substringBefore(':').trim()
+            val normalizedPath = "/" + clean.substringAfter('/')
+                .substringBefore('?')
+                .substringBefore('#')
+                .trim('/')
+            if (host.isNotBlank()) {
+                if (normalizedPath.length > 1) {
+                    blockedUrlPaths.add(BlockedUrlPath(host, normalizedPath))
+                } else {
+                    blockedDomains.add(host)
+                }
+            }
+        } else {
+            blockedDomains.add(clean)
         }
     }
 
@@ -202,6 +234,17 @@ class BrowserUrlDetector(
                         }
                     }
 
+                    val hostLabels = domain.split('.')
+                    if (hostLabels.any { it in KNOWN_ADULT_DOMAIN_LABELS }) {
+                        return DetectionResult(
+                            isBlocked = true,
+                            confidence = 1.0f,
+                            category = ContentCategory.ADULT_WEBSITE,
+                            ruleId = "ADULT_DOMAIN_LABEL_MATCH",
+                            reason = "Known adult domain blocked: $domain"
+                        )
+                    }
+
                     if (isDomainBlocked(domain)) {
                         return DetectionResult(
                             isBlocked = true,
@@ -209,6 +252,16 @@ class BrowserUrlDetector(
                             category = ContentCategory.ADULT_WEBSITE,
                             ruleId = "ADULT_DOMAIN_MATCH",
                             reason = "Known adult domain blocked: $domain"
+                        )
+                    }
+
+                    if (isUrlPathBlocked(domain, extractedUrl)) {
+                        return DetectionResult(
+                            isBlocked = true,
+                            confidence = 1.0f,
+                            category = ContentCategory.ADULT_WEBSITE,
+                            ruleId = "ADULT_URL_PATH_MATCH",
+                            reason = "Known adult board or URL path blocked: $extractedUrl"
                         )
                     }
                 }
@@ -331,15 +384,24 @@ class BrowserUrlDetector(
     }
 
     fun extractDomain(rawUrl: String): String {
-        val withProtocol = if (!rawUrl.startsWith("http://") && !rawUrl.startsWith("https://")) {
-            "https://"
+        val trimmed = rawUrl.trim()
+        val withProtocol = if (!trimmed.startsWith("http://", ignoreCase = true) && !trimmed.startsWith("https://", ignoreCase = true)) {
+            "https://$trimmed"
         } else {
-            rawUrl
+            trimmed
         }
 
-        val host = runCatching {
+        val parsedHost = runCatching {
             URI(withProtocol).host
-        }.getOrNull() ?: rawUrl.split("/").firstOrNull() ?: rawUrl
+        }.getOrNull()
+
+        val host = parsedHost ?: trimmed
+            .substringAfter("://", trimmed)
+            .substringBefore("/")
+            .substringBefore("?")
+            .substringBefore("#")
+            .substringAfterLast("@")
+            .substringBefore(":")
 
         var cleaned = host.lowercase(Locale.US).trim()
         if (cleaned.startsWith("www.")) cleaned = cleaned.substring(4)
@@ -359,7 +421,31 @@ class BrowserUrlDetector(
         return false
     }
 
+    private fun extractPath(rawUrl: String): String {
+        val trimmed = rawUrl.trim()
+        val withoutProto = trimmed.substringAfter("://", trimmed)
+        val pathPart = withoutProto.substringAfter('/', "")
+        if (pathPart.isEmpty()) return "/"
+        val cleanPath = "/" + pathPart
+            .substringBefore('?')
+            .substringBefore('#')
+            .lowercase(Locale.US)
+            .trim('/')
+        return cleanPath
+    }
+
+    private fun isUrlPathBlocked(domain: String, rawUrl: String): Boolean {
+        if (blockedUrlPaths.isEmpty()) return false
+        val path = extractPath(rawUrl)
+        if (path == "/") return false
+        return blockedUrlPaths.any { rule ->
+            val hostMatches = domain == rule.host || domain.endsWith(".${rule.host}")
+            val pathMatches = path == rule.pathPrefix || path.startsWith("${rule.pathPrefix}/")
+            hostMatches && pathMatches
+        }
+    }
+
     fun addCustomBlockedDomain(domain: String) {
-        blockedDomains.add(domain.lowercase(Locale.US).trim())
+        addBlocklistEntry(domain)
     }
 }

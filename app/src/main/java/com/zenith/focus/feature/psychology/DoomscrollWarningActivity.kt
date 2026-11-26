@@ -24,6 +24,9 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -45,19 +48,28 @@ class DoomscrollWarningActivity : ComponentActivity() {
         const val EXTRA_TARGET_PACKAGE = "extra_target_package"
     }
 
+    private var targetPackageState by mutableStateOf("")
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        targetPackageState = intent.getStringExtra(EXTRA_TARGET_PACKAGE) ?: ""
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val targetPackage = intent.getStringExtra(EXTRA_TARGET_PACKAGE) ?: ""
+        targetPackageState = intent.getStringExtra(EXTRA_TARGET_PACKAGE) ?: ""
 
         val returnHome = {
+            val pkg = targetPackageState
             val app = runCatching { ZenithApplication.instance }.getOrNull()
             app?.container?.statisticsRepository?.let { repo ->
                 CoroutineScope(Dispatchers.IO).launch {
                     repo.recordBlockEvent(
                         BlockEvent(
                             timestamp = System.currentTimeMillis(),
-                            packageName = targetPackage.ifBlank { "unknown" },
+                            packageName = pkg.ifBlank { "unknown" },
                             category = ContentCategory.DOOMSCROLL_BROKEN,
                             confidence = 1.0f,
                             ruleId = "doomscroll_interrupted"
@@ -70,7 +82,7 @@ class DoomscrollWarningActivity : ComponentActivity() {
                 addCategory(Intent.CATEGORY_HOME)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
-            startActivity(homeIntent)
+            runCatching { startActivity(homeIntent) }
             finish()
         }
 
@@ -83,7 +95,7 @@ class DoomscrollWarningActivity : ComponentActivity() {
         setContent {
             ZenithFocusTheme {
                 DoomscrollWarningScreen(
-                    targetPackage = targetPackage,
+                    targetPackage = targetPackageState,
                     onCloseApp = returnHome,
                     onContinue = {
                         val app = runCatching { ZenithApplication.instance }.getOrNull()

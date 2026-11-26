@@ -67,6 +67,8 @@ import java.util.Locale
 @Composable
 fun NuclearArmingDialog(
     nuclearAppsCount: Int = 0,
+    isServiceConnected: Boolean = true,
+    onEnableAccessibility: (() -> Unit)? = null,
     onManageApps: (() -> Unit)? = null,
     onDismiss: () -> Unit,
     onArmSession: (durationMillis: Long, enabledCategories: Set<ContentCategory>) -> Unit,
@@ -650,6 +652,46 @@ fun NuclearArmingDialog(
                         }
                     }
 
+                    if (!isServiceConnected) {
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Card(
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = EarthSurfaceLinen),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(1.dp, OrbitalCoral.copy(alpha = 0.55f), RoundedCornerShape(14.dp))
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    text = "🛡️ Accessibility Shield Required",
+                                    color = EarthForestDark,
+                                    fontSize = 12.5.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Nuclear Mode requires the Accessibility Shield to intercept Shorts, Reels, and locked apps while the timer is active.",
+                                    color = EarthTextMuted,
+                                    fontSize = 11.sp,
+                                    lineHeight = 15.sp,
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                )
+                                Button(
+                                    onClick = {
+                                        onEnableAccessibility?.invoke()
+                                            ?: com.zenith.focus.core.permission.OemNavigationManager.openAccessibilitySettings(context)
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = OrbitalCoral),
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(36.dp)
+                                ) {
+                                    Text("ENABLE ACCESSIBILITY SHIELD ➔", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+
                     if (!isAdminActive) {
                         Spacer(modifier = Modifier.height(14.dp))
                         Card(
@@ -707,11 +749,18 @@ fun NuclearArmingDialog(
                         Button(
                             onClick = {
                                 if (canProceed) {
-                                    if (!isAdminActive) {
-                                        ZenithDeviceAdminReceiver.openDeviceAdminActivation(context)
-                                    } else {
-                                        onArmSession(selectedDurationMillis, selectedCategories)
-                                        step = 1
+                                    when {
+                                        !isServiceConnected -> {
+                                            onEnableAccessibility?.invoke()
+                                                ?: com.zenith.focus.core.permission.OemNavigationManager.openAccessibilitySettings(context)
+                                        }
+                                        !isAdminActive -> {
+                                            ZenithDeviceAdminReceiver.openDeviceAdminActivation(context)
+                                        }
+                                        else -> {
+                                            onArmSession(selectedDurationMillis, selectedCategories)
+                                            step = 1
+                                        }
                                     }
                                 }
                             },
@@ -723,7 +772,12 @@ fun NuclearArmingDialog(
                             shape = RoundedCornerShape(14.dp)
                         ) {
                             Text(
-                                text = if (!canProceed) "SELECT A SHIELD" else if (!isAdminActive) "1. ACTIVATE PROTECTION" else "PROCEED ➔",
+                                text = when {
+                                    !canProceed -> "SELECT A SHIELD"
+                                    !isServiceConnected -> "ENABLE SHIELD ➔"
+                                    !isAdminActive -> "1. ACTIVATE ADMIN"
+                                    else -> "PROCEED ➔"
+                                },
                                 color = Color.White,
                                 fontWeight = FontWeight.Black
                             )

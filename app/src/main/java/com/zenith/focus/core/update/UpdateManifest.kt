@@ -81,6 +81,13 @@ data class UpdateManifest(
                 UpdateException.ManifestException("APK URL must use secure HTTPS transport: ${apk.url}")
             )
         }
+        apk.fallbackUrl?.let { fallback ->
+            if (!fallback.startsWith("https://")) {
+                return Result.failure(
+                    UpdateException.ManifestException("APK fallbackUrl must use secure HTTPS transport: $fallback")
+                )
+            }
+        }
         if (apk.sizeBytes <= 0) {
             return Result.failure(
                 UpdateException.ManifestException("Invalid APK sizeBytes: ${apk.sizeBytes}")

@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 class UpdateManager(
@@ -35,16 +36,16 @@ class UpdateManager(
                 pInfo.versionCode
             }
         } catch (e: Exception) {
-            9 // Fallback matching current build
+            com.zenith.focus.BuildConfig.VERSION_CODE
         }
     }
 
     val currentVersionName: String by lazy {
         try {
             val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            pInfo.versionName ?: "2.3.4"
+            pInfo.versionName ?: com.zenith.focus.BuildConfig.VERSION_NAME
         } catch (e: Exception) {
-            "2.3.4"
+            com.zenith.focus.BuildConfig.VERSION_NAME
         }
     }
 
@@ -55,7 +56,10 @@ class UpdateManager(
     )
 
     fun checkForUpdates(manifestUrl: String = UpdateConfig.DEFAULT_MANIFEST_URL) {
-        if (_state.value is UpdateState.Checking || _state.value is UpdateState.Downloading) {
+        if (_state.value is UpdateState.Checking ||
+            _state.value is UpdateState.Downloading ||
+            _state.value is UpdateState.Verifying
+        ) {
             return
         }
 
@@ -94,7 +98,7 @@ class UpdateManager(
     }
 
     fun startDownload(manifest: UpdateManifest) {
-        if (_state.value is UpdateState.Downloading) return
+        if (_state.value is UpdateState.Downloading || _state.value is UpdateState.Verifying) return
 
         activeJob?.cancel()
         activeJob = scope.launch {
@@ -120,9 +124,11 @@ class UpdateManager(
                     throw UpdateException.NetworkException("Downloaded file not found on disk")
                 }
 
-                // Verification step
+                // Verification step (run SHA-256 & archive parsing off Main thread to avoid ANR)
                 _state.value = UpdateState.Verifying
-                val verifyResult = verifier.verify(finalFile, manifest)
+                val verifyResult = withContext(Dispatchers.IO) {
+                    verifier.verify(finalFile, manifest)
+                }
 
                 verifyResult.fold(
                     onSuccess = {

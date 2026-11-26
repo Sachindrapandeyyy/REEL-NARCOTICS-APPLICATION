@@ -127,6 +127,14 @@ class ZenithDeviceAdminReceiver : DeviceAdminReceiver() {
 
     override fun onDisableRequested(context: Context, intent: Intent): CharSequence {
         val app = context.applicationContext as? ZenithApplication
+        if (app != null && androidx.core.os.UserManagerCompat.isUserUnlocked(context)) {
+            kotlinx.coroutines.runBlocking {
+                kotlinx.coroutines.withTimeoutOrNull(1200L) {
+                    (app.container.nuclearModeRepository as? com.zenith.focus.data.nuclear.NuclearModeRepositoryImpl)?.ensureInitialized()
+                    (app.container.lockRepository as? com.zenith.focus.data.repository.LockRepositoryImpl)?.ensureInitialized()
+                }
+            }
+        }
         val isNuclear = app?.container?.nuclearModeRepository?.session?.value?.isCurrentlyActive() == true
         val isLock = app?.container?.lockRepository?.lockState?.value?.isCurrentlyActive() == true
         if (isNuclear || isLock) {

@@ -87,4 +87,21 @@ class UpdateManifestTest {
         val deserialized = UpdateManifest.fromJson(serializedJson)
         assertEquals(original, deserialized)
     }
+
+    @Test
+    fun testInsecureFallbackUrlRejectionAndHttpsFallbackAcceptance() {
+        val base = UpdateManifest.fromJson(validJson)
+
+        val insecureFallback = base.copy(
+            apk = base.apk.copy(fallbackUrl = "http://mirror.example.com/release.apk")
+        )
+        val failResult = insecureFallback.validate("com.zenith.focus")
+        assertTrue(failResult.isFailure)
+        assertTrue(failResult.exceptionOrNull() is UpdateException.ManifestException)
+
+        val httpsFallback = base.copy(
+            apk = base.apk.copy(fallbackUrl = "https://github.com/Sachindrapandeyyy/REEL-NARCOTICS-APPLICATION/releases/download/v3.0.0/app.apk")
+        )
+        assertTrue(httpsFallback.validate("com.zenith.focus").isSuccess)
+    }
 }

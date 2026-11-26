@@ -16,6 +16,7 @@ import com.zenith.focus.domain.model.AppLockMode
 import com.zenith.focus.domain.model.InstalledAppInfo
 import com.zenith.focus.domain.model.LockedAppRule
 import com.zenith.focus.domain.repository.AppLockRepository
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +24,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -79,80 +82,105 @@ class AppLockRepositoryImpl(
         }
     }
 
+    private val isInitialized = CompletableDeferred<Unit>()
+    private val writeMutex = Mutex()
     private val _appLockConfig = MutableStateFlow(AppLockConfig())
     override val appLockConfig: StateFlow<AppLockConfig> = _appLockConfig.asStateFlow()
+
+    suspend fun ensureInitialized() {
+        isInitialized.await()
+    }
 
     init {
         externalScope.launch {
             context.appLockDataStore.data
                 .catch { emit(emptyPreferences()) }
                 .collect { prefs ->
-                    val isEnabled = prefs[KEY_APP_LOCK_ENABLED] ?: true
-                    val rulesJson = prefs[KEY_LOCKED_APPS_JSON]
-                    val rules = deserializeRules(rulesJson)
-                    _appLockConfig.value = AppLockConfig(
-                        isAppLockEnabled = isEnabled,
-                        lockedApps = rules
-                    )
+                    try {
+                        val isEnabled = prefs[KEY_APP_LOCK_ENABLED] ?: true
+                        val rulesJson = prefs[KEY_LOCKED_APPS_JSON]
+                        val rules = deserializeRules(rulesJson)
+                        _appLockConfig.value = AppLockConfig(
+                            isAppLockEnabled = isEnabled,
+                            lockedApps = rules
+                        )
+                    } finally {
+                        isInitialized.complete(Unit)
+                    }
                 }
         }
     }
 
     override suspend fun setAppLockEnabled(enabled: Boolean) {
-        _appLockConfig.value = _appLockConfig.value.copy(isAppLockEnabled = enabled)
-        context.appLockDataStore.edit { prefs ->
-            prefs[KEY_APP_LOCK_ENABLED] = enabled
+        ensureInitialized()
+        writeMutex.withLock {
+            _appLockConfig.value = _appLockConfig.value.copy(isAppLockEnabled = enabled)
+            context.appLockDataStore.edit { prefs ->
+                prefs[KEY_APP_LOCK_ENABLED] = enabled
+            }
         }
     }
 
     override suspend fun lockApp(packageName: String, appName: String, mode: AppLockMode) {
-        val normalizedPkg = packageName.trim().lowercase(Locale.US)
-        val updatedMap = _appLockConfig.value.lockedApps.toMutableMap()
-        updatedMap[normalizedPkg] = LockedAppRule(
-            packageName = packageName.trim(),
-            appName = appName.trim(),
-            lockMode = mode,
-            addedTimestamp = System.currentTimeMillis()
-        )
-        _appLockConfig.value = _appLockConfig.value.copy(lockedApps = updatedMap)
-        saveRulesToDataStore(updatedMap)
+        ensureInitialized()
+        writeMutex.withLock {
+            val normalizedPkg = packageName.trim().lowercase(Locale.US)
+            val updatedMap = _appLockConfig.value.lockedApps.toMutableMap()
+            updatedMap[normalizedPkg] = LockedAppRule(
+                packageName = packageName.trim(),
+                appName = appName.trim(),
+                lockMode = mode,
+                addedTimestamp = System.currentTimeMillis()
+            )
+            _appLockConfig.value = _appLockConfig.value.copy(lockedApps = updatedMap)
+            saveRulesToDataStore(updatedMap)
+        }
     }
 
     override suspend fun lockApps(apps: List<Pair<String, String>>, mode: AppLockMode) {
-        val updatedMap = _appLockConfig.value.lockedApps.toMutableMap()
-        val now = System.currentTimeMillis()
-        for ((pkg, name) in apps) {
-            val normalizedPkg = pkg.trim().lowercase(Locale.US)
-            updatedMap[normalizedPkg] = LockedAppRule(
-                packageName = pkg.trim(),
-                appName = name.trim(),
-                lockMode = mode,
-                addedTimestamp = now
-            )
+        ensureInitialized()
+        writeMutex.withLock {
+            val updatedMap = _appLockConfig.value.lockedApps.toMutableMap()
+            val now = System.currentTimeMillis()
+            for ((pkg, name) in apps) {
+                val normalizedPkg = pkg.trim().lowercase(Locale.US)
+                updatedMap[normalizedPkg] = LockedAppRule(
+                    packageName = pkg.trim(),
+                    appName = name.trim(),
+                    lockMode = mode,
+                    addedTimestamp = now
+                )
+            }
+            _appLockConfig.value = _appLockConfig.value.copy(lockedApps = updatedMap)
+            saveRulesToDataStore(updatedMap)
         }
-        _appLockConfig.value = _appLockConfig.value.copy(lockedApps = updatedMap)
-        saveRulesToDataStore(updatedMap)
     }
 
     override suspend fun updateAppLockMode(packageName: String, mode: AppLockMode) {
-        val normalizedPkg = packageName.trim().lowercase(Locale.US)
-        val existing = _appLockConfig.value.lockedApps[normalizedPkg] ?: return
-        val updatedMap = _appLockConfig.value.lockedApps.toMutableMap()
-        updatedMap[normalizedPkg] = existing.copy(lockMode = mode)
-        _appLockConfig.value = _appLockConfig.value.copy(lockedApps = updatedMap)
-        saveRulesToDataStore(updatedMap)
+        ensureInitialized()
+        writeMutex.withLock {
+            val normalizedPkg = packageName.trim().lowercase(Locale.US)
+            val existing = _appLockConfig.value.lockedApps[normalizedPkg] ?: return@withLock
+            val updatedMap = _appLockConfig.value.lockedApps.toMutableMap()
+            updatedMap[normalizedPkg] = existing.copy(lockMode = mode)
+            _appLockConfig.value = _appLockConfig.value.copy(lockedApps = updatedMap)
+            saveRulesToDataStore(updatedMap)
+        }
     }
 
     override suspend fun unlockApp(packageName: String): Boolean {
-        val normalizedPkg = packageName.trim().lowercase(Locale.US)
-        if (!_appLockConfig.value.lockedApps.containsKey(normalizedPkg)) {
-            return false
+        ensureInitialized()
+        return writeMutex.withLock {
+            val normalizedPkg = packageName.trim().lowercase(Locale.US)
+            if (!_appLockConfig.value.lockedApps.containsKey(normalizedPkg)) {
+                return@withLock false
+            }
+            val updatedMap = _appLockConfig.value.lockedApps.toMutableMap()
+            updatedMap.remove(normalizedPkg)
+            _appLockConfig.value = _appLockConfig.value.copy(lockedApps = updatedMap)
+            saveRulesToDataStore(updatedMap)
+            true
         }
-        val updatedMap = _appLockConfig.value.lockedApps.toMutableMap()
-        updatedMap.remove(normalizedPkg)
-        _appLockConfig.value = _appLockConfig.value.copy(lockedApps = updatedMap)
-        saveRulesToDataStore(updatedMap)
-        return true
     }
 
     private suspend fun saveRulesToDataStore(rules: Map<String, LockedAppRule>) {
@@ -198,7 +226,7 @@ class AppLockRepositoryImpl(
             }
 
             seenPackages.add(lowerPkg)
-            val appLabel = resolveInfo.loadLabel(pm)?.toString() ?: pkg
+            val appLabel = resolveInfo.loadLabel(pm).toString().ifBlank { pkg }
             val isSystem = (resolveInfo.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
             val lockedRule = currentLocked[lowerPkg]
 

@@ -16,15 +16,16 @@ import com.zenith.focus.domain.model.HabitConfig
 import com.zenith.focus.domain.model.ProtectionConfig
 import com.zenith.focus.domain.model.ScheduleConfig
 import com.zenith.focus.domain.repository.SettingsRepository
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
-
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "zenith_settings_preferences")
 
@@ -74,6 +75,13 @@ class SettingsRepositoryImpl(
         private val KEY_BEDTIME_END_MIN = intPreferencesKey("bedtime_end_min")
     }
 
+    private val isInitialized = CompletableDeferred<Unit>()
+    private val writeMutex = Mutex()
+    private var lastScheduledHabitConfig: HabitConfig? = null
+
+    private val _isLoaded = MutableStateFlow(false)
+    val isLoaded: StateFlow<Boolean> = _isLoaded.asStateFlow()
+
     private val _protectionConfig = MutableStateFlow(ProtectionConfig())
     override val protectionConfig: StateFlow<ProtectionConfig> = _protectionConfig.asStateFlow()
 
@@ -89,12 +97,21 @@ class SettingsRepositoryImpl(
     private val _habitConfig = MutableStateFlow(HabitConfig())
     override val habitConfig: StateFlow<HabitConfig> = _habitConfig.asStateFlow()
 
+    suspend fun ensureInitialized() {
+        isInitialized.await()
+    }
+
     init {
         externalScope.launch {
             context.settingsDataStore.data
                 .catch { emit(androidx.datastore.preferences.core.emptyPreferences()) }
                 .collect { prefs ->
-                    loadSettingsFromPrefs(prefs)
+                    try {
+                        loadSettingsFromPrefs(prefs)
+                    } finally {
+                        _isLoaded.value = true
+                        isInitialized.complete(Unit)
+                    }
                 }
         }
     }
@@ -146,123 +163,131 @@ class SettingsRepositoryImpl(
             bedtimeEndMinute = prefs[KEY_BEDTIME_END_MIN] ?: 30
         )
         _habitConfig.value = habits
-        HabitNotificationScheduler.reschedule(context, habits)
+        if (lastScheduledHabitConfig != habits) {
+            lastScheduledHabitConfig = habits
+            HabitNotificationScheduler.reschedule(context, habits)
+        }
     }
 
     override suspend fun updateCategory(category: ContentCategory, isBlocked: Boolean) {
-        val current = _protectionConfig.value
-        val updated = when (category) {
-            ContentCategory.YOUTUBE_SHORTS -> current.copy(blockYouTubeShorts = isBlocked)
-            ContentCategory.INSTAGRAM_REELS -> current.copy(blockInstagramReels = isBlocked)
-            ContentCategory.SNAPCHAT_SPOTLIGHT -> current.copy(blockSnapchatSpotlight = isBlocked)
-            ContentCategory.FACEBOOK_REELS -> current.copy(blockFacebookReels = isBlocked)
-            ContentCategory.TIKTOK -> current.copy(blockTikTok = isBlocked)
-            ContentCategory.OTHER_SHORT_VIDEO -> current.copy(blockOtherShortVideo = isBlocked)
-            ContentCategory.ADULT_WEBSITE -> current.copy(blockAdultWebsites = isBlocked)
-            ContentCategory.ADULT_KEYWORD -> current.copy(blockAdultKeywords = isBlocked)
-            ContentCategory.SYSTEM_TAMPER -> current
-            ContentCategory.APP_LOCK -> current
-            ContentCategory.IMPULSE_DEFEATED -> current
-            ContentCategory.DOOMSCROLL_BROKEN -> current
+        mutateProtectionConfig { current ->
+            when (category) {
+                ContentCategory.YOUTUBE_SHORTS -> current.copy(blockYouTubeShorts = isBlocked)
+                ContentCategory.INSTAGRAM_REELS -> current.copy(blockInstagramReels = isBlocked)
+                ContentCategory.SNAPCHAT_SPOTLIGHT -> current.copy(blockSnapchatSpotlight = isBlocked)
+                ContentCategory.FACEBOOK_REELS -> current.copy(blockFacebookReels = isBlocked)
+                ContentCategory.TIKTOK -> current.copy(blockTikTok = isBlocked)
+                ContentCategory.OTHER_SHORT_VIDEO -> current.copy(blockOtherShortVideo = isBlocked)
+                ContentCategory.ADULT_WEBSITE -> current.copy(blockAdultWebsites = isBlocked)
+                ContentCategory.ADULT_KEYWORD -> current.copy(blockAdultKeywords = isBlocked)
+                ContentCategory.SYSTEM_TAMPER -> current
+                ContentCategory.APP_LOCK -> current
+                ContentCategory.IMPULSE_DEFEATED -> current
+                ContentCategory.DOOMSCROLL_BROKEN -> current
+            }
         }
-        updateProtectionConfig(updated)
+    }
+
+    private suspend inline fun mutateProtectionConfig(crossinline transform: (ProtectionConfig) -> ProtectionConfig) {
+        ensureInitialized()
+        writeMutex.withLock {
+            val updated = transform(_protectionConfig.value)
+            _protectionConfig.value = updated
+            persistProtectionConfig(updated)
+        }
     }
 
     override suspend fun updateProtectionConfig(config: ProtectionConfig) {
-        _protectionConfig.value = config
-        externalScope.launch {
-            runCatching {
-                context.settingsDataStore.edit { prefs ->
-                    prefs[KEY_BLOCK_SHORTS] = config.blockYouTubeShorts
-                    prefs[KEY_BLOCK_REELS] = config.blockInstagramReels
-                    prefs[KEY_BLOCK_SPOTLIGHT] = config.blockSnapchatSpotlight
-                    prefs[KEY_BLOCK_FB_REELS] = config.blockFacebookReels
-                    prefs[KEY_BLOCK_TIKTOK] = config.blockTikTok
-                    prefs[KEY_BLOCK_OTHER] = config.blockOtherShortVideo
-                    prefs[KEY_BLOCK_ADULT_SITES] = config.blockAdultWebsites
-                    prefs[KEY_BLOCK_ADULT_KEYWORDS] = config.blockAdultKeywords
-                    prefs[KEY_BROWSER_PROTECTION] = config.browserProtectionEnabled
-                    prefs[KEY_STRICT_MODE] = config.strictMode
-                    prefs[KEY_NUCLEAR_MODE] = config.nuclearMode
-                    prefs[KEY_FRICTION_TYPE] = config.frictionType.name
-                    prefs[KEY_UNLOCK_PHRASE] = config.unlockPhrase
-                    prefs[KEY_PIN_HASH] = config.pinHash
-                    prefs[KEY_PIN_SALT] = config.pinSalt
-                    prefs[KEY_ENABLE_MINDFUL_PAUSE] = config.enableMindfulPause
-                    prefs[KEY_STEALTH_BUTTON_COVER] = config.stealthButtonCover
-                    prefs[KEY_ENABLE_DOOMSCROLL_GUARD] = config.enableDoomscrollGuard
-                    prefs[KEY_ENABLE_PHYSICAL_ANCHOR] = config.enablePhysicalAnchor
-                    prefs[KEY_NFC_ANCHOR_HASH] = config.nfcAnchorHash
-                    prefs[KEY_QR_ANCHOR_HASH] = config.qrAnchorHash
-                    prefs[KEY_ENABLE_AUTO_GRAYSCALE] = config.enableAutoGrayscale
-                }
+        ensureInitialized()
+        writeMutex.withLock {
+            _protectionConfig.value = config
+            persistProtectionConfig(config)
+        }
+    }
+
+    private suspend fun persistProtectionConfig(config: ProtectionConfig) {
+        runCatching {
+            context.settingsDataStore.edit { prefs ->
+                prefs[KEY_BLOCK_SHORTS] = config.blockYouTubeShorts
+                prefs[KEY_BLOCK_REELS] = config.blockInstagramReels
+                prefs[KEY_BLOCK_SPOTLIGHT] = config.blockSnapchatSpotlight
+                prefs[KEY_BLOCK_FB_REELS] = config.blockFacebookReels
+                prefs[KEY_BLOCK_TIKTOK] = config.blockTikTok
+                prefs[KEY_BLOCK_OTHER] = config.blockOtherShortVideo
+                prefs[KEY_BLOCK_ADULT_SITES] = config.blockAdultWebsites
+                prefs[KEY_BLOCK_ADULT_KEYWORDS] = config.blockAdultKeywords
+                prefs[KEY_BROWSER_PROTECTION] = config.browserProtectionEnabled
+                prefs[KEY_STRICT_MODE] = config.strictMode
+                prefs[KEY_NUCLEAR_MODE] = config.nuclearMode
+                prefs[KEY_FRICTION_TYPE] = config.frictionType.name
+                prefs[KEY_UNLOCK_PHRASE] = config.unlockPhrase
+                prefs[KEY_PIN_HASH] = config.pinHash
+                prefs[KEY_PIN_SALT] = config.pinSalt
+                prefs[KEY_ENABLE_MINDFUL_PAUSE] = config.enableMindfulPause
+                prefs[KEY_STEALTH_BUTTON_COVER] = config.stealthButtonCover
+                prefs[KEY_ENABLE_DOOMSCROLL_GUARD] = config.enableDoomscrollGuard
+                prefs[KEY_ENABLE_PHYSICAL_ANCHOR] = config.enablePhysicalAnchor
+                prefs[KEY_NFC_ANCHOR_HASH] = config.nfcAnchorHash
+                prefs[KEY_QR_ANCHOR_HASH] = config.qrAnchorHash
+                prefs[KEY_ENABLE_AUTO_GRAYSCALE] = config.enableAutoGrayscale
             }
         }
     }
 
     override suspend fun setStrictMode(enabled: Boolean) {
-        val current = _protectionConfig.value.copy(strictMode = enabled)
-        updateProtectionConfig(current)
+        mutateProtectionConfig { it.copy(strictMode = enabled) }
     }
 
     override suspend fun setMindfulPauseEnabled(enabled: Boolean) {
-        val current = _protectionConfig.value.copy(enableMindfulPause = enabled)
-        updateProtectionConfig(current)
+        mutateProtectionConfig { it.copy(enableMindfulPause = enabled) }
     }
 
     override suspend fun setStealthCoverEnabled(enabled: Boolean) {
-        val current = _protectionConfig.value.copy(stealthButtonCover = enabled)
-        updateProtectionConfig(current)
+        mutateProtectionConfig { it.copy(stealthButtonCover = enabled) }
     }
 
     override suspend fun setDoomscrollGuardEnabled(enabled: Boolean) {
-        val current = _protectionConfig.value.copy(enableDoomscrollGuard = enabled)
-        updateProtectionConfig(current)
+        mutateProtectionConfig { it.copy(enableDoomscrollGuard = enabled) }
     }
 
     override suspend fun setPhysicalAnchorEnabled(enabled: Boolean) {
-        val current = _protectionConfig.value.copy(enablePhysicalAnchor = enabled)
-        updateProtectionConfig(current)
+        mutateProtectionConfig { it.copy(enablePhysicalAnchor = enabled) }
     }
 
     override suspend fun setNfcAnchorHash(hash: String) {
-        val current = _protectionConfig.value.copy(nfcAnchorHash = hash)
-        updateProtectionConfig(current)
+        mutateProtectionConfig { it.copy(nfcAnchorHash = hash) }
     }
 
     override suspend fun setQrAnchorHash(hash: String) {
-        val current = _protectionConfig.value.copy(qrAnchorHash = hash)
-        updateProtectionConfig(current)
+        mutateProtectionConfig { it.copy(qrAnchorHash = hash) }
     }
 
     override suspend fun setAutoGrayscaleEnabled(enabled: Boolean) {
-        val current = _protectionConfig.value.copy(enableAutoGrayscale = enabled)
-        updateProtectionConfig(current)
+        mutateProtectionConfig { it.copy(enableAutoGrayscale = enabled) }
     }
 
     override suspend fun setFrictionType(frictionType: FrictionType) {
-        val current = _protectionConfig.value.copy(frictionType = frictionType)
-        updateProtectionConfig(current)
+        mutateProtectionConfig { it.copy(frictionType = frictionType) }
     }
 
     override suspend fun setPin(pin: String) {
         val salt = PinHasher.generateSalt()
         val hash = PinHasher.hashPin(pin, salt)
-        val current = _protectionConfig.value.copy(pinHash = hash, pinSalt = salt)
-        updateProtectionConfig(current)
+        mutateProtectionConfig { it.copy(pinHash = hash, pinSalt = salt) }
     }
 
     override suspend fun clearPin() {
-        val current = _protectionConfig.value.copy(pinHash = "", pinSalt = "")
-        updateProtectionConfig(current)
+        mutateProtectionConfig { it.copy(pinHash = "", pinSalt = "") }
     }
 
     override suspend fun verifyPin(pin: String): Boolean {
+        ensureInitialized()
         val current = _protectionConfig.value
         return PinHasher.verifyPin(pin, current.pinHash, current.pinSalt)
     }
 
     override suspend fun setOnboardingCompleted(completed: Boolean) {
+        ensureInitialized()
         context.settingsDataStore.edit { prefs ->
             prefs[KEY_ONBOARDING_DONE] = completed
         }
@@ -270,6 +295,7 @@ class SettingsRepositoryImpl(
     }
 
     override suspend fun setAppTheme(theme: String) {
+        ensureInitialized()
         context.settingsDataStore.edit { prefs ->
             prefs[KEY_APP_THEME] = theme
         }
@@ -292,8 +318,10 @@ class SettingsRepositoryImpl(
     }
 
     override suspend fun updateHabitConfig(config: HabitConfig) {
-        _habitConfig.value = config
-        externalScope.launch {
+        ensureInitialized()
+        writeMutex.withLock {
+            _habitConfig.value = config
+            lastScheduledHabitConfig = config
             runCatching {
                 context.settingsDataStore.edit { prefs ->
                     prefs[KEY_MORNING_PLEDGE_ENABLED] = config.morningPledgeEnabled

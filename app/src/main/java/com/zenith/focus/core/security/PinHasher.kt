@@ -25,9 +25,11 @@ object PinHasher {
     }
 
     fun verifyPin(enteredPin: String, storedHash: String, storedSalt: String): Boolean {
-        if (storedHash.isBlank() || storedSalt.isBlank()) return false
-        val computedHash = hashPin(enteredPin, storedSalt)
-        return slowEquals(fromHex(computedHash), fromHex(storedHash))
+        if (storedHash.isBlank() || storedSalt.isBlank() || enteredPin.isBlank()) return false
+        return runCatching {
+            val computedHash = hashPin(enteredPin, storedSalt)
+            slowEquals(fromHex(computedHash), fromHex(storedHash))
+        }.getOrDefault(false)
     }
 
     private fun slowEquals(a: ByteArray, b: ByteArray): Boolean {
@@ -48,11 +50,18 @@ object PinHasher {
     }
 
     private fun fromHex(hex: String): ByteArray {
-        val len = hex.length
+        val clean = hex.trim()
+        val len = clean.length
+        if (len == 0 || len % 2 != 0) {
+            return ByteArray(0)
+        }
         val data = ByteArray(len / 2)
         var i = 0
         while (i < len) {
-            data[i / 2] = ((Character.digit(hex[i], 16) shl 4) + Character.digit(hex[i + 1], 16)).toByte()
+            val hi = Character.digit(clean[i], 16)
+            val lo = Character.digit(clean[i + 1], 16)
+            if (hi < 0 || lo < 0) return ByteArray(0)
+            data[i / 2] = ((hi shl 4) + lo).toByte()
             i += 2
         }
         return data

@@ -32,6 +32,7 @@ class ShortFormButtonShield(private val context: Context) {
     private var currentBounds: Rect? = null
     private var currentTargetPackage: String? = null
     private var currentStealthMode: Boolean = true
+    private var lastHapticTimeMs: Long = 0L
 
     private class ShieldCoverView(context: Context) : View(context) {
         var coverColor: Int = 0x01000000
@@ -244,9 +245,13 @@ class ShortFormButtonShield(private val context: Context) {
         shieldView = null
         currentBounds = null
         currentTargetPackage = null
+        currentStealthMode = true
     }
 
     private fun triggerHaptic() {
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (lastHapticTimeMs > 0L && now - lastHapticTimeMs < 350L) return
+        lastHapticTimeMs = now
         runCatching {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 val vm = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager

@@ -1,6 +1,7 @@
 package com.zenith.focus.feature.settings
 
 import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AdminPanelSettings
@@ -25,6 +27,7 @@ import androidx.compose.material.icons.outlined.Bedtime
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.ColorLens
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Nfc
@@ -44,13 +47,17 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,8 +69,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.zenith.focus.core.designsystem.*
@@ -76,50 +86,66 @@ import com.zenith.focus.domain.model.HabitConfig
 import com.zenith.focus.domain.model.ProtectionConfig
 import com.zenith.focus.feature.protection.EtherealToggle
 import com.zenith.focus.receiver.ZenithDeviceAdminReceiver
+import kotlinx.coroutines.launch
+import java.util.Locale
 
 @Composable
 fun SettingsScreen(
     config: ProtectionConfig,
     isServiceConnected: Boolean,
     isNuclearActive: Boolean = false,
-    @Suppress("UNUSED_PARAMETER") currentTheme: String = "",
-    @Suppress("UNUSED_PARAMETER") updateManager: UpdateManager? = null,
+    isLockActive: Boolean = false,
+    updateManager: UpdateManager? = null,
     habitConfig: HabitConfig = HabitConfig(),
     onUpdateHabitConfig: (HabitConfig) -> Unit = {},
     onUpdateProtectionConfig: (ProtectionConfig) -> Unit = {},
     onOpenPhysicalAnchorDialog: () -> Unit = {},
-    @Suppress("UNUSED_PARAMETER") todayTotalBlocks: Int = 0,
-    @Suppress("UNUSED_PARAMETER") focusStreakDays: Int = 1,
+    todayTotalBlocks: Int = 0,
+    focusStreakDays: Int = 1,
     onShowUpdateDialog: () -> Unit = {},
-    @Suppress("UNUSED_PARAMETER") onSelectFrictionType: (FrictionType) -> Unit = {},
-    @Suppress("UNUSED_PARAMETER") onSetPin: suspend (String) -> Unit = {},
-    @Suppress("UNUSED_PARAMETER") onClearPin: suspend () -> Unit = {},
-    @Suppress("UNUSED_PARAMETER") onSetTheme: (String) -> Unit = {},
+    onSelectFrictionType: (FrictionType) -> Unit = {},
+    onSetPin: suspend (String) -> Unit = {},
+    onClearPin: suspend () -> Unit = {},
     onEnableAccessibility: (() -> Unit)? = null
 ) {
     val earth = EarthTheme.colors
     val context = LocalContext.current
     val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
+    val coroutineScope = rememberCoroutineScope()
     val handleOpenAccessibility: () -> Unit = onEnableAccessibility ?: {
         OemNavigationManager.openAccessibilitySettings(context)
         Unit
     }
     val lifecycleOwner = LocalLifecycleOwner.current
     val scrollState = rememberScrollState()
+    val isSessionLocked = isNuclearActive || isLockActive
+    val updateState = updateManager?.state?.collectAsState()?.value
 
     var showRestrictedDialog by remember { mutableStateOf(false) }
+    var showFrictionPickerDialog by remember { mutableStateOf(false) }
+    var showPinSetupDialog by remember { mutableStateOf(false) }
+    var showPhraseEditorDialog by remember { mutableStateOf(false) }
+    var showRoutineScheduleDialog by remember { mutableStateOf(false) }
     var isDeviceAdminActive by remember {
         mutableStateOf(ZenithDeviceAdminReceiver.isAdminActive(context))
+    }
+    var isSecureSettingsGranted by remember {
+        mutableStateOf(com.zenith.focus.feature.sensory.GrayscaleController.isPermissionGranted(context))
+    }
+    var isDeviceOwner by remember {
+        mutableStateOf(com.zenith.focus.core.security.DeviceOwnerManager.isDeviceOwner(context))
     }
 
     if (showRestrictedDialog) {
         RestrictedSettingsGuideDialog(onDismiss = { showRestrictedDialog = false })
     }
 
-    DisposableEffect(lifecycleOwner) {
+    DisposableEffect(lifecycleOwner, isNuclearActive) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 isDeviceAdminActive = ZenithDeviceAdminReceiver.isAdminActive(context)
+                isSecureSettingsGranted = com.zenith.focus.feature.sensory.GrayscaleController.isPermissionGranted(context)
+                isDeviceOwner = com.zenith.focus.core.security.DeviceOwnerManager.isDeviceOwner(context)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -291,11 +317,12 @@ fun SettingsScreen(
             ) {
                 Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 6.dp)) {
                     // Item 1: Morning Focus Pledge
+                    val morningStr = formatRoutineClock(habitConfig.morningPledgeHour, habitConfig.morningPledgeMinute)
                     SettingsToggleRow(
                         icon = Icons.Outlined.LightMode,
                         iconTint = OrbitalAmber,
                         title = "Morning Focus Pledge",
-                        subtitle = "8:00 AM daily intention setting before scrolling starts",
+                        subtitle = "$morningStr daily intention setting before scrolling starts",
                         isChecked = habitConfig.morningPledgeEnabled,
                         onCheckedChange = { enabled ->
                             onUpdateHabitConfig(habitConfig.copy(morningPledgeEnabled = enabled))
@@ -305,11 +332,12 @@ fun SettingsScreen(
                     EtherealDivider()
 
                     // Item 2: Evening Victory Digest
+                    val eveningStr = formatRoutineClock(habitConfig.eveningSummaryHour, habitConfig.eveningSummaryMinute)
                     SettingsToggleRow(
                         icon = Icons.Outlined.NotificationsActive,
                         iconTint = OrbitalViolet,
                         title = "Evening Summary Digest",
-                        subtitle = "9:00 PM summary of kicks deflected and focus streak",
+                        subtitle = "$eveningStr summary of kicks deflected and focus streak",
                         isChecked = habitConfig.eveningSummaryEnabled,
                         onCheckedChange = { enabled ->
                             onUpdateHabitConfig(habitConfig.copy(eveningSummaryEnabled = enabled))
@@ -319,14 +347,38 @@ fun SettingsScreen(
                     EtherealDivider()
 
                     // Item 3: Bedtime Sleep Shield
+                    val bedtimeStartStr = formatRoutineClock(habitConfig.bedtimeStartHour, habitConfig.bedtimeStartMinute)
+                    val bedtimeEndStr = formatRoutineClock(habitConfig.bedtimeEndHour, habitConfig.bedtimeEndMinute)
                     SettingsToggleRow(
                         icon = Icons.Outlined.Bedtime,
                         iconTint = OrbitalCoral,
                         title = "Bedtime Sleep Shield",
-                        subtitle = "11:00 PM to 6:30 AM unconditional feed lockdown",
+                        subtitle = "$bedtimeStartStr to $bedtimeEndStr unconditional feed lockdown",
                         isChecked = habitConfig.bedtimeShieldEnabled,
                         onCheckedChange = { enabled ->
-                            onUpdateHabitConfig(habitConfig.copy(bedtimeShieldEnabled = enabled))
+                            if (!enabled && isNuclearActive) {
+                                Toast.makeText(context, "Locked while Nuclear Mode is active.", Toast.LENGTH_SHORT).show()
+                            } else {
+                                onUpdateHabitConfig(habitConfig.copy(bedtimeShieldEnabled = enabled))
+                            }
+                        }
+                    )
+
+                    EtherealDivider()
+
+                    SettingsActionRow(
+                        icon = Icons.Outlined.Edit,
+                        iconTint = OrbitalSky,
+                        title = "Customize Routine Times",
+                        subtitle = "$morningStr • $eveningStr • $bedtimeStartStr–$bedtimeEndStr",
+                        badge = if (isNuclearActive) "LOCKED" else "EDIT",
+                        badgeColor = if (isNuclearActive) OrbitalAmber else OrbitalSky,
+                        onClick = {
+                            if (isNuclearActive) {
+                                Toast.makeText(context, "Routine schedules locked during active Nuclear Mode.", Toast.LENGTH_SHORT).show()
+                            } else {
+                                showRoutineScheduleDialog = true
+                            }
                         }
                     )
                 }
@@ -398,10 +450,6 @@ fun SettingsScreen(
             GroupHeader(title = "PHYSICAL & SENSORY ARMOR", subtitle = "Hardware NFC/QR keys & dopamine-free display")
             Spacer(modifier = Modifier.height(10.dp))
 
-            val isSecureSettingsGranted = remember {
-                com.zenith.focus.feature.sensory.GrayscaleController.isPermissionGranted(context)
-            }
-
             Card(
                 shape = RoundedCornerShape(22.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.90f)),
@@ -421,10 +469,17 @@ fun SettingsScreen(
                             "Requires 1-time ADB permission • Tap command below to copy",
                         isChecked = config.enableAutoGrayscale,
                         onCheckedChange = { enabled ->
-                            if (enabled && !isSecureSettingsGranted) {
-                                android.widget.Toast.makeText(context, "Grant WRITE_SECURE_SETTINGS via ADB first!", android.widget.Toast.LENGTH_LONG).show()
+                            if (!enabled && isNuclearActive) {
+                                Toast.makeText(context, "Auto-Grayscale cannot be disabled during active Nuclear Mode.", Toast.LENGTH_SHORT).show()
+                            } else {
+                                if (enabled && !isSecureSettingsGranted) {
+                                    Toast.makeText(context, "Grant WRITE_SECURE_SETTINGS via ADB first!", Toast.LENGTH_LONG).show()
+                                }
+                                if (enabled && isNuclearActive && isSecureSettingsGranted) {
+                                    com.zenith.focus.feature.sensory.GrayscaleController.applyGrayscaleIfEnabled(context, true)
+                                }
+                                onUpdateProtectionConfig(config.copy(enableAutoGrayscale = enabled))
                             }
-                            onUpdateProtectionConfig(config.copy(enableAutoGrayscale = enabled))
                         }
                     )
 
@@ -482,6 +537,77 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // ====================================================================
+            // UNLOCK FRICTION & PIN CHALLENGE CONFIGURATION
+            // ====================================================================
+            GroupHeader(title = "UNLOCK FRICTION & PIN", subtitle = "Challenge required before unlocking Focus Lock early")
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Card(
+                shape = RoundedCornerShape(22.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.90f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, earth.border, RoundedCornerShape(22.dp))
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 6.dp)) {
+                    val frictionTitle = when (config.frictionType) {
+                        FrictionType.HOLD_BUTTON -> "5-Second Conscious Hold"
+                        FrictionType.TYPE_PHRASE -> "Type Pledge Phrase"
+                        FrictionType.MATH_TASK -> "Mental Math Challenge"
+                        FrictionType.PIN_CODE -> "Secret 4–8 Digit PIN"
+                    }
+                    SettingsActionRow(
+                        icon = Icons.Outlined.Lock,
+                        iconTint = OrbitalViolet,
+                        title = "Unlock Method",
+                        subtitle = frictionTitle,
+                        badge = if (isSessionLocked) "LOCKED" else "CHANGE",
+                        badgeColor = if (isSessionLocked) OrbitalAmber else OrbitalViolet,
+                        onClick = {
+                            if (isSessionLocked) {
+                                Toast.makeText(context, "Unlock friction cannot be changed while a session is active.", Toast.LENGTH_SHORT).show()
+                            } else {
+                                showFrictionPickerDialog = true
+                            }
+                        }
+                    )
+
+                    EtherealDivider()
+
+                    val hasPin = !config.pinHash.isNullOrBlank()
+                    SettingsActionRow(
+                        icon = Icons.Outlined.Security,
+                        iconTint = if (hasPin) OrbitalMint else OrbitalSky,
+                        title = "Focus PIN Code",
+                        subtitle = if (hasPin) "4–8 digit PIN active" else "Optional PIN required for PIN_CODE mode",
+                        badge = if (hasPin) "MANAGE" else "SET PIN",
+                        badgeColor = if (hasPin) OrbitalMint else OrbitalSky,
+                        onClick = { showPinSetupDialog = true }
+                    )
+
+                    EtherealDivider()
+
+                    SettingsActionRow(
+                        icon = Icons.Outlined.Edit,
+                        iconTint = OrbitalCoral,
+                        title = "Pledge Unlock Phrase",
+                        subtitle = "\"${config.unlockPhrase}\"",
+                        badge = if (isSessionLocked) "LOCKED" else "EDIT",
+                        badgeColor = if (isSessionLocked) OrbitalAmber else OrbitalCoral,
+                        onClick = {
+                            if (isSessionLocked) {
+                                Toast.makeText(context, "Unlock phrase cannot be edited while locked.", Toast.LENGTH_SHORT).show()
+                            } else {
+                                showPhraseEditorDialog = true
+                            }
+                        }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // ====================================================================
             // 5. GROUP 3: APPLICATION UPDATES & ENGINE (UNIFIED FROSTED CONTAINER)
             // ====================================================================
             GroupHeader(title = "ENGINE & UPDATES", subtitle = "Release channel")
@@ -500,16 +626,19 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                             Text(
-                                text = "Reel Narcotics v3.0.0",
+                                text = "Reel Narcotics v${com.zenith.focus.BuildConfig.VERSION_NAME}",
                                 color = earth.textPrimary,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "Ethereal Aurora Edition",
-                                color = earth.textMuted,
+                                text = when (updateState) {
+                                    is UpdateState.Available -> "Update v${updateState.manifest.versionName} ready • ${focusStreakDays}d streak"
+                                    else -> "Ethereal Aurora • $todayTotalBlocks kicks today • ${focusStreakDays}d streak"
+                                },
+                                color = if (updateState is UpdateState.Available) OrbitalCoral else earth.textMuted,
                                 fontSize = 12.sp
                             )
                         }
@@ -518,19 +647,21 @@ fun SettingsScreen(
                             Button(
                                 onClick = onShowUpdateDialog,
                                 shape = RoundedCornerShape(14.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = earth.surfaceVariant),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (updateState is UpdateState.Available) OrbitalCoral else earth.surfaceVariant
+                                ),
                                 modifier = Modifier.height(38.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.Sync,
                                     contentDescription = "Check for updates",
-                                    tint = earth.textPrimary,
+                                    tint = if (updateState is UpdateState.Available) Color.White else earth.textPrimary,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "Update",
-                                    color = earth.textPrimary,
+                                    text = if (updateState is UpdateState.Available) "Install" else "Update",
+                                    color = if (updateState is UpdateState.Available) Color.White else earth.textPrimary,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -547,11 +678,6 @@ fun SettingsScreen(
             // ====================================================================
             GroupHeader(title = "GOD MODE (ADB)", subtitle = "Ultimate tamper-proofing")
             Spacer(modifier = Modifier.height(10.dp))
-
-            val isDeviceOwner = remember(isNuclearActive) {
-                com.zenith.focus.core.security.DeviceOwnerManager.isDeviceOwner(context)
-            }
-            val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
 
             Card(
                 shape = RoundedCornerShape(22.dp),
@@ -651,6 +777,7 @@ fun SettingsScreen(
                                 } else {
                                     val success = com.zenith.focus.core.security.DeviceOwnerManager.deactivateDeviceOwner(context)
                                     if (success) {
+                                        isDeviceOwner = false
                                         android.widget.Toast.makeText(context, "Device Owner deactivated", android.widget.Toast.LENGTH_SHORT).show()
                                     }
                                 }
@@ -720,6 +847,410 @@ fun SettingsScreen(
             }
 
             Spacer(modifier = Modifier.height(100.dp))
+        }
+    }
+
+    if (showFrictionPickerDialog) {
+        FrictionMethodPickerDialog(
+            currentType = config.frictionType,
+            hasPinConfigured = !config.pinHash.isNullOrBlank(),
+            onDismiss = { showFrictionPickerDialog = false },
+            onSelect = { selected ->
+                showFrictionPickerDialog = false
+                if (selected == FrictionType.PIN_CODE && config.pinHash.isNullOrBlank()) {
+                    Toast.makeText(context, "Create a 4–8 digit PIN to enable PIN Lock mode.", Toast.LENGTH_SHORT).show()
+                    showPinSetupDialog = true
+                } else {
+                    onSelectFrictionType(selected)
+                }
+            }
+        )
+    }
+
+    if (showPinSetupDialog) {
+        PinSetupModalDialog(
+            hasExistingPin = !config.pinHash.isNullOrBlank(),
+            canClearPin = !isSessionLocked,
+            onDismiss = { showPinSetupDialog = false },
+            onSavePin = { pin ->
+                coroutineScope.launch {
+                    onSetPin(pin)
+                    if (!isSessionLocked) {
+                        onSelectFrictionType(FrictionType.PIN_CODE)
+                    }
+                    showPinSetupDialog = false
+                    Toast.makeText(context, "Focus PIN saved & active.", Toast.LENGTH_SHORT).show()
+                }
+            },
+            onRemovePin = {
+                coroutineScope.launch {
+                    onClearPin()
+                    if (config.frictionType == FrictionType.PIN_CODE) {
+                        onSelectFrictionType(FrictionType.HOLD_BUTTON)
+                    }
+                    showPinSetupDialog = false
+                    Toast.makeText(context, "Focus PIN removed.", Toast.LENGTH_SHORT).show()
+                }
+            }
+        )
+    }
+
+    if (showPhraseEditorDialog) {
+        UnlockPhraseEditorDialog(
+            currentPhrase = config.unlockPhrase,
+            onDismiss = { showPhraseEditorDialog = false },
+            onSavePhrase = { newPhrase ->
+                onUpdateProtectionConfig(config.copy(unlockPhrase = newPhrase))
+                showPhraseEditorDialog = false
+                Toast.makeText(context, "Unlock phrase updated.", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
+
+    if (showRoutineScheduleDialog) {
+        RoutineScheduleEditorDialog(
+            habitConfig = habitConfig,
+            onDismiss = { showRoutineScheduleDialog = false },
+            onSave = { updated ->
+                onUpdateHabitConfig(updated)
+                showRoutineScheduleDialog = false
+                Toast.makeText(context, "Routine schedule updated.", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
+}
+
+private fun formatRoutineClock(hour24: Int, minute: Int): String {
+    val h = ((hour24 % 24) + 24) % 24
+    val m = ((minute % 60) + 60) % 60
+    val period = if (h >= 12) "PM" else "AM"
+    val hour12 = when {
+        h == 0 -> 12
+        h > 12 -> h - 12
+        else -> h
+    }
+    return String.format(Locale.US, "%d:%02d %s", hour12, m, period)
+}
+
+@Composable
+private fun FrictionMethodPickerDialog(
+    currentType: FrictionType,
+    hasPinConfigured: Boolean,
+    onDismiss: () -> Unit,
+    onSelect: (FrictionType) -> Unit
+) {
+    val earth = EarthTheme.colors
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(22.dp),
+            color = earth.surfaceSoft,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text("UNLOCK CHALLENGE", color = OrbitalViolet, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Select Early-Unlock Friction", color = earth.textPrimary, fontSize = 18.sp, fontFamily = FontFamily.Serif)
+                Spacer(modifier = Modifier.height(14.dp))
+
+                val options = listOf(
+                    Triple(FrictionType.HOLD_BUTTON, "5-Second Conscious Hold", "Press and hold to reflect before ending Lock"),
+                    Triple(FrictionType.TYPE_PHRASE, "Type Pledge Phrase", "Must type your commitment phrase character-by-character"),
+                    Triple(FrictionType.MATH_TASK, "Mental Math Challenge", "Solve two arithmetic problems to exit Lock early"),
+                    Triple(FrictionType.PIN_CODE, "Secret 4–8 Digit PIN", if (hasPinConfigured) "Verify with your saved numeric PIN" else "Prompts PIN creation first")
+                )
+                options.forEach { (type, title, desc) ->
+                    val isSelected = type == currentType
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(if (isSelected) OrbitalVioletSoft else Color.White)
+                            .border(
+                                1.dp,
+                                if (isSelected) OrbitalViolet else earth.border,
+                                RoundedCornerShape(14.dp)
+                            )
+                            .clickable { onSelect(type) }
+                            .padding(12.dp)
+                    ) {
+                        Text(title, color = if (isSelected) OrbitalViolet else earth.textPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(desc, color = earth.textMuted, fontSize = 11.sp)
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
+                    Text("CLOSE", color = earth.textMuted, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PinSetupModalDialog(
+    hasExistingPin: Boolean,
+    canClearPin: Boolean,
+    onDismiss: () -> Unit,
+    onSavePin: (String) -> Unit,
+    onRemovePin: () -> Unit
+) {
+    val earth = EarthTheme.colors
+    var pinInput by remember { mutableStateOf("") }
+    var confirmInput by remember { mutableStateOf("") }
+    var errorMsg by remember { mutableStateOf<String?>(null) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(22.dp),
+            color = earth.surfaceSoft,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text("FOCUS PIN", color = OrbitalViolet, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(if (hasExistingPin) "Update Focus PIN" else "Set Focus PIN", color = earth.textPrimary, fontSize = 18.sp, fontFamily = FontFamily.Serif)
+                Spacer(modifier = Modifier.height(10.dp))
+
+                OutlinedTextField(
+                    value = pinInput,
+                    onValueChange = { if (it.length <= 8 && it.all(Char::isDigit)) { pinInput = it; errorMsg = null } },
+                    label = { Text("New PIN (4–8 digits)") },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = confirmInput,
+                    onValueChange = { if (it.length <= 8 && it.all(Char::isDigit)) { confirmInput = it; errorMsg = null } },
+                    label = { Text("Confirm PIN") },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                errorMsg?.let { msg ->
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(msg, color = OrbitalCoral, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("CANCEL", color = earth.textMuted, fontWeight = FontWeight.Bold)
+                    }
+                    Button(
+                        onClick = {
+                            when {
+                                pinInput.length < 4 -> errorMsg = "PIN must be at least 4 digits."
+                                pinInput != confirmInput -> errorMsg = "PIN entries do not match."
+                                else -> onSavePin(pinInput)
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = OrbitalViolet),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("SAVE PIN", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                if (hasExistingPin && canClearPin) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = onRemovePin,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("REMOVE SAVED PIN", color = OrbitalCoral, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun UnlockPhraseEditorDialog(
+    currentPhrase: String,
+    onDismiss: () -> Unit,
+    onSavePhrase: (String) -> Unit
+) {
+    val earth = EarthTheme.colors
+    var phraseInput by remember { mutableStateOf(currentPhrase) }
+    var errorMsg by remember { mutableStateOf<String?>(null) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(22.dp),
+            color = earth.surfaceSoft,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text("UNLOCK PLEDGE", color = OrbitalCoral, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Custom Commitment Phrase", color = earth.textPrimary, fontSize = 18.sp, fontFamily = FontFamily.Serif)
+                Spacer(modifier = Modifier.height(10.dp))
+
+                OutlinedTextField(
+                    value = phraseInput,
+                    onValueChange = { if (it.length <= 100) { phraseInput = it; errorMsg = null } },
+                    label = { Text("Commitment phrase (8+ chars)") },
+                    maxLines = 3,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                errorMsg?.let { msg ->
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(msg, color = OrbitalCoral, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("CANCEL", color = earth.textMuted, fontWeight = FontWeight.Bold)
+                    }
+                    Button(
+                        onClick = {
+                            val clean = phraseInput.trim()
+                            if (clean.length < 8) {
+                                errorMsg = "Enter at least 8 characters."
+                            } else {
+                                onSavePhrase(clean)
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = OrbitalCoral),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("SAVE", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RoutineScheduleEditorDialog(
+    habitConfig: HabitConfig,
+    onDismiss: () -> Unit,
+    onSave: (HabitConfig) -> Unit
+) {
+    val earth = EarthTheme.colors
+    var morningMin by remember { mutableIntStateOf(habitConfig.morningPledgeHour * 60 + habitConfig.morningPledgeMinute) }
+    var eveningMin by remember { mutableIntStateOf(habitConfig.eveningSummaryHour * 60 + habitConfig.eveningSummaryMinute) }
+    var bedStartMin by remember { mutableIntStateOf(habitConfig.bedtimeStartHour * 60 + habitConfig.bedtimeStartMinute) }
+    var bedEndMin by remember { mutableIntStateOf(habitConfig.bedtimeEndHour * 60 + habitConfig.bedtimeEndMinute) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(22.dp),
+            color = earth.surfaceSoft,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text("ATTENTION ROUTINES", color = OrbitalSky, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Customize Daily Times", color = earth.textPrimary, fontSize = 18.sp, fontFamily = FontFamily.Serif)
+                Spacer(modifier = Modifier.height(12.dp))
+
+                TimeStepperRow("Morning Pledge", morningMin) { delta -> morningMin = ((morningMin + delta) % 1440 + 1440) % 1440 }
+                Spacer(modifier = Modifier.height(8.dp))
+                TimeStepperRow("Evening Summary", eveningMin) { delta -> eveningMin = ((eveningMin + delta) % 1440 + 1440) % 1440 }
+                Spacer(modifier = Modifier.height(8.dp))
+                TimeStepperRow("Bedtime Start", bedStartMin) { delta -> bedStartMin = ((bedStartMin + delta) % 1440 + 1440) % 1440 }
+                Spacer(modifier = Modifier.height(8.dp))
+                TimeStepperRow("Bedtime End", bedEndMin) { delta -> bedEndMin = ((bedEndMin + delta) % 1440 + 1440) % 1440 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("CANCEL", color = earth.textMuted, fontWeight = FontWeight.Bold)
+                    }
+                    Button(
+                        onClick = {
+                            onSave(
+                                habitConfig.copy(
+                                    morningPledgeHour = morningMin / 60,
+                                    morningPledgeMinute = morningMin % 60,
+                                    eveningSummaryHour = eveningMin / 60,
+                                    eveningSummaryMinute = eveningMin % 60,
+                                    bedtimeStartHour = bedStartMin / 60,
+                                    bedtimeStartMinute = bedStartMin % 60,
+                                    bedtimeEndHour = bedEndMin / 60,
+                                    bedtimeEndMinute = bedEndMin % 60
+                                )
+                            )
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = OrbitalViolet),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("SAVE TIMES", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TimeStepperRow(
+    label: String,
+    totalMinutes: Int,
+    onStepMinutes: (Int) -> Unit
+) {
+    val earth = EarthTheme.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color.White)
+            .border(1.dp, earth.border, RoundedCornerShape(14.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(label, color = earth.textMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            Text(formatRoutineClock(totalMinutes / 60, totalMinutes % 60), color = earth.textPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(earth.surfaceVariant)
+                    .clickable { onStepMinutes(-30) }
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
+            ) {
+                Text("-30m", color = earth.textPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(OrbitalVioletSoft)
+                    .clickable { onStepMinutes(30) }
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
+            ) {
+                Text("+30m", color = OrbitalViolet, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
         }
     }
 }

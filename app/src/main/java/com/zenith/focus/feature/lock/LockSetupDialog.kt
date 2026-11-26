@@ -13,9 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -179,30 +176,39 @@ fun LockSetupDialog(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 if (!isCustomMode) {
-                    // PRESETS GRID
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    // PRESETS GRID (explicit non-scrolling rows inside verticalScroll so all 11 presets stay reachable)
+                    Column(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.height(200.dp)
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        items(presets) { preset ->
-                            val isSelected = selectedPreset == preset
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(if (isSelected) earth.forestGreen else earth.surface)
-                                    .border(1.dp, if (isSelected) earth.forestDark else earth.border, RoundedCornerShape(12.dp))
-                                    .clickable { selectedPreset = preset }
-                                    .padding(vertical = 12.dp),
-                                contentAlignment = Alignment.Center
+                        presets.chunked(2).forEach { rowPresets ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Text(
-                                    text = preset.label,
-                                    color = if (isSelected) Color.White else earth.textPrimary,
-                                    fontSize = 12.sp,
-                                    fontWeight = if (isSelected) FontWeight.Black else FontWeight.SemiBold
-                                )
+                                rowPresets.forEach { preset ->
+                                    val isSelected = selectedPreset == preset
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(if (isSelected) earth.forestGreen else earth.surface)
+                                            .border(1.dp, if (isSelected) earth.forestDark else earth.border, RoundedCornerShape(12.dp))
+                                            .clickable { selectedPreset = preset }
+                                            .padding(vertical = 12.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = preset.label,
+                                            color = if (isSelected) Color.White else earth.textPrimary,
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isSelected) FontWeight.Black else FontWeight.SemiBold
+                                        )
+                                    }
+                                }
+                                if (rowPresets.size == 1) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
                             }
                         }
                     }
@@ -436,11 +442,15 @@ fun LockSetupDialog(
                     Button(
                         onClick = {
                             if (isCustomMode) {
+                                val effectiveTotalMinutes = (effectiveDurationMillis / 60_000L).toInt().coerceAtLeast(1)
+                                val effDays = effectiveTotalMinutes / (24 * 60)
+                                val effHours = (effectiveTotalMinutes % (24 * 60)) / 60
+                                val effMins = effectiveTotalMinutes % 60
                                 val label = when {
-                                    customDays > 0 -> "${customDays}d ${customHours}h Lock"
-                                    customHours > 0 && customMinutes > 0 -> "${customHours}h ${customMinutes}m Lock"
-                                    customHours > 0 -> "${customHours}h Lock"
-                                    else -> "${customMinutes}m Lock"
+                                    effDays > 0 -> "${effDays}d ${effHours}h Lock"
+                                    effHours > 0 && effMins > 0 -> "${effHours}h ${effMins}m Lock"
+                                    effHours > 0 -> "${effHours}h Lock"
+                                    else -> "${effMins}m Lock"
                                 }
                                 onStartLock(effectiveDurationMillis, LockMode.CUSTOM, label)
                             } else {

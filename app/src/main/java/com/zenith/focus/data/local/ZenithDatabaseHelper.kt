@@ -8,6 +8,7 @@ import com.zenith.focus.core.time.DateTimeUtils
 import com.zenith.focus.domain.model.BlockEvent
 import com.zenith.focus.domain.model.ContentCategory
 import com.zenith.focus.domain.repository.DailyStat
+import com.zenith.focus.feature.stats.FocusScoreCalculator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Calendar
@@ -113,8 +114,8 @@ class ZenithDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABAS
 
     suspend fun getImpulsesDefeatedCountSince(timestamp: Long): Int = withContext(Dispatchers.IO) {
         val cursor = readableDatabase.rawQuery(
-            "SELECT COUNT(*) FROM " + TABLE_BLOCK_EVENTS + " WHERE (" + COL_CATEGORY + " = 'IMPULSE_DEFEATED' OR " + COL_CATEGORY + " = 'DOOMSCROLL_BROKEN') AND " + COL_TIMESTAMP + " >= ?",
-            arrayOf(timestamp.toString())
+            "SELECT COUNT(*) FROM " + TABLE_BLOCK_EVENTS + " WHERE " + COL_CATEGORY + " = ? AND " + COL_TIMESTAMP + " >= ?",
+            arrayOf(ContentCategory.IMPULSE_DEFEATED.name, timestamp.toString())
         )
         cursor.use {
             if (it.moveToFirst()) it.getInt(0) else 0
@@ -146,6 +147,9 @@ class ZenithDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABAS
             var reels = 0
             var spotlight = 0
             var adult = 0
+            var impulses = 0
+            var doomscrolls = 0
+            var tampers = 0
 
             cursor.use {
                 while (it.moveToNext()) {
@@ -160,11 +164,19 @@ class ZenithDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABAS
                         ContentCategory.OTHER_SHORT_VIDEO.name -> reels += count
                         ContentCategory.SNAPCHAT_SPOTLIGHT.name -> spotlight += count
                         ContentCategory.ADULT_WEBSITE.name, ContentCategory.ADULT_KEYWORD.name -> adult += count
+                        ContentCategory.IMPULSE_DEFEATED.name -> impulses += count
+                        ContentCategory.DOOMSCROLL_BROKEN.name -> doomscrolls += count
+                        ContentCategory.SYSTEM_TAMPER.name -> tampers += count
                     }
                 }
             }
 
-            val minutesSaved = total * 3
+            val standardBlocks = (total - impulses - doomscrolls - tampers).coerceAtLeast(0)
+            val minutesSaved = FocusScoreCalculator.calculateTimeReclaimedMinutes(
+                impulsesDefeated = impulses,
+                doomscrollsBroken = doomscrolls,
+                shortFormBlocks = standardBlocks
+            )
             result.add(DailyStat(dayStart, total, shorts, reels, spotlight, adult, minutesSaved))
         }
 
@@ -209,6 +221,16 @@ class ZenithDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABAS
         writableDatabase.delete(TABLE_BLOCK_EVENTS, null, null)
     }
 
+    private fun escapeCsvField(raw: String?): String {
+        val value = raw ?: ""
+        val sanitized = if (value.isNotEmpty() && value[0] in charArrayOf('=', '+', '-', '@', '\t', '\r')) {
+            "'$value"
+        } else {
+            value
+        }
+        return "\"${sanitized.replace("\"", "\"\"")}\""
+    }
+
     suspend fun exportCsv(): String = withContext(Dispatchers.IO) {
         val sb = StringBuilder()
         sb.append("id,timestamp,date_time,package_name,category,confidence,rule_id\n")
@@ -222,9 +244,13 @@ class ZenithDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABAS
                 val cat = it.getString(it.getColumnIndexOrThrow(COL_CATEGORY))
                 val conf = it.getFloat(it.getColumnIndexOrThrow(COL_CONFIDENCE))
                 val rule = it.getString(it.getColumnIndexOrThrow(COL_RULE_ID))
-                sb.append(id).append(",").append(ts).append(",\"").append(dt).append("\",")
-                    .append(pkg).append(",").append(cat).append(",").append(conf).append(",")
-                    .append(rule).append("\n")
+                sb.append(id).append(",")
+                    .append(ts).append(",")
+                    .append(escapeCsvField(dt)).append(",")
+                    .append(escapeCsvField(pkg)).append(",")
+                    .append(escapeCsvField(cat)).append(",")
+                    .append(conf).append(",")
+                    .append(escapeCsvField(rule)).append("\n")
             }
         }
         sb.toString()

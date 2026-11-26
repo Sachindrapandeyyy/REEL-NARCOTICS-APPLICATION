@@ -129,7 +129,19 @@ class LockRepositoryImpl(
             alarmIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        alarmManager?.set(AlarmManager.RTC_WAKEUP, targetTimestampMillis, pendingIntent)
+        runCatching {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                if (alarmManager?.canScheduleExactAlarms() == true) {
+                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, targetTimestampMillis, pendingIntent)
+                } else {
+                    alarmManager?.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, targetTimestampMillis, pendingIntent)
+                }
+            } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                alarmManager?.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, targetTimestampMillis, pendingIntent)
+            } else {
+                alarmManager?.set(AlarmManager.RTC_WAKEUP, targetTimestampMillis, pendingIntent)
+            }
+        }
     }
 
     override suspend fun endLock() {

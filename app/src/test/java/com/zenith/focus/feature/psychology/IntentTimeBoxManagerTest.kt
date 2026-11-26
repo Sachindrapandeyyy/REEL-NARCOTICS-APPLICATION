@@ -82,4 +82,29 @@ class IntentTimeBoxManagerTest {
         manager.clearAll()
         assertFalse(manager.isCurrentlyActive("com.reddit.frontpage"))
     }
+
+    @Test
+    fun `test consumeRecentlyExpiredSession ejects only when freshly expired`() {
+        manager.startTimeBox("COM.GOOGLE.ANDROID.YOUTUBE", 5, "Study")
+        simulatedRealtime += 310_000L // 10s past 5m end
+
+        val freshExpired = manager.consumeRecentlyExpiredSession("com.google.android.youtube")
+        assertNotNull("Freshly expired foreground session must be returned once", freshExpired)
+        assertEquals("Study", freshExpired?.purpose)
+        // Second read must return null
+        org.junit.Assert.assertNull(manager.consumeRecentlyExpiredSession("com.google.android.youtube"))
+
+        // Calling getActiveSession after expiration must NOT erase the session before consumeRecentlyExpiredSession runs
+        manager.startTimeBox("com.facebook.katana", 5, "Research")
+        simulatedRealtime += 310_000L
+        assertNull(manager.getActiveSession("com.facebook.katana"))
+        val stillConsumable = manager.consumeRecentlyExpiredSession("com.facebook.katana")
+        assertNotNull("getActiveSession must not erase freshly expired session before consumption", stillConsumable)
+        assertEquals("Research", stillConsumable?.purpose)
+
+        // Hours-old stale session must be discarded silently without late ejection
+        manager.startTimeBox("com.instagram.android", 5, "DMs")
+        simulatedRealtime += 3_600_000L // 1 hour later
+        org.junit.Assert.assertNull(manager.consumeRecentlyExpiredSession("com.instagram.android"))
+    }
 }

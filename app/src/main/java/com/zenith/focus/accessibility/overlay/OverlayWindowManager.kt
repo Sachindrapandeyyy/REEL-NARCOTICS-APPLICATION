@@ -49,6 +49,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.savedstate.SavedStateRegistry
+import androidx.savedstate.SavedStateRegistryController
+import androidx.savedstate.SavedStateRegistryOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.geometry.Offset
@@ -67,6 +75,31 @@ class OverlayWindowManager(
     private val windowManager = service.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private val mainHandler = Handler(Looper.getMainLooper())
     private var overlayView: View? = null
+    private var overlayLifecycleOwner: OverlayLifecycleOwner? = null
+
+    private class OverlayLifecycleOwner : LifecycleOwner, SavedStateRegistryOwner {
+        private val lifecycleRegistry = LifecycleRegistry(this)
+        private val savedStateController = SavedStateRegistryController.create(this)
+
+        init {
+            savedStateController.performRestore(null)
+            lifecycleRegistry.currentState = Lifecycle.State.CREATED
+        }
+
+        fun onAttach() {
+            lifecycleRegistry.currentState = Lifecycle.State.STARTED
+            lifecycleRegistry.currentState = Lifecycle.State.RESUMED
+        }
+
+        fun onDetach() {
+            runCatching {
+                lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
+            }
+        }
+
+        override val lifecycle: Lifecycle get() = lifecycleRegistry
+        override val savedStateRegistry: SavedStateRegistry get() = savedStateController.savedStateRegistry
+    }
 
     companion object {
         @Volatile
@@ -120,7 +153,10 @@ class OverlayWindowManager(
                 gravity = Gravity.CENTER
             }
 
+            val lifecycleOwner = OverlayLifecycleOwner()
             val composeView = ComposeView(service).apply {
+                setViewTreeLifecycleOwner(lifecycleOwner)
+                setViewTreeSavedStateRegistryOwner(lifecycleOwner)
                 setContent {
                     ZenithFocusTheme {
                         BlockOverlayContent(
@@ -136,10 +172,14 @@ class OverlayWindowManager(
                 }
             }
 
+            lifecycleOwner.onAttach()
             windowManager.addView(composeView, layoutParams)
             overlayView = composeView
+            overlayLifecycleOwner = lifecycleOwner
             isOverlayShowing = true
         }.onFailure {
+            overlayLifecycleOwner?.onDetach()
+            overlayLifecycleOwner = null
             launchFallbackActivity(category, remainingMillis, reason)
         }
     }
@@ -151,19 +191,30 @@ class OverlayWindowManager(
             putExtra(BlockScreenActivity.EXTRA_REMAINING_MILLIS, remainingMillis)
             putExtra(BlockScreenActivity.EXTRA_REASON, reason)
         }
-        service.startActivity(intent)
-        isOverlayShowing = true
+        runCatching {
+            service.startActivity(intent)
+            isOverlayShowing = true
+        }
     }
 
     fun dismissOverlay() {
-        mainHandler.post {
+        val cleanup = {
             overlayView?.let { view ->
                 runCatching {
-                    windowManager.removeView(view)
+                    windowManager.removeViewImmediate(view)
+                }.onFailure {
+                    runCatching { windowManager.removeView(view) }
                 }
                 overlayView = null
             }
+            overlayLifecycleOwner?.onDetach()
+            overlayLifecycleOwner = null
             notifyDismissed()
+        }
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            cleanup()
+        } else {
+            mainHandler.post { cleanup() }
         }
     }
 }

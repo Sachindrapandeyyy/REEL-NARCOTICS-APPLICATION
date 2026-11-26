@@ -99,6 +99,8 @@ class NuclearModeRepositoryImpl(
                 // Session expired while app was dead
                 loadedSession = loadedSession.copy(status = NuclearSessionStatus.EXPIRED)
                 persistSession(loadedSession)
+                com.zenith.focus.feature.nuclear.NuclearForegroundService.stop(context)
+                com.zenith.focus.core.security.DeviceOwnerManager.clearNuclearRestrictions(context)
                 com.zenith.focus.feature.sensory.GrayscaleController.restoreColor(context)
             }
         }
@@ -244,7 +246,19 @@ class NuclearModeRepositoryImpl(
             nucIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        alarmManager?.set(AlarmManager.RTC_WAKEUP, endTimeMillis, nucPending)
+        runCatching {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                if (alarmManager?.canScheduleExactAlarms() == true) {
+                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, endTimeMillis, nucPending)
+                } else {
+                    alarmManager?.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, endTimeMillis, nucPending)
+                }
+            } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                alarmManager?.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, endTimeMillis, nucPending)
+            } else {
+                alarmManager?.set(AlarmManager.RTC_WAKEUP, endTimeMillis, nucPending)
+            }
+        }
     }
 
     private fun cancelNuclearAlarm() {
@@ -266,19 +280,27 @@ class NuclearModeRepositoryImpl(
         val current = _session.value
         if (current.status == NuclearSessionStatus.ACTIVE) {
             val now = System.currentTimeMillis()
-            if (now >= current.endTimeMillis) {
+            val nowElapsed = SystemClock.elapsedRealtime()
+            val didReboot = current.startElapsedRealtime <= 0L || nowElapsed < current.startElapsedRealtime
+            val isStillActive = if (didReboot) {
+                now < current.endTimeMillis
+            } else {
+                current.isCurrentlyActive(now, nowElapsed)
+            }
+
+            if (!isStillActive) {
                 val expired = current.copy(status = NuclearSessionStatus.EXPIRED)
                 persistSession(expired)
                 _session.value = expired
                 com.zenith.focus.feature.nuclear.NuclearForegroundService.stop(context)
                 com.zenith.focus.core.security.DeviceOwnerManager.clearNuclearRestrictions(context)
-            } else {
+                com.zenith.focus.feature.sensory.GrayscaleController.restoreColor(context)
+            } else if (didReboot) {
                 // Device rebooted: monotonic elapsed counter reset to 0.
                 // Re-anchor monotonic reference to current elapsedRealtime and remaining duration.
                 val remainingWall = current.endTimeMillis - now
-                val newElapsed = SystemClock.elapsedRealtime()
                 val reanchored = current.reanchorAfterReboot(
-                    newElapsedRealtime = newElapsed,
+                    newElapsedRealtime = nowElapsed,
                     remainingDurationMillis = remainingWall,
                     newStartTimeMillis = now
                 )
@@ -287,6 +309,12 @@ class NuclearModeRepositoryImpl(
                 com.zenith.focus.feature.nuclear.NuclearForegroundService.start(context)
                 com.zenith.focus.core.security.DeviceOwnerManager.applyNuclearRestrictions(context)
                 scheduleNuclearAlarm(reanchored.endTimeMillis)
+            } else {
+                // App package replaced without reboot: keep original monotonic bounds & restore FGS/restrictions/alarm.
+                com.zenith.focus.feature.nuclear.NuclearForegroundService.start(context)
+                com.zenith.focus.core.security.DeviceOwnerManager.applyNuclearRestrictions(context)
+                val trueEnd = current.startTimeMillis + current.durationMillis
+                scheduleNuclearAlarm(maxOf(current.endTimeMillis, trueEnd))
             }
         }
     }

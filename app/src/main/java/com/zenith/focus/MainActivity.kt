@@ -13,7 +13,6 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -106,21 +105,18 @@ class MainActivity : ComponentActivity() {
         checkAccessibilityStatus()
 
         setContent {
-            val appTheme by settingsRepo.appTheme.collectAsState()
-            val isDarkTheme = when (appTheme) {
-                "DARK" -> true
-                "LIGHT" -> false
-                else -> isSystemInDarkTheme()
-            }
-
-            ZenithFocusTheme(darkTheme = isDarkTheme) {
+            ZenithFocusTheme(darkTheme = false) {
                 val view = androidx.compose.ui.platform.LocalView.current
                 val earthColors = com.zenith.focus.core.designsystem.EarthTheme.colors
                 if (!view.isInEditMode) {
                     androidx.compose.runtime.SideEffect {
                         val window = (view.context as android.app.Activity).window
-                        window.statusBarColor = earthColors.canvas.toArgb()
-                        window.navigationBarColor = earthColors.canvas.toArgb()
+                        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                            @Suppress("DEPRECATION")
+                            window.statusBarColor = earthColors.canvas.toArgb()
+                            @Suppress("DEPRECATION")
+                            window.navigationBarColor = earthColors.canvas.toArgb()
+                        }
                         val insets = androidx.core.view.WindowCompat.getInsetsController(window, view)
                         insets.isAppearanceLightStatusBars = true
                         insets.isAppearanceLightNavigationBars = true
@@ -132,6 +128,8 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val isOnboardingDone by settingsRepo.isOnboardingCompleted.collectAsState()
+                    val isSettingsLoaded by (settingsRepo as? com.zenith.focus.data.repository.SettingsRepositoryImpl)
+                        ?.isLoaded?.collectAsState() ?: remember { mutableStateOf(true) }
                     val lockState by lockRepo.lockState.collectAsState()
                     val nuclearSession by nuclearRepo.session.collectAsState()
                     val config by settingsRepo.protectionConfig.collectAsState()
@@ -178,47 +176,83 @@ class MainActivity : ComponentActivity() {
                     var todayTotal by remember { mutableIntStateOf(0) }
                     var todayShorts by remember { mutableIntStateOf(0) }
                     var todayReels by remember { mutableIntStateOf(0) }
+                    var todaySpotlight by remember { mutableIntStateOf(0) }
                     var todayAdult by remember { mutableIntStateOf(0) }
                     var todayTamper by remember { mutableIntStateOf(0) }
+                    var todayAppLock by remember { mutableIntStateOf(0) }
                     var todayImpulsesDefeated by remember { mutableIntStateOf(0) }
                     var todayDoomscrolls by remember { mutableIntStateOf(0) }
                     var streakDays by remember { mutableIntStateOf(0) }
                     var dailyStats by remember { mutableStateOf<List<DailyStat>>(emptyList()) }
                     var recentEvents by remember { mutableStateOf<List<BlockEvent>>(emptyList()) }
 
-                    val refreshStats = {
-                        coroutineScope.launch {
+                    val refreshFastStats: suspend () -> Unit = {
+                        try {
                             todayTotal = statsRepo.getTodayBlockCount()
                             todayShorts = statsRepo.getTodayCountByCategory(ContentCategory.YOUTUBE_SHORTS)
-                            todayReels = statsRepo.getTodayCountByCategory(ContentCategory.INSTAGRAM_REELS)
+                            todayReels = statsRepo.getTodayCountByCategory(ContentCategory.INSTAGRAM_REELS) +
+                                         statsRepo.getTodayCountByCategory(ContentCategory.FACEBOOK_REELS) +
+                                         statsRepo.getTodayCountByCategory(ContentCategory.TIKTOK) +
+                                         statsRepo.getTodayCountByCategory(ContentCategory.OTHER_SHORT_VIDEO)
+                            todaySpotlight = statsRepo.getTodayCountByCategory(ContentCategory.SNAPCHAT_SPOTLIGHT)
                             todayAdult = statsRepo.getTodayCountByCategory(ContentCategory.ADULT_WEBSITE) +
                                          statsRepo.getTodayCountByCategory(ContentCategory.ADULT_KEYWORD)
                             todayTamper = statsRepo.getTodayCountByCategory(ContentCategory.SYSTEM_TAMPER)
+                            todayAppLock = statsRepo.getTodayCountByCategory(ContentCategory.APP_LOCK)
                             todayImpulsesDefeated = statsRepo.getTodayImpulsesDefeated()
                             todayDoomscrolls = statsRepo.getTodayCountByCategory(ContentCategory.DOOMSCROLL_BROKEN)
+                        } catch (ce: kotlinx.coroutines.CancellationException) {
+                            throw ce
+                        } catch (_: Throwable) {
+                        }
+                    }
+
+                    val refreshHistoryStats: suspend () -> Unit = {
+                        try {
                             streakDays = statsRepo.getFocusStreakDays()
                             statsRepo.getRecentEvents(25).collect {
                                 recentEvents = it
                             }
+                            statsRepo.getDailyStats(7).collect {
+                                dailyStats = it
+                            }
+                        } catch (ce: kotlinx.coroutines.CancellationException) {
+                            throw ce
+                        } catch (_: Throwable) {
                         }
                     }
 
-                    androidx.compose.runtime.LaunchedEffect(selectedTab) {
-                        refreshStats()
-                        statsRepo.getDailyStats(7).collect {
-                            dailyStats = it
-                        }
+                    androidx.compose.runtime.LaunchedEffect(selectedTab, todayTotal) {
+                        refreshFastStats()
+                        refreshHistoryStats()
                     }
 
-                    // Background tick for lock expiration and stats
-                    androidx.compose.runtime.LaunchedEffect(Unit) {
-                        while (true) {
-                            refreshStats()
-                            nuclearRepo.checkAndUpdateExpiration()
-                            lockRepo.refreshLockState()
-                            isDeviceAdminActive = ZenithDeviceAdminReceiver.isAdminActive(context)
-                            canInstallPackages = updateManager.canRequestPackageInstalls()
-                            delay(1000L)
+                    // Background tick for lock expiration and fast stats (paused when screen/activity is backgrounded)
+                    androidx.compose.runtime.LaunchedEffect(lifecycleOwner) {
+                        var isResumed = lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+                        val obs = LifecycleEventObserver { _, event ->
+                            if (event == Lifecycle.Event.ON_RESUME) isResumed = true
+                            else if (event == Lifecycle.Event.ON_PAUSE) isResumed = false
+                        }
+                        lifecycleOwner.lifecycle.addObserver(obs)
+                        try {
+                            while (true) {
+                                if (isResumed) {
+                                    refreshFastStats()
+                                    try {
+                                        nuclearRepo.checkAndUpdateExpiration()
+                                        lockRepo.refreshLockState()
+                                    } catch (ce: kotlinx.coroutines.CancellationException) {
+                                        throw ce
+                                    } catch (_: Throwable) {
+                                    }
+                                    isDeviceAdminActive = ZenithDeviceAdminReceiver.isAdminActive(context)
+                                    canInstallPackages = updateManager.canRequestPackageInstalls()
+                                }
+                                delay(1500L)
+                            }
+                        } finally {
+                            lifecycleOwner.lifecycle.removeObserver(obs)
                         }
                     }
 
@@ -244,7 +278,13 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    if (!isOnboardingDone) {
+                    if (!isSettingsLoaded) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(earthColors.canvas)
+                        )
+                    } else if (!isOnboardingDone) {
                         OnboardingScreen(
                             config = config,
                             isServiceConnected = isServiceConnected,
@@ -316,12 +356,6 @@ class MainActivity : ComponentActivity() {
                                         todayDoomscrollsBroken = todayDoomscrolls,
                                         todayTamperAttempts = todayTamper,
                                         focusStreakDays = streakDays,
-                                        isDarkTheme = isDarkTheme,
-                                        onToggleTheme = {
-                                            coroutineScope.launch {
-                                                settingsRepo.setAppTheme(if (isDarkTheme) "LIGHT" else "DARK")
-                                            }
-                                        },
                                         onArmNuclearClicked = {
                                             if (nuclearSession.isCurrentlyActive()) {
                                                 showNuclearExtendDialog = true
@@ -376,14 +410,18 @@ class MainActivity : ComponentActivity() {
                                         dailyStats = dailyStats,
                                         todayShorts = todayShorts,
                                         todayReels = todayReels,
-                                        todaySpotlight = (todayTotal - todayShorts - todayReels - todayAdult - todayTamper).coerceAtLeast(0),
+                                        todaySpotlight = todaySpotlight,
                                         todayAdult = todayAdult,
                                         todayTamper = todayTamper,
+                                        todayAppLock = todayAppLock,
+                                        todayImpulsesDefeated = todayImpulsesDefeated,
+                                        todayDoomscrollsBroken = todayDoomscrolls,
                                         recentEvents = recentEvents,
                                         onExportCsv = { statsRepo.exportStatisticsCsv() },
                                         onClearStats = {
                                             statsRepo.clearAllStatistics()
-                                            refreshStats()
+                                            refreshFastStats()
+                                            refreshHistoryStats()
                                         },
                                         onNavigateBack = { selectedTab = 0 },
                                         onNavigateAppLock = { showAppLockScreen = true },
@@ -393,7 +431,7 @@ class MainActivity : ComponentActivity() {
                                         config = config,
                                         isServiceConnected = isServiceConnected,
                                         isNuclearActive = nuclearSession.isCurrentlyActive(),
-                                        currentTheme = appTheme,
+                                        isLockActive = lockState.isCurrentlyActive(),
                                         updateManager = updateManager,
                                         habitConfig = habitConfig,
                                         onUpdateHabitConfig = { updated ->
@@ -420,9 +458,6 @@ class MainActivity : ComponentActivity() {
                                         },
                                         onClearPin = {
                                             settingsRepo.clearPin()
-                                        },
-                                        onSetTheme = { theme ->
-                                            coroutineScope.launch { settingsRepo.setAppTheme(theme) }
                                         },
                                         onEnableAccessibility = {
                                             showAccessibilityDisclosure = true
@@ -455,6 +490,7 @@ class MainActivity : ComponentActivity() {
                                          config = config,
                                          isNuclearActive = nuclearSession.isCurrentlyActive(),
                                          scannedNfcTagHash = latestNfcHash.value,
+                                         onClearScannedNfcTag = { latestNfcHash.value = null },
                                          onDismiss = { showUnlockDialog = false },
                                          onUnlockConfirmed = {
                                              coroutineScope.launch {
@@ -499,6 +535,11 @@ class MainActivity : ComponentActivity() {
                                 if (showNuclearArmingDialog) {
                                     NuclearArmingDialog(
                                         nuclearAppsCount = appLockConfig.nuclearCount,
+                                        isServiceConnected = isServiceConnected,
+                                        onEnableAccessibility = {
+                                            showNuclearArmingDialog = false
+                                            showAccessibilityDisclosure = true
+                                        },
                                         onManageApps = {
                                             showNuclearArmingDialog = false
                                             showAppLockScreen = true
@@ -652,8 +693,10 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         checkAccessibilityStatus()
         enableNfcForegroundDispatch()
-        val app = application as? ZenithApplication ?: return
-        app.container.updateManager.checkForUpdates()
+        if (com.zenith.focus.BuildConfig.ENABLE_SELF_UPDATER) {
+            val app = application as? ZenithApplication ?: return
+            app.container.updateManager.checkForUpdates()
+        }
     }
 
     override fun onPause() {

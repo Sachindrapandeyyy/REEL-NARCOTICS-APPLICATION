@@ -34,13 +34,7 @@ class FacebookReelsDetector : ContentDetector {
                              context.packageName.contains("facebook.lite", ignoreCase = true)
 
         // Signal 2: Content descriptions & navigation indicators (Accessibility nodes)
-        val isReelsTabSelected = context.hasSelectedDesc("Reels") ||
-            context.hasSelectedText("Reels") ||
-            context.hasContentDescription("Reels, selected") ||
-            context.hasContentDescription("Reels tab, selected") ||
-            context.hasContentDescription("selected, Reels") ||
-            (isFacebookLite && context.visibleTexts.any { it.equals("Reels", ignoreCase = true) } &&
-             (context.hasSelectedText("Reels") || context.hasSelectedDesc("Reels") || context.hasContentDescription("Reels, selected")))
+        val isReelsTabSelected = context.isNavigationTabSelected("Reels")
 
         val isReelsNavOrViewer = isReelsTabSelected ||
             context.hasContentDescription("Reels video player")
@@ -109,7 +103,7 @@ class FacebookReelsDetector : ContentDetector {
             if (hasLiteReelAudioOrRemix) {
                 confidence = maxOf(confidence, 0.95f)
                 reasons.add("Facebook Lite Reels audio/remix metadata active")
-            } else if (context.hasText("Reels") && (context.hasText("Like") || context.hasText("Comment") || context.hasText("Share")) && !context.hasText("What's on your mind?")) {
+            } else if (context.hasText("Watch more Reels") || (context.hasText("Reels") && context.hasText("Follow") && !context.hasText("Stories") && !context.hasText("What's on your mind?"))) {
                 confidence = maxOf(confidence, 0.85f)
                 reasons.add("Facebook Lite Reels viewer detected")
             }

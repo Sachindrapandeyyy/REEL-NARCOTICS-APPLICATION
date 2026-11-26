@@ -1,5 +1,6 @@
 package com.zenith.focus.feature.psychology
 
+import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
 data class TimeBoxSession(
@@ -33,63 +34,65 @@ class IntentTimeBoxManager(
 ) {
     private val sessions = ConcurrentHashMap<String, TimeBoxSession>()
 
+    private fun keyOf(packageName: String): String = packageName.lowercase(Locale.US)
+
     fun startTimeBox(packageName: String, durationMinutes: Int, purpose: String): TimeBoxSession {
+        val key = keyOf(packageName)
         val now = elapsedRealtimeProvider()
         val durationMs = durationMinutes * 60_000L
         val session = TimeBoxSession(
-            packageName = packageName,
+            packageName = key,
             durationMs = durationMs,
             purpose = purpose,
             startTimeRealtime = now,
             endTimeRealtime = now + durationMs
         )
-        sessions[packageName] = session
+        sessions[key] = session
         return session
     }
 
     fun isCurrentlyActive(packageName: String): Boolean {
-        val session = sessions[packageName] ?: return false
-        val now = elapsedRealtimeProvider()
-        if (session.isExpired(now)) {
-            sessions.remove(packageName)
-            return false
-        }
-        return true
+        return getActiveSession(packageName) != null
     }
 
     fun getRemainingMillis(packageName: String): Long {
-        val session = sessions[packageName] ?: return 0L
-        val now = elapsedRealtimeProvider()
-        val remaining = session.remainingMs(now)
-        if (remaining <= 0L) {
-            sessions.remove(packageName)
-            return 0L
-        }
-        return remaining
+        val session = getActiveSession(packageName) ?: return 0L
+        return session.remainingMs(elapsedRealtimeProvider())
     }
 
     fun getProgressFraction(packageName: String): Float {
-        val session = sessions[packageName] ?: return 0f
-        val now = elapsedRealtimeProvider()
-        if (session.isExpired(now)) {
-            sessions.remove(packageName)
-            return 1.0f
-        }
-        return session.progressFraction(now)
+        val session = getActiveSession(packageName) ?: return 0f
+        return session.progressFraction(elapsedRealtimeProvider())
     }
 
     fun getActiveSession(packageName: String): TimeBoxSession? {
-        val session = sessions[packageName] ?: return null
+        val key = keyOf(packageName)
+        val session = sessions[key] ?: return null
         val now = elapsedRealtimeProvider()
-        if (session.isExpired(now)) {
-            sessions.remove(packageName)
-            return null
-        }
-        return session
+        // Do not remove expired session here so consumeRecentlyExpiredSession can handle foreground ejection once.
+        return if (session.isExpired(now)) null else session
+    }
+
+    /**
+     * Atomically consumes an expired session if one exists.
+     * Returns the session only if it expired within [maxStaleMs] so foreground active timers
+     * notify and eject immediately, while hours-old stale sessions are silently cleared.
+     */
+    fun consumeRecentlyExpiredSession(
+        packageName: String,
+        maxStaleMs: Long = 120_000L
+    ): TimeBoxSession? {
+        val key = keyOf(packageName)
+        val session = sessions[key] ?: return null
+        val now = elapsedRealtimeProvider()
+        if (!session.isExpired(now)) return null
+        sessions.remove(key, session)
+        val overdueMs = now - session.endTimeRealtime
+        return if (overdueMs in 0L..maxStaleMs) session else null
     }
 
     fun clearSession(packageName: String) {
-        sessions.remove(packageName)
+        sessions.remove(keyOf(packageName))
     }
 
     fun clearAll() {

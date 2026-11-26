@@ -43,6 +43,35 @@ data class ScreenContext(
         return selectedDescriptions.any { it.contains(desc, ignoreCase = ignoreCase) }
     }
 
+    /**
+     * Checks whether a bottom navigation tab (e.g., "Shorts", "Reels", "Spotlight") is actively selected
+     * without false-matching checked toggles like "Share to Reels".
+     */
+    fun isNavigationTabSelected(tabName: String): Boolean {
+        val tab = tabName.trim().lowercase(java.util.Locale.US)
+        fun matchesTabLabel(raw: String): Boolean {
+            val l = raw.trim().lowercase(java.util.Locale.US)
+            return l == tab ||
+                l.startsWith("$tab,") ||
+                l.startsWith("$tab tab") ||
+                l.startsWith("selected, $tab") ||
+                l.endsWith(", $tab") ||
+                (l.contains(tab) && l.contains("tab"))
+        }
+
+        val inSelectedNodes = selectedDescriptions.any { matchesTabLabel(it) } ||
+            selectedTexts.any { matchesTabLabel(it) }
+        if (inSelectedNodes) return true
+
+        return contentDescriptions.any { raw ->
+            val l = raw.trim().lowercase(java.util.Locale.US)
+            l == "$tab, selected" ||
+                l == "$tab tab, selected" ||
+                l == "selected, $tab" ||
+                (l.startsWith(tab) && l.contains("selected"))
+        }
+    }
+
     fun containsAnyToken(tokens: Collection<String>): Boolean {
         return tokens.any { allNormalizedTokens.contains(it) }
     }

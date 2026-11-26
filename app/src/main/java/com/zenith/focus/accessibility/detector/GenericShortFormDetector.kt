@@ -90,7 +90,7 @@ class GenericShortFormDetector : ContentDetector {
             pkg.contains("penpencil") || pkg.contains("physicswalla") || pkg.contains("unacademy") ||
             pkg.contains("khanacademy") || pkg.contains("coursera") || pkg.contains("udemy") ||
             pkg.contains("byjus") || pkg.contains("vedantu") || pkg.contains("doubtnut") ||
-            pkg.contains("allen") || pkg.contains("testbook")
+            pkg.startsWith("com.allen.") || pkg.contains("allenapp") || pkg.contains("testbook")
         ) {
             return false
         }

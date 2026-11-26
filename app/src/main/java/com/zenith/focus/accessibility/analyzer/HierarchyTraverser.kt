@@ -43,8 +43,38 @@ object HierarchyTraverser {
         queue.add(root to 0)
         var visitedCount = 0
 
+        val lowerRootPkg = packageName.lowercase(java.util.Locale.US)
+        val isRootLauncher = com.zenith.focus.accessibility.detector.TamperDetectionEngine.isLauncherPackage(lowerRootPkg)
+        val isShortFormHost = lowerRootPkg.contains("youtube") || lowerRootPkg.contains("instagram") ||
+            lowerRootPkg.contains("facebook") || lowerRootPkg.contains("snapchat")
+        val rootRect = android.graphics.Rect().also { runCatching { root.getBoundsInScreen(it) } }
+
         while (queue.isNotEmpty() && visitedCount < MAX_NODES) {
             val (node, depth) = queue.poll() ?: break
+
+            if (node !== root) {
+                val isVisible = runCatching { node.isVisibleToUser }.getOrDefault(true)
+                if (!isVisible) {
+                    if (Build.VERSION.SDK_INT < 34) {
+                        @Suppress("DEPRECATION")
+                        runCatching { node.recycle() }
+                    }
+                    continue
+                }
+
+                // Isolate foreign embedded widgets on launchers (e.g., Google Search bar widget shortcut_btn)
+                if (isRootLauncher) {
+                    val nodePkg = runCatching { node.packageName?.toString()?.lowercase(java.util.Locale.US) }.getOrNull()
+                    if (!nodePkg.isNullOrBlank() && nodePkg != lowerRootPkg) {
+                        if (Build.VERSION.SDK_INT < 34) {
+                            @Suppress("DEPRECATION")
+                            runCatching { node.recycle() }
+                        }
+                        continue
+                    }
+                }
+            }
+
             visitedCount++
 
             val nodeClass = runCatching { node.className?.toString() }.getOrNull()
@@ -79,8 +109,7 @@ object HierarchyTraverser {
                         nodeTextMap[entryName] = text
                     }
                 }
-                val normalized = TextNormalizer.normalize(text)
-                allNormalizedTokens.addAll(TextNormalizer.extractTokens(normalized))
+                allNormalizedTokens.addAll(TextNormalizer.extractTokens(text))
             }
 
             // Extract Content Description
@@ -90,22 +119,33 @@ object HierarchyTraverser {
                 if (isSelected) {
                     selectedDescriptions.add(desc)
                 }
-                val normalized = TextNormalizer.normalize(desc)
-                allNormalizedTokens.addAll(TextNormalizer.extractTokens(normalized))
+                allNormalizedTokens.addAll(TextNormalizer.extractTokens(desc))
             }
 
-            // Inspect potential bottom navigation tab bounds for Shorts, Reels, or Spotlight
-            if (detectedTabBounds == null) {
+            // Inspect bottom navigation tab bounds ONLY for short-form social apps in portrait normal-size windows
+            val isPortraitFullWindow = rootRect.width() <= 0 || rootRect.height() <= 0 ||
+                (rootRect.height() > rootRect.width() && rootRect.height() >= 600)
+            if (detectedTabBounds == null && isShortFormHost && isPortraitFullWindow) {
                 val t = text?.trim()?.lowercase(java.util.Locale.US) ?: ""
                 val d = desc?.trim()?.lowercase(java.util.Locale.US) ?: ""
                 val v = entryName.lowercase(java.util.Locale.US)
                 val isShortsOrReelsTab = (t == "shorts" || t == "reels" || t == "spotlight" ||
-                        d.startsWith("shorts") || d.startsWith("reels") || d.startsWith("spotlight") ||
+                        d == "shorts" || d.startsWith("shorts,") || d.startsWith("shorts tab") ||
+                        d == "reels" || d.startsWith("reels,") || d.startsWith("reels tab") ||
+                        d == "spotlight" || d.startsWith("spotlight,") || d.startsWith("spotlight tab") ||
                         v.contains("shorts_tab") || v.contains("reels_tab") || v.contains("spotlight_tab"))
                 if (isShortsOrReelsTab) {
                     val rect = android.graphics.Rect()
                     runCatching { node.getBoundsInScreen(rect) }
-                    if (rect.width() > 0 && rect.height() > 0 && rect.top > 0) {
+                    val inBottomNavRegion = if (rootRect.height() > 0 && rootRect.width() > 0) {
+                        val bottomThreshold = rootRect.top + (rootRect.height() * 0.72f).toInt()
+                        rect.top >= bottomThreshold &&
+                            rect.width() <= (rootRect.width() * 0.45f).toInt() &&
+                            rect.height() <= (rootRect.height() * 0.16f).toInt()
+                    } else {
+                        true
+                    }
+                    if (inBottomNavRegion && rect.width() > 0 && rect.height() > 0 && rect.top > 0) {
                         detectedTabBounds = rect
                     }
                 }

@@ -87,6 +87,9 @@ fun StatisticsScreen(
     todaySpotlight: Int,
     todayAdult: Int,
     todayTamper: Int = 0,
+    todayAppLock: Int = 0,
+    todayImpulsesDefeated: Int = 0,
+    todayDoomscrollsBroken: Int = 0,
     recentEvents: List<BlockEvent> = emptyList(),
     onExportCsv: suspend () -> String,
     onClearStats: suspend () -> Unit,
@@ -113,19 +116,30 @@ fun StatisticsScreen(
         )
     }
 
-    // Minutes saved calculation: roughly 8-10 mins saved per prevented doomscroll loop
-    val totalMinutesSaved = remember(todayTotalBlocks, dailyStats) {
-        val todayEstimate = todayTotalBlocks * 8
+    // Today's reclaimed focus minutes (consistent with HomeScreen FocusScoreCalculator formula)
+    val todayMinutesSaved = remember(todayTotalBlocks, todayImpulsesDefeated, todayDoomscrollsBroken, todayTamper) {
+        val standardBlocks = (todayTotalBlocks - todayImpulsesDefeated - todayDoomscrollsBroken - todayTamper).coerceAtLeast(0)
+        FocusScoreCalculator.calculateTimeReclaimedMinutes(
+            impulsesDefeated = todayImpulsesDefeated,
+            doomscrollsBroken = todayDoomscrollsBroken,
+            shortFormBlocks = standardBlocks
+        )
+    }
+
+    val weekMinutesSaved = remember(dailyStats, todayMinutesSaved) {
         if (dailyStats.isNotEmpty()) {
-            val weekEstimate = dailyStats.sumOf { it.estimatedFocusMinutesSaved }
-            maxOf(todayEstimate, weekEstimate)
+            val pastDays = dailyStats.dropLast(1).sumOf { it.estimatedFocusMinutesSaved }
+            pastDays + maxOf(dailyStats.lastOrNull()?.estimatedFocusMinutesSaved ?: 0, todayMinutesSaved)
         } else {
-            todayEstimate
+            todayMinutesSaved
         }
     }
 
-    val hoursSaved = totalMinutesSaved / 60
-    val minsSaved = totalMinutesSaved % 60
+    val hoursSaved = todayMinutesSaved / 60
+    val minsSaved = todayMinutesSaved % 60
+    val weekHoursSaved = weekMinutesSaved / 60
+    val weekMinsSaved = weekMinutesSaved % 60
+    val weekSummaryFormatted = if (weekHoursSaved > 0) "${weekHoursSaved}h ${weekMinsSaved}m" else "${weekMinsSaved}m"
 
     Box(
         modifier = Modifier
@@ -222,7 +236,7 @@ fun StatisticsScreen(
                             .padding(24.dp)
                     ) {
                         Text(
-                            text = "PROTECTED ATTENTION",
+                            text = "PROTECTED ATTENTION (TODAY)",
                             color = OrbitalViolet,
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
@@ -243,9 +257,9 @@ fun StatisticsScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "reclaimed",
+                                text = "reclaimed • 7d: $weekSummaryFormatted",
                                 color = earth.textMuted,
-                                fontSize = 14.sp,
+                                fontSize = 13.sp,
                                 modifier = Modifier.padding(bottom = 6.dp)
                             )
                         }
@@ -300,30 +314,67 @@ fun StatisticsScreen(
                     .border(1.dp, earth.border, RoundedCornerShape(22.dp))
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
-                    // Calculate actual day initials for the last 7 days ending today
-                    val dayLabels = remember {
-                        (6 downTo 0).map { daysAgo ->
-                            val cal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -daysAgo) }
-                            SimpleDateFormat("EEE", Locale.getDefault()).format(cal.time).take(1)
-                        }
-                    }
-                    val counts = remember(dailyStats, todayTotalBlocks) {
-                        if (dailyStats.isNotEmpty()) {
-                            val last7 = dailyStats.takeLast(7).map { it.totalBlocks.toFloat() }.toMutableList()
-                            if (last7.isNotEmpty()) {
-                                last7[last7.size - 1] = maxOf(last7.last(), todayTotalBlocks.toFloat())
-                            }
-                            if (last7.size < 7) {
-                                val padded = MutableList(7 - last7.size) { 0f }
-                                padded.addAll(last7)
-                                padded
-                            } else last7
+                    // Build 7 padded day entries ending today
+                    val paddedDaily = remember(dailyStats, todayTotalBlocks, todayMinutesSaved) {
+                        val base: MutableList<DailyStat?> = if (dailyStats.isNotEmpty()) {
+                            dailyStats.takeLast(7).map { it as DailyStat? }.toMutableList()
                         } else {
-                            listOf(0f, 0f, 0f, 0f, 0f, 0f, todayTotalBlocks.toFloat())
+                            MutableList(7) { null }
+                        }
+                        while (base.size < 7) {
+                            base.add(0, null)
+                        }
+                        val todayCal = Calendar.getInstance().apply {
+                            set(Calendar.HOUR_OF_DAY, 0)
+                            set(Calendar.MINUTE, 0)
+                            set(Calendar.SECOND, 0)
+                            set(Calendar.MILLISECOND, 0)
+                        }
+                        val existingLast = base.last()
+                        base[base.lastIndex] = if (existingLast != null) {
+                            existingLast.copy(
+                                totalBlocks = maxOf(existingLast.totalBlocks, todayTotalBlocks),
+                                estimatedFocusMinutesSaved = maxOf(existingLast.estimatedFocusMinutesSaved, todayMinutesSaved)
+                            )
+                        } else {
+                            DailyStat(
+                                dayTimestamp = todayCal.timeInMillis,
+                                totalBlocks = todayTotalBlocks,
+                                shortsBlocks = todayShorts,
+                                reelsBlocks = todayReels,
+                                spotlightBlocks = todaySpotlight,
+                                adultBlocks = todayAdult,
+                                estimatedFocusMinutesSaved = todayMinutesSaved
+                            )
+                        }
+                        base
+                    }
+
+                    val dayInitials = remember(paddedDaily) {
+                        (0..6).map { index ->
+                            val ts = paddedDaily.getOrNull(index)?.dayTimestamp ?: Calendar.getInstance().apply {
+                                add(Calendar.DAY_OF_YEAR, -(6 - index))
+                            }.timeInMillis
+                            SimpleDateFormat("EEE", Locale.getDefault()).format(Date(ts)).take(1)
                         }
                     }
 
-                    val maxVal = remember(counts) { (counts.maxOrNull() ?: 10f).coerceAtLeast(8f) }
+                    val dayNames = remember(paddedDaily) {
+                        (0..6).map { index ->
+                            if (index == 6) "Today" else {
+                                val ts = paddedDaily.getOrNull(index)?.dayTimestamp ?: Calendar.getInstance().apply {
+                                    add(Calendar.DAY_OF_YEAR, -(6 - index))
+                                }.timeInMillis
+                                SimpleDateFormat("EEE, MMM d", Locale.getDefault()).format(Date(ts))
+                            }
+                        }
+                    }
+
+                    val counts = remember(paddedDaily) {
+                        paddedDaily.map { (it?.totalBlocks ?: 0).toFloat() }
+                    }
+
+                    val maxVal = remember(counts) { (counts.maxOrNull() ?: 8f).coerceAtLeast(8f) }
 
                     Row(
                         modifier = Modifier
@@ -334,7 +385,7 @@ fun StatisticsScreen(
                     ) {
                         counts.forEachIndexed { index, value ->
                             val isSelected = index == selectedDayIndex
-                            val barHeightFraction = (value / maxVal).coerceIn(0.12f, 1f)
+                            val barHeightFraction = if (value <= 0f) 0.05f else (value / maxVal).coerceIn(0.14f, 1f)
 
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -373,13 +424,38 @@ fun StatisticsScreen(
                                 Spacer(modifier = Modifier.height(8.dp))
 
                                 Text(
-                                    text = dayLabels.getOrElse(index) { "•" },
+                                    text = dayInitials.getOrElse(index) { "•" },
                                     fontSize = 11.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                     color = if (isSelected) earth.textPrimary else earth.textMuted
                                 )
                             }
                         }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    val selStat = paddedDaily.getOrNull(selectedDayIndex)
+                    val selDayTitle = dayNames.getOrElse(selectedDayIndex) { "Day" }
+                    val selBlocks = selStat?.totalBlocks ?: 0
+                    val selMins = selStat?.estimatedFocusMinutesSaved ?: 0
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(OrbitalVioletSoft.copy(alpha = 0.6f))
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = if (selBlocks > 0) {
+                                "$selDayTitle • $selBlocks blocks (${selMins}m saved)"
+                            } else {
+                                "$selDayTitle • 0 distractions intercepted"
+                            },
+                            color = OrbitalViolet,
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                 }
             }
@@ -412,12 +488,12 @@ fun StatisticsScreen(
                     count = todayShorts
                 )
 
-                // Bento 2: Instagram Reels
+                // Bento 2: Reels & Short Video
                 StatsBentoCard(
                     modifier = Modifier.weight(1f),
                     icon = Icons.Outlined.MovieFilter,
                     iconTint = OrbitalViolet,
-                    title = "Instagram Reels",
+                    title = "Reels & Video",
                     count = todayReels
                 )
             }
@@ -437,13 +513,13 @@ fun StatisticsScreen(
                     count = todayAdult
                 )
 
-                // Bento 4: Locked Apps & Spotlight
+                // Bento 4: App Lock, Spotlight, Tamper, Impulses & Doomscroll Shields
                 StatsBentoCard(
                     modifier = Modifier.weight(1f),
                     icon = Icons.Outlined.Apps,
                     iconTint = OrbitalAmber,
-                    title = "App Intercepts",
-                    count = todaySpotlight + todayTamper
+                    title = "App & Feed Shields",
+                    count = todayAppLock + todaySpotlight + todayTamper + todayImpulsesDefeated + todayDoomscrollsBroken
                 )
             }
 
@@ -564,9 +640,13 @@ fun StatisticsScreen(
                     onClick = {
                         coroutineScope.launch {
                             val csv = onExportCsv()
-                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            clipboard.setPrimaryClip(ClipData.newPlainText("Reel Narcotics Audit CSV", csv))
-                            Toast.makeText(context, "Audit CSV copied to clipboard!", Toast.LENGTH_SHORT).show()
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                            if (clipboard != null) {
+                                clipboard.setPrimaryClip(ClipData.newPlainText("Reel Narcotics Audit CSV", csv))
+                                Toast.makeText(context, "Audit CSV copied to clipboard!", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(context, "Clipboard service unavailable on this device", Toast.LENGTH_SHORT).show()
+                            }
                         }
                     },
                     shape = RoundedCornerShape(16.dp),

@@ -1148,4 +1148,60 @@ class DetectorTestMatrix {
         assertFalse(generic.canHandle("com.snapchat.android.beta"))
         assertFalse(generic.canHandle("com.zhiliaoapp.musically.go"))
     }
+
+    @Test
+    fun testInstagramCheckedShareToReelsOptionNotMisclassifiedAsReelsTab() {
+        val detector = InstagramReelsDetector()
+        val context = ScreenContext(
+            packageName = "com.instagram.android",
+            className = "com.instagram.modal.ModalActivity",
+            viewIds = setOf("com.instagram.android:id/sharing_toggle"),
+            visibleTexts = listOf("New Post", "Share to Reels", "Share"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("new", "post", "share", "reels"),
+            selectedTexts = setOf("Share to Reels"),
+            selectedDescriptions = setOf("Share to Reels, checked")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertFalse("Checked 'Share to Reels' toggle in post composer must NOT trigger Reels block", result.isBlocked)
+    }
+
+    @Test
+    fun testSnapchatDiscoverWithUnselectedSpotlightTextLabelAllowed() {
+        val detector = SnapchatSpotlightDetector()
+        val context = ScreenContext(
+            packageName = "com.snapchat.android",
+            className = "com.snapchat.android.LandingPageActivity",
+            viewIds = setOf("discover_feed", "navigation_host"),
+            visibleTexts = listOf("Map", "Chat", "Camera", "Stories", "Spotlight"),
+            contentDescriptions = listOf("Stories, selected"),
+            selectedDescriptions = setOf("Stories, selected"),
+            allNormalizedTokens = setOf("stories", "spotlight")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertFalse("Unselected 'Spotlight' bottom label on Snapchat Discover must NOT false-trigger block", result.isBlocked)
+    }
+
+    @Test
+    fun testFacebookLiteScrolledHomeFeedWithReelsLabelAllowed() {
+        val detector = FacebookReelsDetector()
+        val context = ScreenContext(
+            packageName = "com.facebook.lite",
+            className = "com.facebook.lite.MainActivity",
+            viewIds = emptySet(),
+            visibleTexts = listOf("Reels", "Like", "Comment", "Share", "Friends"),
+            contentDescriptions = emptyList(),
+            allNormalizedTokens = setOf("reels", "like", "comment", "share")
+        )
+        val result = detector.evaluate(context, defaultConfig)
+        assertFalse("Facebook Lite Home feed with inline Reels shelf must NOT false-trigger block", result.isBlocked)
+    }
+
+    @Test
+    fun testAllenEducationalExclusionDoesNotMatchGameNames() {
+        assertTrue(com.zenith.focus.accessibility.service.ZenithAccessibilityService.isEssentialUtility("com.allen.allenapp"))
+        assertFalse(com.zenith.focus.accessibility.service.ZenithAccessibilityService.isEssentialUtility("com.game.fallenknight"))
+        assertFalse(GenericShortFormDetector().canHandle("com.allen.allenapp"))
+        assertTrue(GenericShortFormDetector().canHandle("com.game.fallenknight"))
+    }
 }

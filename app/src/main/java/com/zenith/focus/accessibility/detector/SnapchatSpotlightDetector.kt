@@ -53,18 +53,9 @@ class SnapchatSpotlightDetector : ContentDetector {
             }
 
         // 2. Check navigation / tabs (STRICT: Must be explicitly selected)
-        val isSpotlightTabActive = context.hasSelectedDesc("Spotlight") ||
-            context.hasSelectedText("Spotlight") ||
-            context.selectedDescriptions.any { it.contains("Spotlight", ignoreCase = true) } ||
-            context.selectedTexts.any { it.contains("Spotlight", ignoreCase = true) } ||
-            context.hasContentDescription("Spotlight, selected") ||
-            context.hasContentDescription("Spotlight tab, selected") ||
-            context.hasContentDescription("selected, Spotlight") ||
-            context.contentDescriptions.any { desc ->
-                desc.contains("Spotlight", ignoreCase = true) && desc.contains("selected", ignoreCase = true)
-            }
+        val isSpotlightTabActive = context.isNavigationTabSelected("Spotlight")
 
-        // 3. Check content description / text signals
+        // 3. Check content description / text signals (exclude bare unselected bottom-bar "Spotlight" label)
         val hasSpotlightContent = context.contentDescriptions.any { desc ->
             desc.contains("Spotlight by", ignoreCase = true) ||
             desc.contains("Remix Snap", ignoreCase = true) ||
@@ -73,8 +64,8 @@ class SnapchatSpotlightDetector : ContentDetector {
             desc.contains("Trending Sound", ignoreCase = true) ||
             desc.contains("opera_content_index:", ignoreCase = true)
         } || context.visibleTexts.any { text ->
-            text.trim().equals("Spotlight", ignoreCase = true) ||
-            (text.contains("Spotlight", ignoreCase = true) && (text.contains("Sound", ignoreCase = true) || text.contains("Remix", ignoreCase = true) || text.contains("Subscribe", ignoreCase = true)))
+            text.contains("Spotlight", ignoreCase = true) &&
+            (text.contains("Sound", ignoreCase = true) || text.contains("Remix", ignoreCase = true) || text.contains("Subscribe", ignoreCase = true))
         }
 
         // Excluded surfaces: 1-on-1 Chats, Friends list, Camera preview, and Stories/Discover

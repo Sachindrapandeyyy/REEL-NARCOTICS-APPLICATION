@@ -74,6 +74,7 @@
             android:exported="false"
             android:excludeFromRecents="true"
             android:launchMode="singleInstance"
+            android:taskAffinity=""
             android:theme="@style/Theme.ZenithFocus" />
 
         <!-- Mindful Breathing Pause & Intent Time-Box Screen Activity -->
@@ -82,6 +83,7 @@
             android:exported="false"
             android:excludeFromRecents="true"
             android:launchMode="singleTop"
+            android:taskAffinity=""
             android:theme="@style/Theme.ZenithFocus" />
 
         <!-- Gentle Doomscroll Warning Intercept Screen Activity -->
@@ -90,6 +92,7 @@
             android:exported="false"
             android:excludeFromRecents="true"
             android:launchMode="singleTop"
+            android:taskAffinity=""
             android:theme="@style/Theme.ZenithFocus" />
 
         <!-- Core Accessibility Service -->

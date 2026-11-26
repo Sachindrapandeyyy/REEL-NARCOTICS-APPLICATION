@@ -22,10 +22,11 @@
 
 # --- Psychology Engine & Activities ---
 -keep class com.zenith.focus.feature.psychology.** { *; }
+-keep class com.zenith.focus.feature.blocked.** { *; }
 
 # --- Core App & Dependency Injection Container ---
 -keep class com.zenith.focus.ZenithApplication { *; }
--keep class com.zenith.focus.core.di.ZenithAppContainer { *; }
+-keep class com.zenith.focus.ZenithAppContainer { *; }
 
 # --- DataStore, Database & Domain Models ---
 -keep class com.zenith.focus.domain.model.** { *; }

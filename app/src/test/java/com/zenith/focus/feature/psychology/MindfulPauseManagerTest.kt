@@ -22,9 +22,11 @@ class MindfulPauseManagerTest {
         assertTrue(manager.isMonitoredPackage("com.snapchat.android"))
         assertTrue(manager.isMonitoredPackage("com.reddit.frontpage"))
 
-        // Unmonitored utility apps
+        // Unmonitored utility apps and substring-overlapping framework names like "android"
         assertFalse(manager.isMonitoredPackage("com.google.android.calculator"))
         assertFalse(manager.isMonitoredPackage("com.whatsapp"))
+        assertFalse(manager.isMonitoredPackage("android"))
+        assertFalse(manager.isMonitoredPackage("com"))
     }
 
     @Test
@@ -81,5 +83,33 @@ class MindfulPauseManagerTest {
 
         // User re-opens Instagram -> pause should trigger again!
         assertTrue(manager.shouldTriggerPause(pkg, isFeatureEnabled = true, hasActiveTimeBox = false))
+    }
+
+    @Test
+    fun `test transient keyboards and closing cooldown prevent pause double-launch`() {
+        var clock = 10_000L
+        val timedMgr = MindfulPauseManager(timeProvider = { clock })
+        val pkg = "com.instagram.android"
+
+        timedMgr.onForegroundPackageChanged(pkg)
+        timedMgr.markPassed(pkg)
+
+        // Third-party Transsion Facemoji / Gboard IME appears over Instagram -> passed state preserved
+        timedMgr.onForegroundPackageChanged("com.facemoji.lite.transsion")
+        assertFalse(timedMgr.shouldTriggerPause(pkg, isFeatureEnabled = true, hasActiveTimeBox = false))
+
+        // After tryLockTrigger locks, rapid duplicate window events within 2500ms must not re-trigger
+        timedMgr.clearPassed(pkg)
+        assertTrue(timedMgr.tryLockTrigger(pkg))
+        assertFalse(timedMgr.shouldTriggerPause(pkg, isFeatureEnabled = true, hasActiveTimeBox = false))
+
+        clock += 2600L
+        assertTrue(timedMgr.shouldTriggerPause(pkg, isFeatureEnabled = true, hasActiveTimeBox = false))
+
+        // Closing app suppresses trailing events for 2500ms
+        timedMgr.markClosedRecently(pkg)
+        assertFalse(timedMgr.shouldTriggerPause(pkg, isFeatureEnabled = true, hasActiveTimeBox = false))
+        clock += 2600L
+        assertTrue(timedMgr.shouldTriggerPause(pkg, isFeatureEnabled = true, hasActiveTimeBox = false))
     }
 }

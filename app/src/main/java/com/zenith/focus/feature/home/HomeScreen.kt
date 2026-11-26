@@ -88,8 +88,6 @@ fun HomeScreen(
     todayDoomscrollsBroken: Int = 0,
     todayTamperAttempts: Int = 0,
     focusStreakDays: Int,
-    isDarkTheme: Boolean = false,
-    onToggleTheme: () -> Unit = {},
     onArmNuclearClicked: () -> Unit,
     onStartLockClicked: () -> Unit,
     onUnlockClicked: () -> Unit,

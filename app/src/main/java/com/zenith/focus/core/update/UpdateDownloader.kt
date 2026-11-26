@@ -139,6 +139,10 @@ class UpdateDownloader(
                 break
             }
 
+            if (redirectCount >= maxRedirects) {
+                throw UpdateException.NetworkException("Too many HTTP redirects ($maxRedirects)")
+            }
+
             val finalConn = connection ?: throw UpdateException.NetworkException("Failed to establish connection")
             val expectedSize = if (manifest.apk.sizeBytes > 0) manifest.apk.sizeBytes else finalConn.contentLength.toLong()
             var bytesDownloaded = 0L

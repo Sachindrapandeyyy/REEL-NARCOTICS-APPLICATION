@@ -87,12 +87,7 @@ class YouTubeShortsDetector : ContentDetector {
         }
 
         // 3. Check Shorts tab explicitly selected in navigation bar (independent of specific pivot bar ID)
-        val isShortsTabSelected = context.hasSelectedDesc("Shorts") ||
-            context.hasSelectedText("Shorts") ||
-            context.hasContentDescription("Shorts, selected") ||
-            context.hasContentDescription("Shorts tab, selected") ||
-            context.hasContentDescription("selected, Shorts") ||
-            context.contentDescriptions.any { it.startsWith("Shorts", ignoreCase = true) && it.contains("selected", ignoreCase = true) }
+        val isShortsTabSelected = context.isNavigationTabSelected("Shorts")
 
         // 4. Check if normal long-form video player is active (portrait or fullscreen landscape)
         val isNormalWatchPlayer = (context.hasAnyViewId(

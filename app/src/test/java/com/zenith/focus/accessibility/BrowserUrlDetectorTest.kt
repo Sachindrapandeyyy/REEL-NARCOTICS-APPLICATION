@@ -74,4 +74,41 @@ class BrowserUrlDetectorTest {
             assertFalse("URL $url must be allowed", result.isBlocked)
         }
     }
+
+    @Test
+    fun testPathBasedBlocklistRulesMatchExactAndNestedBoardPathsOnly() {
+        val pathDetector = BrowserUrlDetector(
+            initialBlockedDomains = setOf("4chan.org/b/", "4chan.org/h/")
+        )
+
+        val blockedUrls = listOf(
+            "https://4chan.org/b/",
+            "https://boards.4chan.org/b/thread/999123",
+            "4chan.org/h/catalog"
+        )
+        for (url in blockedUrls) {
+            val context = ScreenContext(
+                packageName = "com.android.chrome",
+                visibleTexts = listOf(url),
+                nodeTextMap = mapOf("url_bar" to url)
+            )
+            val result = pathDetector.evaluate(context, config)
+            assertTrue("Path rule must block $url", result.isBlocked)
+            assertEquals("ADULT_URL_PATH_MATCH", result.ruleId)
+        }
+
+        val allowedUrls = listOf(
+            "https://boards.4chan.org/g/",
+            "https://4chan.org/bistro/menu"
+        )
+        for (url in allowedUrls) {
+            val context = ScreenContext(
+                packageName = "com.android.chrome",
+                visibleTexts = listOf(url),
+                nodeTextMap = mapOf("url_bar" to url)
+            )
+            val result = pathDetector.evaluate(context, config)
+            assertFalse("Unblocked path $url must remain allowed", result.isBlocked)
+        }
+    }
 }

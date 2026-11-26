@@ -296,7 +296,7 @@ private fun DrawScope.drawRecoveryFace(cx: Float, cy: Float, r: Float) {
     val eyeY = cy - r * 0.06f
     val eyeSpacing = r * 0.38f
 
-    // Soft sleeping eyes (— —)
+    // Soft sleeping eyes (- -)
     drawLine(
         color = Color(0xFF8B5CF6),
         start = Offset(cx - eyeSpacing - r * 0.1f, eyeY),

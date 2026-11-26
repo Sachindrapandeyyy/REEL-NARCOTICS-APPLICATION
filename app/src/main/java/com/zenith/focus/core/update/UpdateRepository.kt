@@ -29,38 +29,72 @@ class UpdateRepositoryImpl(
 
     companion object {
         private val KEY_LAST_CHECKED = longPreferencesKey("update_last_checked_timestamp")
+        private const val MAX_REDIRECTS = 5
     }
 
     override suspend fun fetchLatestManifest(manifestUrl: String): Result<UpdateManifest> = withContext(Dispatchers.IO) {
         var connection: HttpsURLConnection? = null
         try {
-            val url = URL(manifestUrl)
-            if (!url.protocol.equals("https", ignoreCase = true)) {
+            var currentUrl = URL(manifestUrl)
+            if (!currentUrl.protocol.equals("https", ignoreCase = true)) {
                 return@withContext Result.failure(
                     UpdateException.NetworkException("Manifest URL must use HTTPS transport")
                 )
             }
 
-            connection = (url.openConnection() as? HttpsURLConnection)
-                ?: return@withContext Result.failure(
-                    UpdateException.NetworkException("Only secure HTTPS connections are permitted")
-                )
+            var redirects = 0
+            while (true) {
+                if (!currentUrl.protocol.equals("https", ignoreCase = true)) {
+                    return@withContext Result.failure(
+                        UpdateException.NetworkException("Insecure redirect protocol blocked: ${currentUrl.protocol}")
+                    )
+                }
 
-            connection.connectTimeout = config.connectTimeoutMs
-            connection.readTimeout = config.readTimeoutMs
-            connection.setRequestProperty("Accept", "application/json")
-            connection.setRequestProperty("Cache-Control", "no-cache")
-            connection.instanceFollowRedirects = true
+                connection = (currentUrl.openConnection() as? HttpsURLConnection)
+                    ?: return@withContext Result.failure(
+                        UpdateException.NetworkException("Only secure HTTPS connections are permitted")
+                    )
 
-            connection.connect()
-            val code = connection.responseCode
-            if (code != HttpsURLConnection.HTTP_OK) {
-                return@withContext Result.failure(
-                    UpdateException.NetworkException("Server returned HTTP $code while fetching update manifest")
-                )
+                connection.connectTimeout = config.connectTimeoutMs
+                connection.readTimeout = config.readTimeoutMs
+                connection.setRequestProperty("Accept", "application/json")
+                connection.setRequestProperty("Cache-Control", "no-cache")
+                connection.instanceFollowRedirects = false
+
+                connection.connect()
+                val code = connection.responseCode
+                if (code == HttpsURLConnection.HTTP_MOVED_PERM ||
+                    code == HttpsURLConnection.HTTP_MOVED_TEMP ||
+                    code == HttpsURLConnection.HTTP_SEE_OTHER ||
+                    code == 307 ||
+                    code == 308
+                ) {
+                    val location = connection.getHeaderField("Location")
+                    connection.disconnect()
+                    connection = null
+                    if (location.isNullOrBlank()) {
+                        return@withContext Result.failure(
+                            UpdateException.NetworkException("Manifest server returned redirect ($code) without Location header")
+                        )
+                    }
+                    if (++redirects > MAX_REDIRECTS) {
+                        return@withContext Result.failure(
+                            UpdateException.NetworkException("Too many redirects while fetching update manifest")
+                        )
+                    }
+                    currentUrl = URL(currentUrl, location)
+                    continue
+                }
+
+                if (code != HttpsURLConnection.HTTP_OK) {
+                    return@withContext Result.failure(
+                        UpdateException.NetworkException("Server returned HTTP $code while fetching update manifest")
+                    )
+                }
+                break
             }
 
-            val body = connection.inputStream.use { stream ->
+            val body = connection!!.inputStream.use { stream ->
                 BufferedReader(InputStreamReader(stream, Charsets.UTF_8)).use { reader ->
                     reader.readText()
                 }

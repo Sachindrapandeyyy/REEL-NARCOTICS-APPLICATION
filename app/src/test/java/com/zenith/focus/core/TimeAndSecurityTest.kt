@@ -45,6 +45,9 @@ class TimeAndSecurityTest {
         assertFalse(PinHasher.verifyPin("0000", hash, salt))
         assertFalse(PinHasher.verifyPin("749", hash, salt))
         assertFalse(PinHasher.verifyPin("", hash, salt))
+        // Odd-length or malformed hex must return false without throwing
+        assertFalse(PinHasher.verifyPin("7492", "abc", "123"))
+        assertFalse(PinHasher.verifyPin("7492", "zzzz", salt))
     }
 
     @Test

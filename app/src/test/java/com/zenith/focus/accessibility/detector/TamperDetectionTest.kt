@@ -767,6 +767,78 @@ class TamperDetectionTest {
 
         val result = TamperDetectionEngine.evaluate(context)
         assertTrue("Dedicated IceBox freezer targeting Reel Narcotics must be intercepted", result.isTamperAttempt)
+        assertTrue(result.isFreezerTamper)
+    }
+
+    @Test
+    fun testRealInfinixXosLauncherWithGoogleShortcutWidgetAndFreezerAllowed() {
+        // Regression test for real-device bug where Google Search widget's `shortcut` viewId
+        // + `Freezer` folder noun + `Reel Narcotics` icon triggered infinite vibration & Home loop
+        val context = ScreenContext(
+            packageName = "com.transsion.XOSLauncher",
+            className = "com.android.launcher3.Workspace",
+            classNames = setOf(
+                "com.android.launcher3.Workspace",
+                "android.appwidget.AppWidgetHostView",
+                "android.widget.FrameLayout",
+                "android.widget.TextView"
+            ),
+            viewIds = setOf(
+                "workspace",
+                "apps_list_view",
+                "folder_icon_name",
+                "googleapp_search_widget_ghost_shortcut",
+                "googleapp_search_widget_shortcut_btn"
+            ),
+            visibleTexts = listOf("Freezer", "Reel Narcotics", "Phone", "Camera", "Chrome", "Suggestions"),
+            contentDescriptions = listOf("Folder: Freezer", "Reel Narcotics", "Home screen 1 of 4"),
+            allNormalizedTokens = setOf("freezer", "reel", "narcotics", "phone", "camera", "chrome")
+        )
+
+        val resultNormal = TamperDetectionEngine.evaluate(context, isNuclearActive = false)
+        assertFalse("Real XOSLauncher home screen must NEVER trigger tamper", resultNormal.isTamperAttempt)
+        assertFalse(resultNormal.isFreezerTamper)
+
+        val resultNuclear = TamperDetectionEngine.evaluate(context, isNuclearActive = true)
+        assertFalse("Real XOSLauncher home screen during Nuclear Mode must NEVER trigger tamper", resultNuclear.isTamperAttempt)
+        assertFalse(resultNuclear.isFreezerTamper)
+    }
+
+    @Test
+    fun testUnknownFreezerTextInWhatsAppOrBrowserAllowedDuringNuclear() {
+        val whatsappContext = ScreenContext(
+            packageName = "com.whatsapp",
+            visibleTexts = listOf("Bro try Parallel Space or App Freezer app"),
+            allNormalizedTokens = setOf("bro", "try", "parallel", "space", "app", "freezer")
+        )
+        assertFalse(
+            "WhatsApp message mentioning Parallel Space / App Freezer must NOT trigger tamper",
+            TamperDetectionEngine.evaluate(whatsappContext, isNuclearActive = true).isTamperAttempt
+        )
+
+        val chromeContext = ScreenContext(
+            packageName = "com.android.chrome",
+            visibleTexts = listOf("Best app cloner alternatives for Android"),
+            allNormalizedTokens = setOf("best", "app", "cloner", "alternatives")
+        )
+        assertFalse(
+            "Chrome page mentioning app cloner must NOT trigger tamper",
+            TamperDetectionEngine.evaluate(chromeContext, isNuclearActive = true).isTamperAttempt
+        )
+    }
+
+    @Test
+    fun testSettingsSetTimerNotMisclassifiedAsDateTimeTamper() {
+        val context = ScreenContext(
+            packageName = "com.android.settings",
+            className = "com.android.settings.SubSettings",
+            visibleTexts = listOf("Do Not Disturb", "Set timer for quiet mode", "Schedule"),
+            allNormalizedTokens = setOf("set", "timer", "schedule")
+        )
+        assertFalse(
+            "Settings 'Set timer' must NOT false-trigger Date & Time tamper check",
+            TamperDetectionEngine.evaluate(context, isNuclearActive = true).isTamperAttempt
+        )
     }
 }
 
